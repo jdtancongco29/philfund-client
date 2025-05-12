@@ -72,7 +72,7 @@ export default function AddNewEntryDialog({ isOpen, onClose, onAdd }: AddNewEntr
               Debate Name <span className="text-red-500">*</span>
             </Label>
             <Select value={debateName} onValueChange={setDebateName}>
-              <SelectTrigger id="debate-name">
+              <SelectTrigger id="debate-name" className="w-full">
                 <SelectValue placeholder="Select..." />
               </SelectTrigger>
               <SelectContent>
@@ -89,7 +89,7 @@ export default function AddNewEntryDialog({ isOpen, onClose, onAdd }: AddNewEntr
               Credit Name <span className="text-red-500">*</span>
             </Label>
             <Select value={creditName} onValueChange={setCreditName}>
-              <SelectTrigger id="credit-name">
+              <SelectTrigger id="credit-name" className="w-full">
                 <SelectValue placeholder="Select..." />
               </SelectTrigger>
               <SelectContent>

@@ -399,7 +399,10 @@ export default function ChartOfAccounts() {
       <div className="flex items-center justify-between mt-4">
         <div className="flex items-center gap-2">
           <span className="text-sm">Rows per page</span>
-          <Select value={rowsPerPage} onValueChange={setRowsPerPage}>
+          <Select value={rowsPerPage} onValueChange={(value) => {
+            setRowsPerPage(value);
+            setCurrentPage(1);
+          }}>
             <SelectTrigger className="w-16 h-8">
               <SelectValue placeholder="10" />
             </SelectTrigger>

@@ -36,7 +36,6 @@ export default function ReferenceManagement() {
     const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
     const [rowsPerPage, setRowsPerPage] = useState("10")
     const [currentPage, setCurrentPage] = useState(1)
-
     const [referenceData, setReferenceData] = useState<ReferenceData[]>([
         { code: "GJ", name: "General Journal", modules: ["Journal Module"] },
         { code: "PN", name: "Promissory Note", modules: ["Lending Module"] },
@@ -241,7 +240,10 @@ export default function ReferenceManagement() {
       <div className="flex items-center justify-end mt-4 gap-6">
         <div className="flex items-center gap-2">
           <span className="text-sm">Rows per page</span>
-          <Select value={rowsPerPage} onValueChange={setRowsPerPage}>
+          <Select value={rowsPerPage} onValueChange={(value) => {
+              setRowsPerPage(value);
+              setCurrentPage(1);
+            }}>
             <SelectTrigger className="w-16 h-8">
               <SelectValue placeholder="10" />
             </SelectTrigger>

@@ -1,12 +1,12 @@
 import ComingSoon from '@/components/coming-soon'
 import MainLayout from '@/components/layout/MainLayout'
 
-function CashieringPage() {
+function DepartmentSetupPage() {
   return (
     <MainLayout>
-      <ComingSoon />
+        <ComingSoon />
     </MainLayout>
   )
 }
 
-export default CashieringPage
+export default DepartmentSetupPage

@@ -1,27 +1,30 @@
 import { FileText } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { Button } from "../ui/button";
-import BranchSelect from "../branch-select";
+import BranchProfileDropdown from "../branch-select";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard" },
   { to: "/borrower-dashboard", label: "Borrower Dashboard" },
   { to: "/lending", label: "Lending" },
   { to: "/accounting", label: "Accounting" },
-  { to: "/maintenance-and-security/general-setup/branch-setup", label: "Maintenance & Security" },
+  {
+    to: "/maintenance-and-security/general-setup/branch-setup",
+    label: "Maintenance & Security",
+    matchPath: "/maintenance-and-security", // add a match path
+  },
 ];
 
 export default function Header() {
   const location = useLocation();
-  const currentBasePath = `/${location.pathname.split("/")[1]}`;
 
   return (
     <header className="bg-white shadow py-4 px-6 flex items-center justify-between border-b border-b-[var(--border)]">
       <div className="flex gap-8">
         <img src="/logo.png" alt="Logo" />
         <nav className="flex gap-1">
-          {navItems.map(({ to, label }) => {
-            const isActive = currentBasePath === to;
+          {navItems.map(({ to, label, matchPath }) => {
+            const isActive = location.pathname.startsWith(matchPath || to);
 
             return (
               <NavLink
@@ -37,11 +40,11 @@ export default function Header() {
       </div>
       <div className="flex gap-6 items-center">
         <Button variant="outline" size="lg" className="py-2 px-4" asChild>
-          <a href="#">
+          <a href="/maintenance-and-security/admin/approval">
             <FileText /> Approval
           </a>
         </Button>
-        <BranchSelect />
+        <BranchProfileDropdown />
       </div>
     </header>
   );

@@ -54,7 +54,7 @@ const menuConfig = [
         title: "Admin",
         value: "admin",
         links: [
-          { label: "For approval list", path: "/maintenance-and-security/admin/approval-list" },
+          { label: "For approval list", path: "/maintenance-and-security/admin/approval" },
           { label: "Back up and Restore", path: "/maintenance-and-security/admin/backup-and-restore" },
           { label: "Activity Logs", path: "/maintenance-and-security/admin/activity-logs" },
         ],
@@ -76,7 +76,7 @@ const menuConfig = [
         value: "lending-setup",
         links: [
           { label: "Group Setup", path: "/maintenance-and-security/lending-setup/group-setup" },
-          { label: "Classification Setup", path: "/maintenance-and-security/lending-setup/clasification-setup" },
+          { label: "Classification Setup", path: "/maintenance-and-security/lending-setup/classification-setup" },
           { label: "Division Setup", path: "/maintenance-and-security/lending-setup/division-setup" },
           { label: "District Setup", path: "/maintenance-and-security/lending-setup/district-setup" },
           { label: "School / Office Setup", path: "/maintenance-and-security/lending-setup/school-office-setup" },

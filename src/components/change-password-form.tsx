@@ -96,7 +96,7 @@ export default function ChangePasswordForm() {
 
         <div className="space-y-2 text-left">
           <label htmlFor="confirmPassword" className="text-sm font-medium">
-            Confirm newv Password <span className="text-red-500">*</span>
+            Confirm new Password <span className="text-red-500">*</span>
           </label>
           <Input
             id="confirmPassword"

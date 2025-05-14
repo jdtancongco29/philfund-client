@@ -1,10 +1,10 @@
-import ComingSoon from '@/components/coming-soon'
 import MainLayout from '@/components/layout/MainLayout'
+import BankAccountsTable from './BankAccountList'
 
 function BankAccountSetupPage() {
   return (
     <MainLayout>
-        <ComingSoon />
+        <BankAccountsTable />
     </MainLayout>
   )
 }

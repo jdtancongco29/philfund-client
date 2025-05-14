@@ -103,7 +103,7 @@ export default function AccountingEntriesTable() {
         <div className="space-y-4">
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold">Accounting Entries Default</h1>
-                <Button size="sm" onClick={() => setIsAddModalOpen(true)} className="cursor-pointer">
+                <Button size="lg" onClick={() => setIsAddModalOpen(true)} className="cursor-pointer">
                     <Plus className="h-4 w-4" />
                     New
                 </Button>

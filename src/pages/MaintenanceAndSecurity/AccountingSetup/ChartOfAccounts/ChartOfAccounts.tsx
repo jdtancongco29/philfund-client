@@ -224,41 +224,43 @@ export default function ChartOfAccounts() {
             Manage the accounts used for recording financial transactions in your organization
           </p>
         </div>
-        <Button size="sm" onClick={() => setIsAddDialogOpen(true)} className="cursor-pointer">
+        <Button size="lg" onClick={() => setIsAddDialogOpen(true)} className="cursor-pointer">
             <Plus className="h-4 w-4" />
             New
         </Button>
       </div>
 
-      <div className="mb-6 space-y-4">
-        <div>
-          <h3 className="text-sm font-medium mb-2">Search</h3>
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search accounts, code..."
-              className="pl-8"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+      <div className="flex justify-between mb-4">
+        <div className="flex gap-2">
+          <div>
+            <h3 className="text-sm font-medium mb-2">Search</h3>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search accounts, code..."
+                className="pl-8 w-[226.5px]"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
           </div>
-        </div>
 
-        <div>
-          <h3 className="text-sm font-medium mb-2">Filter by Classification</h3>
-          <Select value={selectedClassification} onValueChange={setSelectedClassification}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select..." />
-            </SelectTrigger>
-            <SelectContent>
-              {classifications.map((classification) => (
-                <SelectItem key={classification} value={classification}>
-                  {classification}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div>
+            <h3 className="text-sm font-medium mb-2">Filter by Classification</h3>
+            <Select value={selectedClassification} onValueChange={setSelectedClassification}>
+              <SelectTrigger className="w-[226.5px]">
+                <SelectValue placeholder="Select..." />
+              </SelectTrigger>
+              <SelectContent>
+                {classifications.map((classification) => (
+                  <SelectItem key={classification} value={classification}>
+                    {classification}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="flex justify-end gap-2">
@@ -396,7 +398,7 @@ export default function ChartOfAccounts() {
         </Table>
       </div>
 
-      <div className="flex items-center justify-between mt-4">
+      <div className="flex items-center justify-end mt-4 gap-6">
         <div className="flex items-center gap-2">
           <span className="text-sm">Rows per page</span>
           <Select value={rowsPerPage} onValueChange={(value) => {

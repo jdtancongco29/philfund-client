@@ -30,6 +30,8 @@ import DistrictSetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/Distr
 import DivisionSetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/DivisionSetup/page"
 import ClasificationSetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/ClassificationSetup/page"
 import GroupSetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/GroupSetup/page"
+import TwoFactorAuthPage from "./pages/Auth/TwoFactorAuth"
+import ChangePasswordPage from "./pages/Auth/ChangePassword"
 
 function App() {
   return (
@@ -41,6 +43,8 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
         </Route>
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/2fa-verification" element={<TwoFactorAuthPage />} />
+        <Route path="/change-password" element={<ChangePasswordPage />} />
 
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>

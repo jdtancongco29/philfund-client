@@ -1,10 +1,10 @@
-import ComingSoon from '@/components/coming-soon'
 import MainLayout from '@/components/layout/MainLayout'
+import CashieringAccountsForm from './CashieringAccountsForm'
 
 function CashieringPage() {
   return (
     <MainLayout>
-      <ComingSoon />
+      <CashieringAccountsForm />
     </MainLayout>
   )
 }

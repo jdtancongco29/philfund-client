@@ -101,7 +101,7 @@ export default function ReferenceManagement() {
             Create, edit, and delete reference entries used throughout the system
           </p>
         </div>
-        <Button size="sm" onClick={() => setIsAddDialogOpen(true)} className="cursor-pointer">
+        <Button size="lg" onClick={() => setIsAddDialogOpen(true)} className="cursor-pointer">
             <Plus className="h-4 w-4" />
             New
         </Button>

@@ -99,7 +99,11 @@ export default function ChangePasswordForm() {
                 <img src="/logo.png" alt="Logo" className="mx-auto mb-6" />
                 <h1 className="text-2xl font-bold">Change Password</h1>
                 <p className="text-muted-foreground">Please update your password</p>
-                {message && <p className="text-sm text-red-500 text-center">{message}</p>}
+                {message && (
+                    <div className={`rounded-md p-3 text-center text-sm bg-red-50 text-red-500`}>
+                    {message}
+                    </div>
+                )}
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">

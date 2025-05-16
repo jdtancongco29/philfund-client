@@ -1,98 +1,159 @@
-"use client"
+"use client";
 
-import type React from "react"
+import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import Cookies from "js-cookie";
 
-import { useState, useRef } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+const API_URL = import.meta.env.VITE_API_URL || "";
 
 export default function TwoFactorAuthForm() {
-  const [otpValues, setOtpValues] = useState<string[]>(Array(6).fill(""))
-  const inputRefs = useRef<HTMLInputElement[]>([])
+  const navigate = useNavigate();
+  const [otpValues, setOtpValues] = useState<string[]>(Array(6).fill(""));
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [error, setError] = useState(false);
+  const [message, setMessage] = useState(Cookies.get("message") || "");
+  const [isLoading, setIsLoading] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+  const tempToken = Cookies.get("temp_token");
+
+  const cookieOptions = {
+    expires: 7,
+    secure: true,
+    sameSite: "strict" as const,
+  };
 
   const handleChange = (index: number, value: string) => {
-    // Only allow numbers
-    if (!/^\d*$/.test(value)) return
+    const char = value.toUpperCase();
+    if (!/^[A-Z0-9]?$/.test(char)) return;
 
-    const newOtpValues = [...otpValues]
-    newOtpValues[index] = value.slice(0, 1) // Only take the first character
+    const updated = [...otpValues];
+    updated[index] = char;
+    setOtpValues(updated);
 
-    setOtpValues(newOtpValues)
-
-    // Auto-focus next input if value is entered
-    if (value && index < 5) {
-      if (inputRefs.current[index + 1]) {
-        inputRefs.current[index + 1].focus()
-      }
-    }
-  }
+    if (char && index < 5) inputRefs.current[index + 1]?.focus();
+  };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Handle backspace
-    if (e.key === "Backspace") {
-      if (!otpValues[index] && index > 0) {
-        // If current input is empty and backspace is pressed, focus previous input
-        if (inputRefs.current[index - 1]) {
-          inputRefs.current[index - 1].focus()
-        }
-      }
+    if (e.key === "Backspace" && !otpValues[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
     }
-  }
+  };
 
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    e.preventDefault()
-    const pastedData = e.clipboardData.getData("text/plain").trim()
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text/plain").trim().toUpperCase();
+    if (!/^[A-Z0-9]{1,6}$/.test(pasted)) return;
 
-    // Check if pasted content is a number and has a reasonable length
-    if (!/^\d+$/.test(pastedData)) return
+    const chars = pasted.slice(0, 6).split("");
+    const newValues = [...otpValues];
+    chars.forEach((char, i) => { if (i < 6) newValues[i] = char; });
 
-    const digits = pastedData.split("").slice(0, 6)
-    const newOtpValues = [...otpValues]
+    setOtpValues(newValues);
+    const nextIndex = newValues.findIndex(v => !v);
+    inputRefs.current[nextIndex !== -1 ? nextIndex : 5]?.focus();
+  };
 
-    digits.forEach((digit, index) => {
-      if (index < 6) {
-        newOtpValues[index] = digit
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    const otp = otpValues.join("");
+
+    try {
+      console.log(tempToken);
+      console.log(otp);
+      const res = await fetch(`${API_URL}/auth/verify-2fa`, {
+        method: "POST",
+        headers: {
+          'Content-Type': "application/json",
+          'Accept': "application/json",
+        },
+        body: JSON.stringify({ temp_token: tempToken, code: otp }),
+      });
+
+      const data = await res.json();
+      console.log(data);
+      if (!res.ok) {
+        setError(true);
+        setMessage(data.message || "Invalid OTP. Please try again.");
+        return;
       }
-    })
 
-    setOtpValues(newOtpValues)
-
-    // Focus the next empty input or the last input if all are filled
-    const nextEmptyIndex = newOtpValues.findIndex((val) => !val)
-    if (nextEmptyIndex !== -1) {
-      if (inputRefs.current[nextEmptyIndex]) {
-        inputRefs.current[nextEmptyIndex].focus()
-      }
-    } else {
-      if (inputRefs.current[5]) {
-        inputRefs.current[5].focus()
-      }
+      Cookies.set("authToken", data.data.access_token, cookieOptions);
+      Cookies.set("user", JSON.stringify(data.data.user), cookieOptions);
+      navigate("/dashboard");
+    } catch (err) {
+      setError(true);
+      setMessage("An unexpected error occurred. Please try again later.");
+    } finally {
+      setIsLoading(false);
     }
-  }
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    const otp = otpValues.join("")
-    console.log("Submitting OTP:", otp)
-    // Here you would typically validate the OTP with your backend
-  }
+  const handleResendCode = async () => {
+    try {
+      const res = await fetch(`${API_URL}/auth/resend-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ temp_token: tempToken }),
+      });
 
-  const handleResendCode = () => {
-    console.log("Resending OTP code")
-    // Here you would typically call your API to resend the code
-  }
+      const data = await res.json();
+
+      const successStatuses = ["SUCCESS", "RESEND_OTP"];
+
+      if (successStatuses.includes(data.status)) {
+        setError(false);
+        setMessage(data.message);
+      } else {
+        setError(true);
+        setMessage(data.message || "Failed to resend OTP.");
+      }
+
+      const availableAfter = new Date(data.data.available_after).getTime();
+      const diff = Math.max(Math.floor((availableAfter - Date.now()) / 1000), 0);
+      setSecondsLeft(diff);
+    } catch (err) {
+      setError(true);
+      setMessage("An unexpected error occurred while resending OTP.");
+    }
+  };
+
+  useEffect(() => {
+    if (secondsLeft === null) return;
+
+    const interval = setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (!prev || prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [secondsLeft]);
 
   return (
     <div className="space-y-6">
       <div className="space-y-2">
         <img src="/logo.png" alt="Logo" className="mx-auto mb-6" />
         <h1 className="text-2xl font-bold">2 Factor Authentication</h1>
-        <p className="text-muted-foreground">Enter your email below to login to your account</p>
+        <p className="text-muted-foreground">Enter the code sent to your email</p>
       </div>
 
-      <div className="rounded-md bg-green-50 p-3 text-sm text-green-800">
-        We sent a 2FA code to <span className="font-medium">user@chilfund.com</span>.
-      </div>
+      {message && (
+        <div className={`rounded-md p-3 text-center text-sm ${error ? "bg-red-50 text-red-500" : "bg-green-50 text-green-800"}`}>
+          {message}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-4">
@@ -101,40 +162,49 @@ export default function TwoFactorAuthForm() {
               <Input
                 key={index}
                 ref={(el) => {
-                  if (el) {
-                    // Create the array if it doesn't exist
-                    if (!inputRefs.current) {
-                      inputRefs.current = []
-                    }
-                    // Store the input reference at the correct index
-                    inputRefs.current[index] = el
-                  }
+                    if (el) inputRefs.current[index] = el
                 }}
                 type="text"
-                inputMode="numeric"
+                inputMode="text"
                 value={value}
                 onChange={(e) => handleChange(index, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(index, e)}
                 onPaste={index === 0 ? handlePaste : undefined}
-                className="h-12 w-12 text-center text-lg"
+                className="h-12 w-12 text-center text-lg uppercase"
                 maxLength={1}
                 autoFocus={index === 0}
               />
             ))}
           </div>
-          <p className="text-center text-sm text-muted-foreground">Enter your one-time password.</p>
+          <p className="text-center text-sm text-muted-foreground">
+            Enter your one-time password.
+          </p>
         </div>
 
-        <div className="text-center">
-          <button type="button" onClick={handleResendCode} className="text-sm text-blue-600 hover:underline">
+        <div className="text-center space-y-2">
+          <button
+            type="button"
+            onClick={handleResendCode}
+            className="text-sm text-blue-600 hover:underline cursor-pointer"
+            disabled={secondsLeft !== null && secondsLeft > 0}
+          >
             I didn&apos;t receive the OTP code.
           </button>
+          {secondsLeft !== null && secondsLeft > 0 && (
+            <p className="text-sm text-gray-500">
+              You can resend the code in {secondsLeft} second{secondsLeft !== 1 ? "s" : ""}.
+            </p>
+          )}
         </div>
 
-        <Button type="submit" className="w-full">
-          Login
+        <Button
+          type="submit"
+          className="w-full bg-[var(--primary)] text-white"
+          disabled={isLoading}
+        >
+          {isLoading ? "Logging in..." : "Login"}
         </Button>
       </form>
     </div>
-  )
+  );
 }

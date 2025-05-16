@@ -1,69 +1,94 @@
+import { useEffect, useState, useCallback } from "react";
+import { 
+  useNavigate
+  // , useLocation 
+} from "react-router-dom";
+import Cookies from "js-cookie";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import Cookies from "js-cookie";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 export default function LoginForm() {
   const navigate = useNavigate();
-  const location = useLocation();
+  // const location = useLocation();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [logoutMessage, setLogoutMessage] = useState("");
+  const [error, setError] = useState(false);
+  const [validation, setValidation] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (location.state && location.state.message) {
-      setLogoutMessage(location.state.message);
-
-      const timer = setTimeout(() => {
-        setLogoutMessage("");
-      }, 5000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [location.state]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const validUsername = 'admin';
-    const validPassword = 'bdyMaM$g95(;';
-
-    if (username === validUsername && password === validPassword) {
-      // Store token in cookies instead of localStorage
-      Cookies.set('authToken', '0m^nv?(`-Q6tM=EWzMmXKnwur4)l!s<N=y[VzrL*}-rGnsbOVC', {
-        expires: 7, // expires in 1 day
-        secure: true, // only send cookie over HTTPS
-        sameSite: 'strict',
-      });
-
-      navigate('/dashboard');
-    } else {
-      setError('Invalid username or password');
-    }
+  const cookieOptions = {
+    expires: 7,
+    secure: true,
+    sameSite: "strict" as const,
   };
+  // Clear all cookies on mount
+  useEffect(() => {
+    Object.keys(Cookies.get()).forEach((cookie) => Cookies.remove(cookie));
+  }, []);
+
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      setIsLoading(true);
+
+      try {
+        const response = await fetch(`${API_URL}/auth/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'User-Agent': 'Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.6312.86 Safari/537.36',
+          },
+          body: JSON.stringify({ username, password }),
+        });
+
+        const data = await response.json();
+        const errorStatuses = ["ACCOUNT_BLOCKED", "BRANCH_OPENER_REQUIRED", "ACCESS_DENIED", "INVALID_CREDENTIALS"];
+        const passwordExpired = ["PASSWORD_EXPIRED"];
+        const twoFactor = ["TWO_FACTOR_AUTH_REQUIRED",];
+        if(errorStatuses.includes(data.status)){
+          setError(true);
+          setValidation(data.message);
+        }else if(passwordExpired.includes(data.status)){
+          Cookies.set("password_expire", "true", cookieOptions);
+          navigate('/forgot-password');
+        }else if(twoFactor.includes(data.status)){
+          Cookies.set("temp_token", data.data.temp_token, cookieOptions);
+          Cookies.set("message", data.message, cookieOptions);
+          navigate('/2fa-verification');
+        }else{
+          Cookies.set("authToken", data.data.access_token, cookieOptions);
+          Cookies.set("user", JSON.stringify(data.data.user), cookieOptions);
+          navigate('/dashboard');
+        }
+      } catch (err) {
+        console.error(err);
+        setValidation('An unexpected error occurred. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [username, password, navigate]
+  );
 
   return (
     <div className="max-w-sm mx-auto px-4">
       <img src="/logo.png" alt="Logo" className="mx-auto mb-6" />
       <h1 className="text-2xl font-semibold text-center text-[#09090B]">Login</h1>
-
-      {logoutMessage && (
-        <div className="p-3 text-green-700 bg-green-100 border border-green-300 rounded text-sm mb-4">
-          {logoutMessage}
-        </div>
-      )}
-
       <p className="text-center text-base text-[#71717A] mb-6">
         Enter your email below to login to your account
       </p>
 
       <form className="space-y-5" onSubmit={handleSubmit}>
-        {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
-
+        {validation && (
+          <div className={`rounded-md p-3 text-center text-sm ${error ? "bg-red-50 text-red-500" : "bg-green-50 text-green-800"}`}>
+            {validation}
+          </div>
+        )}
         <div className="space-y-1">
           <Label htmlFor="username">
             Username <span className="text-red-500">*</span>
@@ -95,8 +120,12 @@ export default function LoginForm() {
           />
         </div>
 
-        <Button type="submit" className="w-full bg-[var(--primary)] text-white">
-          Login
+        <Button
+          type="submit"
+          className="w-full bg-[var(--primary)] text-white"
+          disabled={isLoading}
+        >
+          {isLoading ? 'Logging in...' : 'Login'}
         </Button>
       </form>
     </div>

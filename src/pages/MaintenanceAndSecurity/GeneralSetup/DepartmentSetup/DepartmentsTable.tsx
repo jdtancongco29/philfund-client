@@ -182,7 +182,7 @@ export default function DepartmentsTable() {
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button size="sm" onClick={() => console.log("Add new department")}>
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="h-4 w-4" />
                 New
               </Button>
             </DialogTrigger>

@@ -32,6 +32,8 @@ import ClasificationSetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/
 import GroupSetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/GroupSetup/page"
 import TwoFactorAuthPage from "./pages/Auth/TwoFactorAuth"
 import ChangePasswordPage from "./pages/Auth/ChangePassword"
+import TwoFactorRoute from "./components/TwoFactorRoute"
+import ChangePasswordRoute from "./components/ChangePasswordRoute"
 
 function App() {
   return (
@@ -42,9 +44,13 @@ function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />
         </Route>
+        <Route element={<TwoFactorRoute />}>
+          <Route path="/2fa-verification" element={<TwoFactorAuthPage />} />
+        </Route>
+        <Route element={<ChangePasswordRoute />}>
+          <Route path="/change-password" element={<ChangePasswordPage />} />
+        </Route>
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/2fa-verification" element={<TwoFactorAuthPage />} />
-        <Route path="/change-password" element={<ChangePasswordPage />} />
 
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>

@@ -1,10 +1,10 @@
-import ComingSoon from '@/components/coming-soon'
 import MainLayout from '@/components/layout/MainLayout'
+import { DistrictTable } from './DistrictTable'
 
 function DistrictSetupPage() {
   return (
     <MainLayout>
-        <ComingSoon />
+        <DistrictTable />
     </MainLayout>
   )
 }

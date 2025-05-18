@@ -1,10 +1,10 @@
-import ComingSoon from '@/components/coming-soon'
 import MainLayout from '@/components/layout/MainLayout'
+import { BorrowerGroupTable } from './BorrowerGroupTable'
 
 function GroupSetupPage() {
   return (
     <MainLayout>
-        <ComingSoon />
+        <BorrowerGroupTable />
     </MainLayout>
   )
 }

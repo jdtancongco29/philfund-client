@@ -1,10 +1,10 @@
-import ComingSoon from '@/components/coming-soon'
 import MainLayout from '@/components/layout/MainLayout'
+import { DivisionTable } from './DivisionTable'
 
 function DivisionSetupPage() {
   return (
     <MainLayout>
-        <ComingSoon />
+        <DivisionTable />
     </MainLayout>
   )
 }

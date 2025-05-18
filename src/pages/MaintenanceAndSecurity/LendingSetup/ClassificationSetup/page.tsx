@@ -1,10 +1,10 @@
-import ComingSoon from '@/components/coming-soon'
 import MainLayout from '@/components/layout/MainLayout'
+import { ClassificationTable } from './ClassificationTable'
 
 function ClasificationSetupPage() {
   return (
     <MainLayout>
-        <ComingSoon />
+        <ClassificationTable />
     </MainLayout>
   )
 }

@@ -1,10 +1,10 @@
-import ComingSoon from '@/components/coming-soon'
 import MainLayout from '@/components/layout/MainLayout'
+import { SchoolOfficeTable } from './SchoolOfficeTable'
 
 function SchoolOfficeSetupPage() {
   return (
     <MainLayout>
-        <ComingSoon />
+        <SchoolOfficeTable />
     </MainLayout>
   )
 }

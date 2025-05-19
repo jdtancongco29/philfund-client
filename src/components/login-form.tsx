@@ -40,8 +40,7 @@ export default function LoginForm() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'User-Agent': 'Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.6312.86 Safari/537.36',
+            'Accept': 'application/json'
           },
           body: JSON.stringify({ username, password }),
         });
@@ -49,7 +48,7 @@ export default function LoginForm() {
         const data = await response.json();
         const errorStatuses = ["ACCOUNT_BLOCKED", "BRANCH_OPENER_REQUIRED", "ACCESS_DENIED", "INVALID_CREDENTIALS"];
         const passwordExpired = ["PASSWORD_EXPIRED"];
-        const twoFactor = ["TWO_FACTOR_AUTH_REQUIRED",];
+        const twoFactor = ["2FA_REQUIRED"];
         if(errorStatuses.includes(data.status)){
           setError(true);
           setValidation(data.message);

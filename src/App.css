@@ -172,3 +172,9 @@
 button {
   cursor: pointer;
 }
+.custom-switch{
+  background-color: #e5e7eb
+}
+.custom-switch[data-state='checked'] {
+  background-color: #2B7FFF;
+}

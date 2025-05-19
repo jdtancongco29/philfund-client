@@ -80,6 +80,7 @@ export type DataTableProps<T> = {
     enableFilter?: boolean
     onPdfExport?: () => void
     onCsvExport?: () => void
+    onLoading?: boolean
 }
 
 export function DataTable<T>({
@@ -99,6 +100,7 @@ export function DataTable<T>({
     enableFilter = true,
     onPdfExport,
     onCsvExport,
+    onLoading = false,
 }: DataTableProps<T>) {
     // State for search, sorting, pagination, and filters
     const [searchQuery, setSearchQuery] = useState("")
@@ -481,54 +483,63 @@ export function DataTable<T>({
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {paginatedData.length === 0 ? (
-                        <TableRow>
-                            <TableCell colSpan={columns.length + (onEdit || onDelete ? 1 : 0)} className="text-center py-4">
-                            No data found.
+                        {onLoading ? (
+                            <TableRow>
+                            <TableCell
+                                colSpan={columns.length + (onEdit || onDelete ? 1 : 0)}
+                                className="text-center py-4"
+                            >
+                                Loading Data...
                             </TableCell>
-                        </TableRow>
-                        ) : (
-                        paginatedData.map((item) => (
-                            <TableRow key={String(item[idField])}>
-                            {columns.map((column) => (
-                                <TableCell key={`${String(item[idField])}-${column.id}`}>
-                                   {(() => {
-                                        const value = item[column.accessorKey];
-
-                                        // Find matching display condition
-                                        const match = column.displayCondition?.find(
-                                        (condition) => condition.value === value
-                                        );
-
-                                        const label = match?.label ?? String(value ?? "");
-                                        const className = match?.className;
-
-                                        const content = column.cell ? column.cell(item) : label;
-
-                                        return className ? <span className={className}>{content}</span> : content;
-                                    })()}
-                                </TableCell>
-                            ))}
-                            {(onEdit || onDelete) && (
-                                <TableCell className="text-right">
-                                <div className="flex justify-end gap-2">
-                                    {onEdit && (
-                                    <Button variant="ghost" size="icon" onClick={() => onEdit(item)}>
-                                        <PencilIcon className="h-4 w-4" />
-                                        <span className="sr-only">Edit</span>
-                                    </Button>
-                                    )}
-                                    {onDelete && (
-                                    <Button variant="ghost" size="icon" onClick={() => onDelete(item)}>
-                                        <TrashIcon className="h-4 w-4 text-destructive" />
-                                        <span className="sr-only">Delete</span>
-                                    </Button>
-                                    )}
-                                </div>
-                                </TableCell>
-                            )}
                             </TableRow>
-                        ))
+                        ) : paginatedData.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={columns.length + (onEdit || onDelete ? 1 : 0)} className="text-center py-4">
+                                No data found.
+                                </TableCell>
+                            </TableRow>
+                            ) : (
+                            paginatedData.map((item) => (
+                                <TableRow key={String(item[idField])}>
+                                {columns.map((column) => (
+                                    <TableCell key={`${String(item[idField])}-${column.id}`}>
+                                    {(() => {
+                                            const value = item[column.accessorKey];
+
+                                            // Find matching display condition
+                                            const match = column.displayCondition?.find(
+                                            (condition) => condition.value === value
+                                            );
+
+                                            const label = match?.label ?? String(value ?? "");
+                                            const className = match?.className;
+
+                                            const content = column.cell ? column.cell(item) : label;
+
+                                            return className ? <span className={className}>{content}</span> : content;
+                                        })()}
+                                    </TableCell>
+                                ))}
+                                {(onEdit || onDelete) && (
+                                    <TableCell className="text-right">
+                                    <div className="flex justify-end gap-2">
+                                        {onEdit && (
+                                        <Button variant="ghost" size="icon" onClick={() => onEdit(item)}>
+                                            <PencilIcon className="h-4 w-4" />
+                                            <span className="sr-only">Edit</span>
+                                        </Button>
+                                        )}
+                                        {onDelete && (
+                                        <Button variant="ghost" size="icon" onClick={() => onDelete(item)}>
+                                            <TrashIcon className="h-4 w-4 text-destructive" />
+                                            <span className="sr-only">Delete</span>
+                                        </Button>
+                                        )}
+                                    </div>
+                                    </TableCell>
+                                )}
+                                </TableRow>
+                            ))
                         )}
                     </TableBody>
                 </Table>

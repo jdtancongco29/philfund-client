@@ -1,5 +1,5 @@
 import MainLayout from '@/components/layout/MainLayout'
-import DepartmentsTable from './DepartmentsTable'
+import { DepartmentsTable } from './DepartmentsTable'
 
 function DepartmentSetupPage() {
   return (

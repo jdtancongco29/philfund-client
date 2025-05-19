@@ -81,7 +81,8 @@ export default function TwoFactorAuthForm() {
         setMessage(data.message || "Invalid OTP. Please try again.");
         return;
       }
-
+      Cookies.remove('temp_token');
+      Cookies.remove('message');
       Cookies.set("authToken", data.data.access_token, cookieOptions);
       Cookies.set("user", JSON.stringify(data.data.user), cookieOptions);
       navigate("/dashboard");

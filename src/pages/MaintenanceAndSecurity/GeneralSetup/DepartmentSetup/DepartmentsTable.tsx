@@ -25,6 +25,7 @@ export function DepartmentsTable() {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [departmentToDeleteId, setDepartmentToDeleteId] = useState<string>("")
     const [departmentToDelete, setDepartmentToDelete] = useState< string >("null")
+    const [onResetTable, setOnResetTable] = useState(false);
 
     const token = Cookies.get('authToken');
     const fetchDepartments = async () => {
@@ -40,12 +41,18 @@ export function DepartmentsTable() {
         });
         const data = await response.json();
         setDepartments(data.data.departments);
+        setOnResetTable(true)
       } catch (err) {
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
+    const resetTable = () => {
+      setOnResetTable(true); 
+      setTimeout(() => setOnResetTable(false), 100)
+    }
+
     useEffect(() => {
       fetchDepartments();
     }, []);
@@ -126,6 +133,7 @@ export function DepartmentsTable() {
           icon: <CircleCheck className="h-5 w-5" />,
           duration: 5000,
         })
+        resetTable()
         fetchDepartments();
       } catch (err) {
         console.error('Error deleting department:', err);
@@ -186,8 +194,9 @@ export function DepartmentsTable() {
             duration: 5000,
           })
         )
-        setReset(true);
-        fetchDepartments();
+        setReset(true)
+        resetTable()
+        fetchDepartments()
       } catch (err) {
         console.error('Error adding department:', err);
       } finally {
@@ -213,6 +222,7 @@ export function DepartmentsTable() {
               enableCsvExport={true}
               enableFilter={false}
               onLoading={loading}
+              onResetTable={onResetTable}
           />
 
             <DepartmentDialog

@@ -41,9 +41,9 @@ export type SearchDefinition = {
 }
 
 export type DisplayCondition<T> = {
-  value: T;
-  label: string;
-  className?: string;
+    value: T;
+    label: string;
+    className?: string;
 };
 
 export type ColumnDefinition<T> = {
@@ -81,6 +81,7 @@ export type DataTableProps<T> = {
     onPdfExport?: () => void
     onCsvExport?: () => void
     onLoading?: boolean
+    onResetTable?: boolean
 }
 
 export function DataTable<T>({
@@ -101,6 +102,7 @@ export function DataTable<T>({
     onPdfExport,
     onCsvExport,
     onLoading = false,
+    onResetTable = false,
 }: DataTableProps<T>) {
     // State for search, sorting, pagination, and filters
     const [searchQuery, setSearchQuery] = useState("")
@@ -115,6 +117,15 @@ export function DataTable<T>({
     useEffect(() => {
         setCurrentPage(1)
     }, [searchQuery, activeFilters])
+
+    useEffect(() => {
+        if (onResetTable) {
+            console.log("working reset");
+            setCurrentPage(1);
+        }else{
+console.log("not reset");
+        }
+    }, [onResetTable]);
 
     // Handle sorting
     const handleSort = (columnId: string) => {

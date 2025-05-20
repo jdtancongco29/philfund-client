@@ -18,7 +18,8 @@ const formSchema = z.object({
     .length(3, "Department code must be exactly 3 characters."), // simpler and better than min/max
   name: z
     .string()
-    .min(3, "Department name must be at least 3 characters."),
+    .min(3, { message: "Department name must be at least 3 characters."})
+    .max(20, { message: "Department name must must not be greater than 20 characters."}),
   status: z.boolean(),
 })
 
@@ -76,7 +77,7 @@ export function DepartmentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px]" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">
             {isEditMode ? "Edit Department" : "Add New Department"}

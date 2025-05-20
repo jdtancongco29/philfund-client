@@ -7,6 +7,7 @@ import Cookies from "js-cookie";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { fetchWithHeaders } from "@/lib/api";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -36,32 +37,28 @@ export default function LoginForm() {
       setIsLoading(true);
 
       try {
-        const response = await fetch(`${API_URL}/auth/login`, {
+        const response = await fetchWithHeaders('/auth/login', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
+          auth: false,
+          branch: false,
           body: JSON.stringify({ username, password }),
         });
-
-        const data = await response.json();
         const errorStatuses = ["ACCOUNT_BLOCKED", "BRANCH_OPENER_REQUIRED", "ACCESS_DENIED", "INVALID_CREDENTIALS"];
         const passwordExpired = ["PASSWORD_EXPIRED"];
         const twoFactor = ["2FA_REQUIRED"];
-        if(errorStatuses.includes(data.status)){
+        if(errorStatuses.includes(response.status)){
           setError(true);
-          setValidation(data.message);
-        }else if(passwordExpired.includes(data.status)){
+          setValidation(response.message);
+        }else if(passwordExpired.includes(response.status)){
           Cookies.set("password_expire", "true", cookieOptions);
           navigate('/forgot-password');
-        }else if(twoFactor.includes(data.status)){
-          Cookies.set("temp_token", data.data.temp_token, cookieOptions);
-          Cookies.set("message", data.message, cookieOptions);
+        }else if(twoFactor.includes(response.status)){
+          Cookies.set("temp_token", response.data.temp_token, cookieOptions);
+          Cookies.set("message", response.message, cookieOptions);
           navigate('/2fa-verification');
         }else{
-          Cookies.set("authToken", data.data.access_token, cookieOptions);
-          Cookies.set("user", JSON.stringify(data.data.user), cookieOptions);
+          Cookies.set("authToken", response.data.access_token, cookieOptions);
+          Cookies.set("user", JSON.stringify(response.data.user), cookieOptions);
           navigate('/dashboard');
         }
       } catch (err) {

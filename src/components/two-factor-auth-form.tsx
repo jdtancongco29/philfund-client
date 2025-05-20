@@ -63,8 +63,6 @@ export default function TwoFactorAuthForm() {
     const otp = otpValues.join("");
 
     try {
-      console.log(tempToken);
-      console.log(otp);
       const res = await fetch(`${API_URL}/auth/verify-2fa`, {
         method: "POST",
         headers: {
@@ -75,7 +73,6 @@ export default function TwoFactorAuthForm() {
       });
 
       const data = await res.json();
-      console.log(data);
       if (!res.ok) {
         setError(true);
         setMessage(data.message || "Invalid OTP. Please try again.");

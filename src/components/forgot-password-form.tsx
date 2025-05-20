@@ -16,7 +16,6 @@ export default function ForgotPasswordForm() {
   const [error, setError] = useState(false)
   const [message, setMessage] = useState("")
   const isPassExpired = Cookies.get("password_expire");
-  console.log(isPassExpired);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)

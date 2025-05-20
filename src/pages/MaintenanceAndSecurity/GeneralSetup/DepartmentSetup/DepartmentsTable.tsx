@@ -7,7 +7,7 @@ import { DepartmentDialog, FormValues } from "./DepartmentDialog";
 import { toast } from 'sonner';
 import { CircleCheck } from "lucide-react";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
-const API_URL = import.meta.env.VITE_API_URL;
+import { fetchWithHeaders } from "@/lib/api";
 interface Department {
     id: string
     code: string
@@ -31,16 +31,13 @@ export function DepartmentsTable() {
     const fetchDepartments = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`${API_URL}/department/`, {
+        const response = await fetchWithHeaders('/department/', {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-            Authorization: `Bearer ${token}`
-          }
+          auth: true,
+          branch: true
         });
-        const data = await response.json();
-        setDepartments(data.data.departments);
+
+        setDepartments(response.data.departments);
         setOnResetTable(true)
       } catch (err) {
         console.error(err);
@@ -116,13 +113,10 @@ export function DepartmentsTable() {
 
     const handleConfirmDelete = async () => {
       try {
-        const response = await fetch(`${API_URL}/department/${departmentToDeleteId}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-            Authorization: `Bearer ${token}`,
-          }
+        const response = await fetchWithHeaders(`/department/${departmentToDeleteId}`, {
+          method: 'GET',
+          auth: true,
+          branch: true
         });
 
         if (!response.ok) {
@@ -159,15 +153,13 @@ export function DepartmentsTable() {
     const handleSaveDepartment = async (values: { code: string, name: string, status: boolean }) => {
       try {
         const apiUrl = selectedDepartment
-        ? `${API_URL}/department/${selectedDepartmentId}`
-        : `${API_URL}/department/`;
-        const response = await fetch(apiUrl, {
+        ? `/department/${selectedDepartmentId}`
+        : `/department/`;
+
+        const response = await fetchWithHeaders(apiUrl, {
           method: selectedDepartmentId ? 'PUT' : 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
+          auth: true,
+          branch: true,
           body: JSON.stringify({
             code: values.code,
             name: values.name,
@@ -179,17 +171,15 @@ export function DepartmentsTable() {
           throw new Error('Failed to add department');
         }
 
-        const data = await response.json();
-
         selectedDepartmentId ? (
           toast.success(`Department Updated`, {
-            description: `${data.data.name} has been successfully updated.`,
+            description: `${response.data.name} has been successfully updated.`,
             icon: <CircleCheck className="h-5 w-5" />,
             duration: 5000,
           })
         ) : (
           toast.success(`Department Added`, {
-            description: `${data.data.name} has been successfully added.`,
+            description: `${response.data.name} has been successfully added.`,
             icon: <CircleCheck className="h-5 w-5" />,
             duration: 5000,
           })

@@ -120,10 +120,7 @@ export function DataTable<T>({
 
     useEffect(() => {
         if (onResetTable) {
-            console.log("working reset");
             setCurrentPage(1);
-        }else{
-console.log("not reset");
         }
     }, [onResetTable]);
 

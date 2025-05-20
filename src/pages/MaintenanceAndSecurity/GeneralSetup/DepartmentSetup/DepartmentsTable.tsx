@@ -111,15 +111,12 @@ export function DepartmentsTable() {
 
     const handleConfirmDelete = async () => {
       try {
-        const response = await fetchWithHeaders(`/department/${departmentToDeleteId}`, {
+        await fetchWithHeaders(`/department/${departmentToDeleteId}`, {
           method: 'GET',
           auth: true,
           branch: true
         });
 
-        if (!response.ok) {
-          throw new Error('Failed to delete department');
-        }
         toast.success(`Department Deleted`, {
           description: `${departmentToDelete} has been successfully deleted.`,
           icon: <CircleCheck className="h-5 w-5" />,

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import { DataTable, type SearchDefinition, type ColumnDefinition, type FilterDefinition } from "@/components/data-table/data-table"
-import Cookies from "js-cookie";
 import { DepartmentDialog, FormValues } from "./DepartmentDialog";
 import { toast } from 'sonner';
 import { CircleCheck } from "lucide-react";
@@ -27,7 +26,6 @@ export function DepartmentsTable() {
     const [departmentToDelete, setDepartmentToDelete] = useState< string >("null")
     const [onResetTable, setOnResetTable] = useState(false);
 
-    const token = Cookies.get('authToken');
     const fetchDepartments = async () => {
       setLoading(true);
       try {
@@ -163,13 +161,9 @@ export function DepartmentsTable() {
           body: JSON.stringify({
             code: values.code,
             name: values.name,
-            status: values.status,
+            status: values.status
           }),
         });
-
-        if (!response.ok) {
-          throw new Error('Failed to add department');
-        }
 
         selectedDepartmentId ? (
           toast.success(`Department Updated`, {

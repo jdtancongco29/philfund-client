@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { 
   useNavigate
-  // , useLocation 
 } from "react-router-dom";
 import Cookies from "js-cookie";
 import { Button } from "@/components/ui/button";
@@ -9,11 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { fetchWithHeaders } from "@/lib/api";
 
-const API_URL = import.meta.env.VITE_API_URL;
-
 export default function LoginForm() {
   const navigate = useNavigate();
-  // const location = useLocation();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');

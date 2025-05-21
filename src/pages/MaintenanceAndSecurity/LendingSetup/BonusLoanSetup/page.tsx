@@ -1,10 +1,10 @@
-import ComingSoon from '@/components/coming-soon'
-import MainLayout from '@/components/layout/MainLayout'
+import MainLayout from "@/components/layout/MainLayout"
+import { BonusLoanTable } from "./bonus-loan-table"
 
 function BonusLoanSetupPage() {
   return (
     <MainLayout>
-        <ComingSoon />
+      <BonusLoanTable />
     </MainLayout>
   )
 }

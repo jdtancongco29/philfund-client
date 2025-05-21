@@ -1,12 +1,12 @@
-import ComingSoon from '@/components/coming-soon'
-import MainLayout from '@/components/layout/MainLayout'
+import MainLayout from "@/components/layout/MainLayout"
+import { CashAdvanceTable } from "./cash-advance-table"
 
-function BonusLoanCASetupPage() {
+function CashAdvanceSetupPage() {
   return (
     <MainLayout>
-        <ComingSoon />
+      <CashAdvanceTable />
     </MainLayout>
   )
 }
 
-export default BonusLoanCASetupPage
+export default CashAdvanceSetupPage

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { CircleCheck, Pencil, Trash2 } from "lucide-react";
+
+import { CircleCheck } from "lucide-react";
 import { toast } from "sonner";
 import {
   DataTable,
@@ -51,11 +51,13 @@ export default function ReferenceManagement() {
   const [reference, setReference] = useState<Reference[]>([]);
   const [loading, setLoading] = useState(true);
   const [reset, setReset] = useState(false);
-  const [selectedReference, setSelectedReference] = useState<FormValues | null>(null);
-  const [selectedReferenceId, setSelectedReferenceId] = useState<string>("");
+  const [selectedReference, setSelectedReference] = useState<FormValues | null>(
+    null
+  );
+  const [selectedReferenceId, setSelectedReferenceId] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [referenceToDeleteId, setReferenceToDeleteId] = useState<string>("");
-  const [referenceToDelete, setReferenceToDelete] = useState<string>("");
+  const [referenceToDeleteId, setReferenceToDeleteId] = useState("");
+  const [referenceToDelete, setReferenceToDelete] = useState("");
   const [onResetTable, setOnResetTable] = useState(false);
   const [availableModules, setAvailableModules] = useState<Module[]>([]);
 
@@ -102,16 +104,6 @@ export default function ReferenceManagement() {
     setTimeout(() => setOnResetTable(false), 100);
   };
 
-  const transformedReferences = reference.map(ref => ({
-    ...ref,
-    moduleName: ref.module?.name,
-  }));
-
-  useEffect(() => {
-    fetchReference();
-    fetchModules();
-  }, []);
-
   const columns: ColumnDefinition<Reference>[] = [
     {
       id: "code",
@@ -129,7 +121,7 @@ export default function ReferenceManagement() {
       id: "module",
       header: "Module",
       accessorKey: "module",
-      cell: (item) => item.module?.name || "",
+      cell: (item) => item.module.name,
       enableSorting: true,
     },
   ];
@@ -182,12 +174,6 @@ export default function ReferenceManagement() {
     }
   };
 
-  const handleCloseDeleteDialog = () => {
-    setDeleteDialogOpen(false);
-    setReferenceToDeleteId("");
-    setReferenceToDelete("");
-  };
-
   const handleNew = () => {
     setReset(false);
     setSelectedReference(null);
@@ -196,47 +182,60 @@ export default function ReferenceManagement() {
   };
 
   const handleSaveReference = async (values: FormValues) => {
-  try {
-    const method = selectedReferenceId ? "put" : "post";
-    const endpoint = selectedReferenceId ? `/reference/${selectedReferenceId}` : "/reference/";
-    const payloadData = {
-      code: values.code,
-      name: values.name,
-      module_id: values.module_id,
-      status: values.status,
-    };
+    try {
+      const method = selectedReferenceId ? "put" : "post";
+      const endpoint = selectedReferenceId
+        ? `/reference/${selectedReferenceId}`
+        : "/reference/";
+      const payloadData = {
+        code: values.code,
+        name: values.name,
+        module_id: values.module_id,
+        status: values.status,
+      };
 
-    const response = await apiRequest<{ data: { name: string } }>(
-      method,
-      endpoint,
-      payloadData,
-      {
-        useAuth: true,
-        useBranchId: true,
-      }
-    );
+      const response = await apiRequest<{ data: { name: string } }>(
+        method,
+        endpoint,
+        payloadData,
+        {
+          useAuth: true,
+          useBranchId: true,
+        }
+      );
 
-    toast.success(selectedReferenceId ? "Reference Updated" : "Reference Added", {
-      description: `${response.data.data.name} has been successfully ${selectedReferenceId ? "updated" : "added"}.`,
-      icon: <CircleCheck className="h-5 w-5" />,
-      duration: 5000,
-    });
+      toast.success(
+        selectedReferenceId ? "Reference Updated" : "Reference Added",
+        {
+          description: `${response.data.data.name} has been successfully ${
+            selectedReferenceId ? "updated" : "added"
+          }.`,
+          icon: <CircleCheck className="h-5 w-5" />,
+          duration: 5000,
+        }
+      );
 
-    setReset(true);
-    resetTable();
+      setReset(true);
+      resetTable();
+      fetchReference();
+    } catch (err) {
+      console.error("Error saving Reference:", err);
+      throw err;
+    }
+  };
+
+  
+  useEffect(() => {
     fetchReference();
-  } catch (err) {
-    console.error("Error saving Reference:", err);
-    throw err;
-  }
-};
+    fetchModules();
+  }, []);
 
   return (
     <>
       <DataTable
         title="Reference"
         subtitle="Manage existing references"
-        data={transformedReferences}
+        data={reference}
         columns={columns}
         filters={filters}
         search={search}
@@ -244,9 +243,9 @@ export default function ReferenceManagement() {
         onDelete={handleDelete}
         onNew={handleNew}
         idField="id"
-        enableNew={true}
-        enablePdfExport={true}
-        enableCsvExport={true}
+        enableNew
+        enablePdfExport
+        enableCsvExport
         enableFilter={false}
         onLoading={loading}
         onResetTable={onResetTable}
@@ -262,14 +261,13 @@ export default function ReferenceManagement() {
       />
 
       <DdeleteReferenceDialog
-  isOpen={deleteDialogOpen}
-  onClose={handleCloseDeleteDialog}
-  onConfirm={handleConfirmDelete}
-  title="Delete Reference"
-  description="Are you sure you want to delete the reference: {name}?"
-  itemName={referenceToDelete}
-/>
-
+        isOpen={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Reference"
+        description={`Are you sure you want to delete the reference: ${referenceToDelete}?`}
+        itemName={referenceToDelete}
+      />
     </>
   );
 }

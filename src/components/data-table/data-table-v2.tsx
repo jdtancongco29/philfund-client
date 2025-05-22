@@ -599,80 +599,82 @@ export function DataTableV2<T>({
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-end gap-6">
-        <div className="flex items-center gap-2">
-          <p className="text-sm text-muted-foreground">Rows per page</p>
-          <Select
-            value={String(rowsPerPage)}
-            onValueChange={(value) => {
-              setRowsPerPage(Number(value))
-              setCurrentPage(1);
-              if (onRowCountChange) {
-                onRowCountChange(Number(value))
-              }
-            }}
-          >
-            <SelectTrigger className="h-8">
-              <SelectValue placeholder={rowsPerPage} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="5">5</SelectItem>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      {
+        !onLoading &&
+        <div className="flex items-center justify-end gap-6">
+          <div className="flex items-center gap-2">
+            <p className="text-sm text-muted-foreground">Rows per page</p>
+            <Select
+              value={String(rowsPerPage)}
+              onValueChange={(value) => {
+                setRowsPerPage(Number(value))
+                setCurrentPage(1);
+                if (onRowCountChange) {
+                  onRowCountChange(Number(value))
+                }
+              }}
+            >
+              <SelectTrigger className="h-8">
+                <SelectValue placeholder={rowsPerPage} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-        <div className="flex items-center gap-1 text-sm">
-          <p className="text-muted-foreground">
-            Page {currentPage} of {totalPages || 1}
-          </p>
-          <div className="flex items-center gap-1 ml-4">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setCurrentPage(1)}
-              disabled={currentPage === 1}
-            >
-              <ChevronsLeftIcon className="h-4 w-4" />
-              <span className="sr-only">First page</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setCurrentPage(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              <ChevronLeftIcon className="h-4 w-4" />
-              <span className="sr-only">Previous page</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setCurrentPage(currentPage + 1)}
-              disabled={currentPage === totalPages || totalPages === 0}
-            >
-              <ChevronRightIcon className="h-4 w-4" />
-              <span className="sr-only">Next page</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setCurrentPage(totalPages)}
-              disabled={currentPage === totalPages || totalPages === 0}
-            >
-              <ChevronsRightIcon className="h-4 w-4" />
-              <span className="sr-only">Last page</span>
-            </Button>
+          <div className="flex items-center gap-1 text-sm">
+            <p className="text-muted-foreground">
+              Page {currentPage} of {totalPages || 1}
+            </p>
+            <div className="flex items-center gap-1 ml-4">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronsLeftIcon className="h-4 w-4" />
+                <span className="sr-only">First page</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeftIcon className="h-4 w-4" />
+                <span className="sr-only">Previous page</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={currentPage === totalPages || totalPages === 0}
+              >
+                <ChevronRightIcon className="h-4 w-4" />
+                <span className="sr-only">Next page</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages || totalPages === 0}
+              >
+                <ChevronsRightIcon className="h-4 w-4" />
+                <span className="sr-only">Last page</span>
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
-
+      }
       {/* Filter Dialog */}
       <DataTableFilterDialog
         open={isFilterDialogOpen}

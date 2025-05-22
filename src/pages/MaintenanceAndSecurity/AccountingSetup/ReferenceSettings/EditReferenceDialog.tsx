@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -20,7 +20,6 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Switch } from "@/components/ui/switch"
 import { ModuleSelectionDialog } from "./ModuleSelectionDialog" // Adjust import path accordingly
 
 const formSchema = z.object({
@@ -42,7 +41,7 @@ interface Module {
 interface EditReferenceDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: (values: FormValues) => Promise<void> 
+  onSubmit: (values: FormValues) => Promise<void>
   onReset: boolean
   initialValues?: FormValues | null
   modules: Module[]
@@ -51,7 +50,7 @@ interface EditReferenceDialogProps {
 export function EditReferenceDialog({
   open,
   onOpenChange,
-  onSubmit,
+  // onSubmit,
   onReset,
   initialValues,
   modules,
@@ -72,7 +71,7 @@ export function EditReferenceDialog({
   const [selectedModuleName, setSelectedModuleName] = useState<string>("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  
+
   useEffect(() => {
     if (open) {
       form.reset(initialValues || {
@@ -103,25 +102,25 @@ export function EditReferenceDialog({
     setSelectedModuleName("")
   }, [onReset])
 
-  async function handleSubmit(values: FormValues) {
+  async function handleSubmit() {
     setIsSubmitting(true)
-    
+
     try {
- 
+
       form.clearErrors()
-      
-      const result = await onSubmit(values)
+
+      // const result = await onSubmit(values)
 
       form.reset()
       setSelectedModuleName("")
       onOpenChange(false)
-      
+
     } catch (error: any) {
       console.log("Caught error:", error) // Debug log
-      
+
 
       const response = error.response?.data || error
-      
+
       if (response?.errors) {
 
         for (const [field, messages] of Object.entries(response.errors)) {
@@ -137,7 +136,7 @@ export function EditReferenceDialog({
           message: response.message,
         })
       } else if (typeof error === 'string') {
-    
+
         form.setError("root", {
           type: "server",
           message: error,
@@ -149,8 +148,8 @@ export function EditReferenceDialog({
           message: "An unexpected error occurred. Please try again.",
         })
       }
-      
-      console.log("Form errors after setting:", form.formState.errors) 
+
+      console.log("Form errors after setting:", form.formState.errors)
     } finally {
       setIsSubmitting(false)
     }
@@ -223,7 +222,7 @@ export function EditReferenceDialog({
             <FormField
               control={form.control}
               name="module_id"
-              render={({ field }) => (
+              render={() => (
                 <FormItem>
                   <FormLabel>
                     Module <span className="text-red-500">*</span>
@@ -259,8 +258,8 @@ export function EditReferenceDialog({
               >
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="bg-blue-500 hover:bg-blue-600"
                 disabled={isSubmitting}
               >

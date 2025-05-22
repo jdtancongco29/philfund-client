@@ -130,7 +130,7 @@ export function DepartmentDialog({
                       <FormDescription>This department is currently active.</FormDescription>
                     </div>
                     <FormControl>
-                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      <Switch checked={field.value} onCheckedChange={field.onChange} className="custom-switch" />
                     </FormControl>
                   </FormItem>
                 )}

@@ -1,10 +1,10 @@
-import ComingSoon from '@/components/coming-soon'
 import MainLayout from '@/components/layout/MainLayout'
+import { SalaryLoanTable } from './SalaryLoanTable'
 
 function SalaryLoanSetupPage() {
   return (
     <MainLayout>
-        <ComingSoon />
+      <SalaryLoanTable />
     </MainLayout>
   )
 }

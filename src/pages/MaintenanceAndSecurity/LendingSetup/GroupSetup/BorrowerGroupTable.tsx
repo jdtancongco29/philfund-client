@@ -3,109 +3,87 @@
 import { useState } from "react"
 import { DataTable, type SearchDefinition, type ColumnDefinition, type FilterDefinition } from "@/components/data-table/data-table"
 import { AddGroupDialog } from "./AddGroupDialog"
-
-interface BorrowerGroup {
-    id: string
-    code: string
-    name: string
-    referenceNumber?: string
-}
+import { BorrowGroup } from "./Service/GroupSetupTypes"
+import { useQuery } from "@tanstack/react-query"
+import GroupSetupService from "./Service/GroupSetupService"
 
 export function BorrowerGroupTable() {
-    const [addDialogOpen, setAddDialogOpen] = useState(false)
-    const [borrowerGroups, setBorrowerGroup] = useState<BorrowerGroup[]>([
-        {
-            id: "1",
-            code: "PHILFUND",
-            name: "PhilFund Staff",
-        },
-        {
-            id: "2",
-            code: "DEPED",
-            name: "Department of Education",
-        },
-        {
-            id: "3",
-            code: "PRIVATE",
-            name: "Private Sector",
-        },
-    ])
+  const [addDialogOpen, setAddDialogOpen] = useState(false)
 
-    // Define columns
-    const columns: ColumnDefinition<BorrowerGroup>[] = [
-        {
-            id: "code",
-            header: "Code",
-            accessorKey: "code",
-            enableSorting: true,
-        },
-        {
-            id: "name",
-            header: "Name",
-            accessorKey: "name",
-            enableSorting: true,
-        },
-    ]
+  const { isPending, error, data: borrowerGroups } = useQuery({
+    queryKey: ['borrower-group-table'],
+    queryFn: () => GroupSetupService.getAllGroups()
+  })
 
-    // Define filters
-    const filters: FilterDefinition[] = []
+  if (isPending) return 'Loading...'
 
-    const search: SearchDefinition = {
-        title: "Search",
-        placeholder: "Search groups",
-        enableSearch: true,
-    };
+  if (error) return 'An error has occurred: ' + error.message
 
-    // Handle edit
-    const handleEdit = (borrowerGroup: BorrowerGroup) => {
-        console.log("Edit borrower group", borrowerGroup)
-        // Open edit modal or navigate to edit page
-    }
+  // Define columns
+  const columns: ColumnDefinition<BorrowGroup>[] = [
+    {
+      id: "code",
+      header: "Code",
+      accessorKey: "code",
+      enableSorting: true,
+    },
+    {
+      id: "name",
+      header: "Name",
+      accessorKey: "name",
+      enableSorting: true,
+    },
+  ]
 
-    // Handle delete
-    const handleDelete = (borrowerGroup: BorrowerGroup) => {
-        console.log("Delete borrower group", borrowerGroup)
-        // Show confirmation dialog and delete if confirmed
-        if (confirm(`Are you sure you want to delete borrower group?`)) {
-        setBorrowerGroup(borrowerGroups.filter((d) => d.id !== borrowerGroup.id))
-        }
-    }
+  // Define filters
+  const filters: FilterDefinition[] = []
 
-    // Handle new
-    const handleNew = () => {
-        setAddDialogOpen(true)
-        console.log("Create new group")
-        // Open create modal or navigate to create page
-    }
+  const search: SearchDefinition = {
+    title: "Search",
+    placeholder: "Search groups",
+    enableSearch: true,
+  };
 
-    const handleAddGroup = (values: { code: string; name: string }) => {
-        const newGroup = {
-        id: Date.now().toString(),
-        ...values,
-        }
-        setBorrowerGroup([...borrowerGroups, newGroup])
-        setAddDialogOpen(false)
-    }
+  // Handle edit
+  const handleEdit = (borrowerGroup: BorrowGroup) => {
+    console.log("Edit borrower group", borrowerGroup)
+    // Open edit modal or navigate to edit page
+  }
 
-    return (
-        <>
-            <DataTable
-                title="Borrower Groups"
-                subtitle=""
-                data={borrowerGroups}
-                columns={columns}
-                filters={filters}
-                search={search}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onNew={handleNew}
-                idField="id"
-                enableNew={true}
-                enablePdfExport={true}
-                enableCsvExport={true}
-                enableFilter={false}
-            />
-            <AddGroupDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} onSubmit={handleAddGroup}/>
-        </>
-    )
+  // Handle delete
+  const handleDelete = (borrowerGroup: BorrowGroup) => {
+    console.log("Delete borrower group", borrowerGroup)
+  }
+
+  // Handle new
+  const handleNew = () => {
+    setAddDialogOpen(true)
+  }
+
+  const onSubmit = () => {
+    setAddDialogOpen(false)
+  }
+
+
+  return (
+    <>
+      <DataTable
+        title="Borrower Groups"
+        subtitle=""
+        data={borrowerGroups.data.groups}
+        columns={columns}
+        filters={filters}
+        search={search}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onNew={handleNew}
+        idField="id"
+        enableNew={true}
+        enablePdfExport={true}
+        enableCsvExport={true}
+        enableFilter={false}
+      />
+      <AddGroupDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} onSubmit={onSubmit} />
+    </>
+  )
 }

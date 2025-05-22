@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { apiRequest } from "@/lib/api" 
+import { apiRequest } from "@/lib/api"
 
 interface Module {
   id: string
@@ -25,21 +25,21 @@ export function ModuleSelectionDialog({ open, onClose, onSelect }: ModuleSelecti
     }
   }, [open])
 
-const fetchModules = async () => {
-  setLoading(true)
-  try {
-    const response = await apiRequest<{ data: { module: Module[] } }>("get", "/module", null, {
-      useAuth: true,
-      useBranchId: true, 
-   
-    })
-    setModules(response.data.data.module)
-  } catch (error) {
-    console.error("Error fetching modules:", error)
-  } finally {
-    setLoading(false)
+  const fetchModules = async () => {
+    setLoading(true)
+    try {
+      const response = await apiRequest<{ data: { module: Module[] } }>("get", "/module", null, {
+        useAuth: true,
+        useBranchId: true,
+
+      })
+      setModules(response.data.data.module)
+    } catch (error) {
+      console.error("Error fetching modules:", error)
+    } finally {
+      setLoading(false)
+    }
   }
-}
 
   const filteredModules = modules.filter((mod) =>
     mod.name.toLowerCase().includes(search.toLowerCase())

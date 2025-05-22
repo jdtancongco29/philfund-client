@@ -22,7 +22,7 @@ import { Switch } from "@/components/ui/switch"
 // } from "@/components/ui/dropdown-menu"
 // import Multiselect from 'multiselect-react-dropdown';
 
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 // Sample departments data

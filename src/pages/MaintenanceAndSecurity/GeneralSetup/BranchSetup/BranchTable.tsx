@@ -247,330 +247,330 @@ type DepartmentItems = {
 }
 
 interface Branch {
-    id: string
-    code: string
-    name: string
-    email: string
-    address: string
-    contact: string
-    city: string
-    departments: DepartmentItems[]
-    status: boolean
+  id: string
+  code: string
+  name: string
+  email: string
+  address: string
+  contact: string
+  city: string
+  departments: DepartmentItems[]
+  status: boolean
 }
 
 
 
 export function BranchTable() {
-    const [dialogOpen, setDialogOpen] = useState(false)
-    const [branches, setBranches] = useState<Branch[]>([])    
-    const [loading, setLoading] = useState(true)
-    const [reset, setReset] = useState(false)
-    const [selectedBranch, setSelectedBranch] = useState<FormValues | null>(null)
-    const [selectedBranchId, setSelectedBranchId] = useState<string>("")
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-    const [branchToDeleteId, setBranchToDeleteId] = useState<string>("")
-    const [branchToDelete, setBranchToDelete] = useState< string >("null")
-    const [onResetTable, setOnResetTable] = useState(false)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [branches, setBranches] = useState<Branch[]>([])
+  const [loading, setLoading] = useState(true)
+  const [reset] = useState(false)
+  const [selectedBranch] = useState<FormValues | null>(null)
+  // const [selectedBranchId, setSelectedBranchId] = useState<string>("")
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [branchToDeleteId, setBranchToDeleteId] = useState<string>("")
+  const [branchToDelete, setBranchToDelete] = useState<string>("null")
+  const [onResetTable, setOnResetTable] = useState(false)
 
-    const fetchBranches = async () => {
-      setLoading(true);
-      try {
-        // const response = await apiRequest<{ data: { branches: any[] } }>(
-        //   'get',
-        //   '/branch/',
-        //   null,
-        //   {
-        //     useAuth: true,
-        //     useBranchId: true,
-        //   }
-        // );
-        // setBranches(response.data.data.branches);
-        setBranches([
-          {
-            id: "ffa12bf7-0766-4b32-8a39-e8c4d3e9e884",
-            code: "002",
-            name: "Branch 2",
-            email: "branch2@gmail.com",
-            address: "Zone 1 carmen cdo",
-            contact: "09381726121",
-            city: "Cagayan de Oro City",
-            status: true,
-            departments: [
-              {
-                  id: "a5513ab9-8491-41ba-95ff-8f1b4d62070f",
-                  name: "Accounting"
-              },
-              {
-                  id: "fd522940-8a26-45d7-b8d6-c1dd555dbe2f",
-                  name: "AGH"
-              }
-            ]
-          },
-          {
-            id: "ffa12bf7-0766-4b32-8a39-e8c4d3e9e885",
-            code: "003",
-            name: "Branch 3",
-            email: "branch3@gmail.com",
-            address: "Zone 1 carmen cdo",
-            contact: "09381726121",
-            city: "Cagayan de Oro City",
-            status: false,
-            departments: [
-              {
-                  id: "a5513ab9-8491-41ba-95ff-8f1b4d62071f",
-                  name: "Department 1"
-              },
-              {
-                  id: "fd522940-8a26-45d7-b8d6-c1dd555dbe3f",
-                  name: "Department 2"
-              },
-              {
-                  id: "fd522940-8a26-45d7-b8d6-c1dd555dbe4f",
-                  name: "Department 3"
-              }
-            ]
-          }
-        ])
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    const resetTable = () => {
-      setOnResetTable(true);
-      setTimeout(() => setOnResetTable(false), 100)
-    }
-    useEffect(() => {
-      fetchBranches();
-    }, []);
-
-    // Define columns
-    const columns: ColumnDefinition<Branch>[] = [
-      {
-        id: "code",
-        header: "Code",
-        accessorKey: "code",
-        enableSorting: true,
-      },
-      {
-        id: "name",
-        header: "Name",
-        accessorKey: "name",
-        enableSorting: true,
-      },
-      {
-        id: "city",
-        header: "City/Municipality",
-        accessorKey: "city",
-        enableSorting: true,
-      },
-      {
-        id: "departments",
-        header: "Departments",
-        accessorKey: "departments",
-        enableSorting: true,
-        cell: (row) => {
-          const departments: DepartmentItems[] = row.departments ?? [];
-
-          if (departments.length === 0) return null;
-
-          const firstDeptName = departments[0]?.name;
-          const remainingCount = departments.length - 1;
-
-          return (
-              <div className="flex items-center gap-2">
-                  <span className="border border-[#D0D5DD] rounded-full px-4 py-1 text-sm text-black">
-                      {firstDeptName}
-                  </span>
-                  {remainingCount > 0 && (
-                      <span className="border border-[#D0D5DD] rounded-full px-3 py-1 text-sm text-black">
-                          {remainingCount}+
-                      </span>
-                  )}
-              </div>
-          );
-        }
-      },
-      {
-        id: "status",
-        header: "Status",
-        accessorKey: "status",
-        displayCondition: [
-            {
-                value: true,
-                label: "Active",
-                className: "py-[2px] px-[10px] bg-emerald-600 text-white rounded-full",
-            },
-            {
-                value: false,
-                label: "Inactive",
-                className: "py-[2px] px-[10px] bg-[var(--destructive)] text-white rounded-full",
-            },
-        ],
-        enableSorting: true,
-      }
-    ]
-
-    // Define filters
-    const filters: FilterDefinition[] = []
-
-    const search: SearchDefinition = {
-        title: "Search",
-        placeholder: "Search Branch",
-        enableSearch: true,
-    };
-
-    // Handle edit
-    const handleEdit = (branch: Branch) => {
-      // setSelectedDepartment(department)
-      // setSelectedDepartmentId(department.id)
-      setDialogOpen(true)
-    }
-
-    // Handle delete
-    const handleDelete = (branch: Branch) => {
-        setDeleteDialogOpen(true);
-        setBranchToDeleteId(branch.id)
-        setBranchToDelete(branch?.name)
-    }
-
-    const handleConfirmDelete = async () => {
-      try {
-        await apiRequest(
-          'delete',
-          `/branch/${branchToDeleteId}`,
-          null,
-          {
-            useAuth: true,
-            useBranchId: true,
-          }
-        );
-
-        toast.success(`Department Deleted`, {
-          description: `${branchToDelete} has been successfully deleted.`,
-          icon: <CircleCheck className="h-5 w-5" />,
-          duration: 5000,
-        });
-
-        resetTable();
-        fetchBranches();
-      } catch (err) {
-        console.error('Error deleting branch:', err);
-        toast.error('Failed to delete branch.');
-      } finally {
-        setDeleteDialogOpen(false);
-      }
-    }
-
-    const handleCloseDeleteDialog = async () => {
-        setDeleteDialogOpen(false)
-        setBranchToDeleteId("")
-        setBranchToDelete("")
-    }
-
-    // Handle new
-    const handleNew = () => {
-        // setReset(false)
-        // setSelectedDepartment(null)
-        // setSelectedDepartmentId("")
-        setDialogOpen(true)
-    }
-    // CREATE or Update
-    const handleSaveBranch = async (values: {
-      code: string;
-      name: string;
-      email: string;
-      address: string;
-      contact: string;
-      city: string;
-      departments: { id: string; name: string }[];
-      status: boolean;
-    }) => {
-      console.log(values);
-      // try {
-      //   const apiUrl = selectedDepartment
-      //   ? `${API_URL}/department/${selectedDepartmentId}`
-      //   : `${API_URL}/department/`;
-      //   const response = await fetch(apiUrl, {
-      //     method: selectedDepartmentId ? 'PUT' : 'POST',
-      //     headers: {
-      //       'Content-Type': 'application/json',
-      //       Accept: 'application/json',
-      //       Authorization: `Bearer ${token}`,
-      //     },
-      //     body: JSON.stringify({
-      //       code: values.code,
-      //       name: values.name,
-      //       status: values.status,
-      //     }),
-      //   });
-
-      //   if (!response.ok) {
-      //     throw new Error('Failed to add department');
+  const fetchBranches = async () => {
+    setLoading(true);
+    try {
+      // const response = await apiRequest<{ data: { branches: any[] } }>(
+      //   'get',
+      //   '/branch/',
+      //   null,
+      //   {
+      //     useAuth: true,
+      //     useBranchId: true,
       //   }
+      // );
+      // setBranches(response.data.data.branches);
+      setBranches([
+        {
+          id: "ffa12bf7-0766-4b32-8a39-e8c4d3e9e884",
+          code: "002",
+          name: "Branch 2",
+          email: "branch2@gmail.com",
+          address: "Zone 1 carmen cdo",
+          contact: "09381726121",
+          city: "Cagayan de Oro City",
+          status: true,
+          departments: [
+            {
+              id: "a5513ab9-8491-41ba-95ff-8f1b4d62070f",
+              name: "Accounting"
+            },
+            {
+              id: "fd522940-8a26-45d7-b8d6-c1dd555dbe2f",
+              name: "AGH"
+            }
+          ]
+        },
+        {
+          id: "ffa12bf7-0766-4b32-8a39-e8c4d3e9e885",
+          code: "003",
+          name: "Branch 3",
+          email: "branch3@gmail.com",
+          address: "Zone 1 carmen cdo",
+          contact: "09381726121",
+          city: "Cagayan de Oro City",
+          status: false,
+          departments: [
+            {
+              id: "a5513ab9-8491-41ba-95ff-8f1b4d62071f",
+              name: "Department 1"
+            },
+            {
+              id: "fd522940-8a26-45d7-b8d6-c1dd555dbe3f",
+              name: "Department 2"
+            },
+            {
+              id: "fd522940-8a26-45d7-b8d6-c1dd555dbe4f",
+              name: "Department 3"
+            }
+          ]
+        }
+      ])
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const resetTable = () => {
+    setOnResetTable(true);
+    setTimeout(() => setOnResetTable(false), 100)
+  }
+  useEffect(() => {
+    fetchBranches();
+  }, []);
 
-      //   const data = await response.json();
+  // Define columns
+  const columns: ColumnDefinition<Branch>[] = [
+    {
+      id: "code",
+      header: "Code",
+      accessorKey: "code",
+      enableSorting: true,
+    },
+    {
+      id: "name",
+      header: "Name",
+      accessorKey: "name",
+      enableSorting: true,
+    },
+    {
+      id: "city",
+      header: "City/Municipality",
+      accessorKey: "city",
+      enableSorting: true,
+    },
+    {
+      id: "departments",
+      header: "Departments",
+      accessorKey: "departments",
+      enableSorting: true,
+      cell: (row) => {
+        const departments: DepartmentItems[] = row.departments ?? [];
 
-      //   selectedDepartmentId ? (
-      //     toast.success(`Department Updated`, {
-      //       description: `${data.data.name} has been successfully updated.`,
-      //       icon: <CircleCheck className="h-5 w-5" />,
-      //       duration: 5000,
-      //     })
-      //   ) : (
-      //     toast.success(`Department Added`, {
-      //       description: `${data.data.name} has been successfully added.`,
-      //       icon: <CircleCheck className="h-5 w-5" />,
-      //       duration: 5000,
-      //     })
-      //   )
-      //   setReset(true);
-      //   fetchDepartments();
-      // } catch (err) {
-      //   console.error('Error adding department:', err);
-      // } finally {
-      //   setDialogOpen(false);
-      // }
-    };
+        if (departments.length === 0) return null;
 
-    return (
-        <>
-          <DataTable
-              title="Branch List"
-              subtitle=""
-              data={branches}
-              columns={columns}
-              filters={filters}
-              search={search}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onNew={handleNew}
-              idField="id"
-              enableNew={true}
-              enablePdfExport={true}
-              enableCsvExport={true}
-              enableFilter={false}
-              onLoading={loading}
-              onResetTable={onResetTable}
-          />
+        const firstDeptName = departments[0]?.name;
+        const remainingCount = departments.length - 1;
 
-            <BranchDialog
-                open={dialogOpen}
-                onOpenChange={setDialogOpen}
-                onSubmit={handleSaveBranch}
-                onReset={reset}
-                initialValues={selectedBranch}
-            />
+        return (
+          <div className="flex items-center gap-2">
+            <span className="border border-[#D0D5DD] rounded-full px-4 py-1 text-sm text-black">
+              {firstDeptName}
+            </span>
+            {remainingCount > 0 && (
+              <span className="border border-[#D0D5DD] rounded-full px-3 py-1 text-sm text-black">
+                {remainingCount}+
+              </span>
+            )}
+          </div>
+        );
+      }
+    },
+    {
+      id: "status",
+      header: "Status",
+      accessorKey: "status",
+      displayCondition: [
+        {
+          value: true,
+          label: "Active",
+          className: "py-[2px] px-[10px] bg-emerald-600 text-white rounded-full",
+        },
+        {
+          value: false,
+          label: "Inactive",
+          className: "py-[2px] px-[10px] bg-[var(--destructive)] text-white rounded-full",
+        },
+      ],
+      enableSorting: true,
+    }
+  ]
 
-            <DeleteConfirmationDialog
-              isOpen={deleteDialogOpen}
-              onClose={handleCloseDeleteDialog}
-              onConfirm={handleConfirmDelete}
-              title="Delete Department"
-              description="Are you sure you want to delete the branch '{name}'? This action cannot be undone."
-              itemName={branchToDelete}
-            />
-        </>
-    )
+  // Define filters
+  const filters: FilterDefinition[] = []
+
+  const search: SearchDefinition = {
+    title: "Search",
+    placeholder: "Search Branch",
+    enableSearch: true,
+  };
+
+  // Handle edit
+  const handleEdit = () => {
+    // setSelectedDepartment(department)
+    // setSelectedDepartmentId(department.id)
+    setDialogOpen(true)
+  }
+
+  // Handle delete
+  const handleDelete = (branch: Branch) => {
+    setDeleteDialogOpen(true);
+    setBranchToDeleteId(branch.id)
+    setBranchToDelete(branch?.name)
+  }
+
+  const handleConfirmDelete = async () => {
+    try {
+      await apiRequest(
+        'delete',
+        `/branch/${branchToDeleteId}`,
+        null,
+        {
+          useAuth: true,
+          useBranchId: true,
+        }
+      );
+
+      toast.success(`Department Deleted`, {
+        description: `${branchToDelete} has been successfully deleted.`,
+        icon: <CircleCheck className="h-5 w-5" />,
+        duration: 5000,
+      });
+
+      resetTable();
+      fetchBranches();
+    } catch (err) {
+      console.error('Error deleting branch:', err);
+      toast.error('Failed to delete branch.');
+    } finally {
+      setDeleteDialogOpen(false);
+    }
+  }
+
+  const handleCloseDeleteDialog = async () => {
+    setDeleteDialogOpen(false)
+    setBranchToDeleteId("")
+    setBranchToDelete("")
+  }
+
+  // Handle new
+  const handleNew = () => {
+    // setReset(false)
+    // setSelectedDepartment(null)
+    // setSelectedDepartmentId("")
+    setDialogOpen(true)
+  }
+  // CREATE or Update
+  const handleSaveBranch = async (values: {
+    code: string;
+    name: string;
+    email: string;
+    address: string;
+    contact: string;
+    city: string;
+    departments: { id: string; name: string }[];
+    status: boolean;
+  }) => {
+    console.log(values);
+    // try {
+    //   const apiUrl = selectedDepartment
+    //   ? `${API_URL}/department/${selectedDepartmentId}`
+    //   : `${API_URL}/department/`;
+    //   const response = await fetch(apiUrl, {
+    //     method: selectedDepartmentId ? 'PUT' : 'POST',
+    //     headers: {
+    //       'Content-Type': 'application/json',
+    //       Accept: 'application/json',
+    //       Authorization: `Bearer ${token}`,
+    //     },
+    //     body: JSON.stringify({
+    //       code: values.code,
+    //       name: values.name,
+    //       status: values.status,
+    //     }),
+    //   });
+
+    //   if (!response.ok) {
+    //     throw new Error('Failed to add department');
+    //   }
+
+    //   const data = await response.json();
+
+    //   selectedDepartmentId ? (
+    //     toast.success(`Department Updated`, {
+    //       description: `${data.data.name} has been successfully updated.`,
+    //       icon: <CircleCheck className="h-5 w-5" />,
+    //       duration: 5000,
+    //     })
+    //   ) : (
+    //     toast.success(`Department Added`, {
+    //       description: `${data.data.name} has been successfully added.`,
+    //       icon: <CircleCheck className="h-5 w-5" />,
+    //       duration: 5000,
+    //     })
+    //   )
+    //   setReset(true);
+    //   fetchDepartments();
+    // } catch (err) {
+    //   console.error('Error adding department:', err);
+    // } finally {
+    //   setDialogOpen(false);
+    // }
+  };
+
+  return (
+    <>
+      <DataTable
+        title="Branch List"
+        subtitle=""
+        data={branches}
+        columns={columns}
+        filters={filters}
+        search={search}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onNew={handleNew}
+        idField="id"
+        enableNew={true}
+        enablePdfExport={true}
+        enableCsvExport={true}
+        enableFilter={false}
+        onLoading={loading}
+        onResetTable={onResetTable}
+      />
+
+      <BranchDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onSubmit={handleSaveBranch}
+        onReset={reset}
+        initialValues={selectedBranch}
+      />
+
+      <DeleteConfirmationDialog
+        isOpen={deleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+        onConfirm={handleConfirmDelete}
+        title="Delete Department"
+        description="Are you sure you want to delete the branch '{name}'? This action cannot be undone."
+        itemName={branchToDelete}
+      />
+    </>
+  )
 }

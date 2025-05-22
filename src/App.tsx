@@ -1,4 +1,8 @@
 // src/App.tsx
+import {
+  QueryClient,
+  QueryClientProvider,
+} from '@tanstack/react-query'
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
 import LoginPage from "./pages/Auth/Login"
 import Dashboard from "./pages/Home/page"
@@ -35,61 +39,64 @@ import ChangePasswordPage from "./pages/Auth/ChangePassword"
 import TwoFactorRoute from "./components/TwoFactorRoute"
 import ChangePasswordRoute from "./components/ChangePasswordRoute"
 import { Toaster } from 'sonner';
+const queryClient = new QueryClient()
 
 function App() {
   return (
     <>
-      <Router>
-        <Routes>
-          {/* Public Routes */}
-          <Route element={<PublicRoute />}>
-            <Route path="/" element={<Navigate to="/login" replace />} />
-            <Route path="/login" element={<LoginPage />} />
-          </Route>
-          <Route element={<TwoFactorRoute />}>
-            <Route path="/2fa-verification" element={<TwoFactorAuthPage />} />
-          </Route>
-          <Route element={<ChangePasswordRoute />}>
-            <Route path="/change-password" element={<ChangePasswordPage />} />
-          </Route>
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <QueryClientProvider client={queryClient}>
+        <Router>
+          <Routes>
+            {/* Public Routes */}
+            <Route element={<PublicRoute />}>
+              <Route path="/" element={<Navigate to="/login" replace />} />
+              <Route path="/login" element={<LoginPage />} />
+            </Route>
+            <Route element={<TwoFactorRoute />}>
+              <Route path="/2fa-verification" element={<TwoFactorAuthPage />} />
+            </Route>
+            <Route element={<ChangePasswordRoute />}>
+              <Route path="/change-password" element={<ChangePasswordPage />} />
+            </Route>
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-          {/* Protected Routes */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/borrower-dashboard" element={<BorrowerDashboardPage />} />
-            <Route path="/lending" element={<LendingPage />} />
-            <Route path="/accounting" element={<AccountingPage />} />
-            <Route path="/maintenance-and-security/general-setup/branch-setup" element={<BranchSetup />} />
-            <Route path="/maintenance-and-security/general-setup/department-setup" element={<DepartmentSetupPage />} />
-            <Route path="/maintenance-and-security/security/user-management" element={<UserManagementPage />} />
-            <Route path="/maintenance-and-security/security/user-permissions" element={<UserPermissionsPage />} />
-            <Route path="/maintenance-and-security/admin/approval" element={<ApprovalPage />} />
-            <Route path="/maintenance-and-security/admin/backup-and-restore" element={<BackupAndRestorePage />} />
-            <Route path="/maintenance-and-security/admin/activity-logs" element={<ActivityLogsPage />} />
-            <Route path="/maintenance-and-security/admin/approval" element={<ApprovalPage />} />
-            <Route path="/maintenance-and-security/accounting-setup/reference-settings" element={<ReferenceSettingsPage />} />
-            <Route path="/maintenance-and-security/accounting-setup/chart-of-accounts" element={<ChartOfAccountsPage />} />
-            <Route path="/maintenance-and-security/accounting-setup/accounting-entries-defaults" element={<AccountingEntriesDefaultspage />} />
-            <Route path="/maintenance-and-security/accounting-setup/default-account-setup" element={<DefaultAccountSetupPage />} />
-            <Route path="/maintenance-and-security/accounting-setup/bank-account-setup" element={<BankAccountSetupPage />} />
-            <Route path="/maintenance-and-security/accounting-setup/cashiering" element={<CashieringPage />} />
-            <Route path="/maintenance-and-security/lending-setup/group-setup" element={<GroupSetupPage />} />
-            <Route path="/maintenance-and-security/lending-setup/classification-setup" element={<ClasificationSetupPage />} />
-            <Route path="/maintenance-and-security/lending-setup/division-setup" element={<DivisionSetupPage />} />
-            <Route path="/maintenance-and-security/lending-setup/district-setup" element={<DistrictSetupPage />} />
-            <Route path="/maintenance-and-security/lending-setup/school-office-setup" element={<SchoolOfficeSetupPage />} />
-            <Route path="/maintenance-and-security/lending-setup/salary-loan-setup" element={<SalaryLoanSetupPage />} />
-            <Route path="/maintenance-and-security/lending-setup/salary-loan-ca-setup" element={<SalaryLoanCASetupPage />} />
-            <Route path="/maintenance-and-security/lending-setup/bonus-loan-setup" element={<BonusLoanSetupPage />} />
-            <Route path="/maintenance-and-security/lending-setup/bonus-loan-ca-setup" element={<BonusLoanCASetupPage />} />
-            {/* Add more protected routes here */}
-          </Route>
+            {/* Protected Routes */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/borrower-dashboard" element={<BorrowerDashboardPage />} />
+              <Route path="/lending" element={<LendingPage />} />
+              <Route path="/accounting" element={<AccountingPage />} />
+              <Route path="/maintenance-and-security/general-setup/branch-setup" element={<BranchSetup />} />
+              <Route path="/maintenance-and-security/general-setup/department-setup" element={<DepartmentSetupPage />} />
+              <Route path="/maintenance-and-security/security/user-management" element={<UserManagementPage />} />
+              <Route path="/maintenance-and-security/security/user-permissions" element={<UserPermissionsPage />} />
+              <Route path="/maintenance-and-security/admin/approval" element={<ApprovalPage />} />
+              <Route path="/maintenance-and-security/admin/backup-and-restore" element={<BackupAndRestorePage />} />
+              <Route path="/maintenance-and-security/admin/activity-logs" element={<ActivityLogsPage />} />
+              <Route path="/maintenance-and-security/admin/approval" element={<ApprovalPage />} />
+              <Route path="/maintenance-and-security/accounting-setup/reference-settings" element={<ReferenceSettingsPage />} />
+              <Route path="/maintenance-and-security/accounting-setup/chart-of-accounts" element={<ChartOfAccountsPage />} />
+              <Route path="/maintenance-and-security/accounting-setup/accounting-entries-defaults" element={<AccountingEntriesDefaultspage />} />
+              <Route path="/maintenance-and-security/accounting-setup/default-account-setup" element={<DefaultAccountSetupPage />} />
+              <Route path="/maintenance-and-security/accounting-setup/bank-account-setup" element={<BankAccountSetupPage />} />
+              <Route path="/maintenance-and-security/accounting-setup/cashiering" element={<CashieringPage />} />
+              <Route path="/maintenance-and-security/lending-setup/group-setup" element={<GroupSetupPage />} />
+              <Route path="/maintenance-and-security/lending-setup/classification-setup" element={<ClasificationSetupPage />} />
+              <Route path="/maintenance-and-security/lending-setup/division-setup" element={<DivisionSetupPage />} />
+              <Route path="/maintenance-and-security/lending-setup/district-setup" element={<DistrictSetupPage />} />
+              <Route path="/maintenance-and-security/lending-setup/school-office-setup" element={<SchoolOfficeSetupPage />} />
+              <Route path="/maintenance-and-security/lending-setup/salary-loan-setup" element={<SalaryLoanSetupPage />} />
+              <Route path="/maintenance-and-security/lending-setup/salary-loan-ca-setup" element={<SalaryLoanCASetupPage />} />
+              <Route path="/maintenance-and-security/lending-setup/bonus-loan-setup" element={<BonusLoanSetupPage />} />
+              <Route path="/maintenance-and-security/lending-setup/bonus-loan-ca-setup" element={<BonusLoanCASetupPage />} />
+              {/* Add more protected routes here */}
+            </Route>
 
-          {/* Redirect unknown routes */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </Router>
+            {/* Redirect unknown routes */}
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </Router>
+      </QueryClientProvider>
       <Toaster richColors position="top-right" />
     </>
   )

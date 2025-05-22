@@ -62,7 +62,7 @@ interface EditReferenceDialogProps {
 export function EditReferenceDialog({
   open,
   onOpenChange,
-  onSubmit,
+  // onSubmit,
   onReset,
   initialValues,
   modules,
@@ -159,7 +159,7 @@ export function EditReferenceDialog({
     try {
       setErrors({}); // Clear any previous errors
 
-      await onSubmit(formValues);
+      //await onSubmit(formValues);
 
       // Reset form on success
       setFormValues({

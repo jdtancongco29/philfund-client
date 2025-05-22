@@ -18,11 +18,13 @@ export const GroupSetupService = {
    */
   getAllGroups: async (
     page?: number,
-    limit?: number
+    limit?: number,
+    search?: string | null
   ): Promise<ApiResponse<GetAllGroupsResponse>> => {
     const params = new URLSearchParams();
     if (page) params.append("page", page.toString());
-    if (limit) params.append("limit", limit.toString());
+    if (limit) params.append("per_page", limit.toString());
+    if (search) params.append("search", search);
 
     const endpoint = `/borrower/group${
       params.toString() ? `?${params.toString()}` : ""

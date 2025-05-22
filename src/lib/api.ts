@@ -1,6 +1,6 @@
 // src/lib/api.ts
-import axios from 'axios';
-import Cookies from 'js-cookie';
+import axios from "axios";
+import Cookies from "js-cookie";
 const API_URL = import.meta.env.VITE_API_URL;
 interface ApiOptions {
   useAuth?: boolean; // Enables Authorization: Bearer <token>
@@ -10,47 +10,47 @@ interface ApiOptions {
 
 // Get token from cookies
 const getToken = (): string | undefined => {
-  const token = Cookies.get('authToken');
+  const token = Cookies.get("authToken");
   return token;
 };
 
 // Get branch ID from user cookie
-const getBranchId = (): string | undefined => {
+export const getBranchId = (): string | undefined => {
   try {
-    const userCookie = Cookies.get('user');
+    const userCookie = Cookies.get("user");
     const user = userCookie ? JSON.parse(userCookie) : null;
     return user?.current_branch;
   } catch (error) {
-    console.error('Failed to parse user cookie:', error);
+    console.error("Failed to parse user cookie:", error);
     return undefined;
   }
-}
+};
 
 // Main API request function
 export const apiRequest = async <T = any>(
-  method: 'get' | 'post' | 'put' | 'delete',
+  method: "get" | "post" | "put" | "delete",
   endpoint: string,
   data: any = null,
   options: ApiOptions = {}
 ) => {
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
+    "Content-Type": "application/json",
+    Accept: "application/json",
   };
 
   if (options.useAuth) {
     const token = getToken();
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      headers["Authorization"] = `Bearer ${token}`;
     } else {
-      console.warn('No token found in cookies.');
+      console.warn("No token found in cookies.");
     }
   }
 
   if (options.useBranchId) {
     const branchId = getBranchId();
     if (branchId) {
-      headers['X-Branch-Id'] = branchId;
+      headers["X-Branch-Id"] = branchId;
     }
   }
 

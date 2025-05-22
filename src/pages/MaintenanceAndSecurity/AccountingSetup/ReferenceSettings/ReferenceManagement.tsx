@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { CircleCheck, Pencil, Trash2 } from "lucide-react";
+import { CircleCheck } from "lucide-react";
 import { toast } from "sonner";
 import {
   DataTable,
@@ -196,40 +195,40 @@ export default function ReferenceManagement() {
   };
 
   const handleSaveReference = async (values: FormValues) => {
-  try {
-    const method = selectedReferenceId ? "put" : "post";
-    const endpoint = selectedReferenceId ? `/reference/${selectedReferenceId}` : "/reference/";
-    const payloadData = {
-      code: values.code,
-      name: values.name,
-      module_id: values.module_id,
-      status: values.status,
-    };
+    try {
+      const method = selectedReferenceId ? "put" : "post";
+      const endpoint = selectedReferenceId ? `/reference/${selectedReferenceId}` : "/reference/";
+      const payloadData = {
+        code: values.code,
+        name: values.name,
+        module_id: values.module_id,
+        status: values.status,
+      };
 
-    const response = await apiRequest<{ data: { name: string } }>(
-      method,
-      endpoint,
-      payloadData,
-      {
-        useAuth: true,
-        useBranchId: true,
-      }
-    );
+      const response = await apiRequest<{ data: { name: string } }>(
+        method,
+        endpoint,
+        payloadData,
+        {
+          useAuth: true,
+          useBranchId: true,
+        }
+      );
 
-    toast.success(selectedReferenceId ? "Reference Updated" : "Reference Added", {
-      description: `${response.data.data.name} has been successfully ${selectedReferenceId ? "updated" : "added"}.`,
-      icon: <CircleCheck className="h-5 w-5" />,
-      duration: 5000,
-    });
+      toast.success(selectedReferenceId ? "Reference Updated" : "Reference Added", {
+        description: `${response.data.data.name} has been successfully ${selectedReferenceId ? "updated" : "added"}.`,
+        icon: <CircleCheck className="h-5 w-5" />,
+        duration: 5000,
+      });
 
-    setReset(true);
-    resetTable();
-    fetchReference();
-  } catch (err) {
-    console.error("Error saving Reference:", err);
-    throw err;
-  }
-};
+      setReset(true);
+      resetTable();
+      fetchReference();
+    } catch (err) {
+      console.error("Error saving Reference:", err);
+      throw err;
+    }
+  };
 
   return (
     <>
@@ -262,13 +261,13 @@ export default function ReferenceManagement() {
       />
 
       <DdeleteReferenceDialog
-  isOpen={deleteDialogOpen}
-  onClose={handleCloseDeleteDialog}
-  onConfirm={handleConfirmDelete}
-  title="Delete Reference"
-  description="Are you sure you want to delete the reference: {name}?"
-  itemName={referenceToDelete}
-/>
+        isOpen={deleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+        onConfirm={handleConfirmDelete}
+        title="Delete Reference"
+        description="Are you sure you want to delete the reference: {name}?"
+        itemName={referenceToDelete}
+      />
 
     </>
   );

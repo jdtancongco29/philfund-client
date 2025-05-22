@@ -85,7 +85,6 @@ export function BranchTable() {
     setOnResetTable(true);
     setTimeout(() => setOnResetTable(false), 100)
   }
-
   useEffect(() => {
     fetchBranches();
   }, []);

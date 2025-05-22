@@ -6,6 +6,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { BorrowGroup, CreateGroupPayload, UpdateGroupPayload } from "./Service/GroupSetupTypes"
+import { getBranchId } from "@/lib/api"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import GroupSetupService from "./Service/GroupSetupService"
+import { Loader2 } from "lucide-react"
+import { useEffect } from "react"
 
 // Define the form schema with validation
 const formSchema = z.object({
@@ -18,39 +24,89 @@ type FormValues = z.infer<typeof formSchema>
 
 // Define the component props
 interface AddGroupDialogProps {
-  open: boolean
+  item: BorrowGroup | null,
+  open: boolean,
+  isEditing: boolean,
   onOpenChange: (open: boolean) => void
-  onSubmit: (values: FormValues) => void
+  onSubmit: () => void
+  onCancel: () => void
 }
 
-export function AddGroupDialog({ open, onOpenChange, onSubmit }: AddGroupDialogProps) {
+export function GroupDialogForm({ open, isEditing, item, onOpenChange, onCancel, onSubmit }: AddGroupDialogProps) {
+  const queryClient = useQueryClient()
+  const editingHandler = useMutation({
+    mutationFn: (newGroup: UpdateGroupPayload) => {
+      return GroupSetupService.updateGroup(item!.id, newGroup);
+    },
+  })
+  const creationHandler = useMutation({
+    mutationFn: (newGroup: CreateGroupPayload) => {
+      return GroupSetupService.createGroup(newGroup);
+    },
+  })
   // Initialize the form
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      code: "",
-      name: "",
+      code: item?.code ?? "",
+      name: item?.name ?? "",
     },
   })
 
+  useEffect(() => {
+    form.setValue("code", item?.code ?? "");
+    form.setValue("name", item?.name ?? "");
+  }, [item, form])
+
+  const create = async (branch_id: string, values: FormValues) => {
+    const payload: CreateGroupPayload = { code: values.code, name: values.name, branch_id: branch_id }
+    try {
+      await creationHandler.mutateAsync(payload);
+      queryClient.invalidateQueries({ queryKey: ['borrower-group-table'] })
+      onSubmit();
+      form.reset()
+    } catch (errorData: any) {
+      console.error(errorData);
+    }
+  }
+
+  const update = async (branch_id: string, values: FormValues) => {
+    const payload: UpdateGroupPayload = { code: values.code, name: values.name, branch_id: branch_id }
+    try {
+      await editingHandler.mutateAsync(payload);
+      queryClient.invalidateQueries({ queryKey: ['borrower-group-table'] })
+      onSubmit();
+      form.reset()
+    } catch (_error) {
+      console.log(_error);
+    }
+  }
+
   // Handle form submission
-  const handleSubmit = (values: FormValues) => {
-    onSubmit(values)
-    form.reset()
+  const handleSubmit = async (values: FormValues) => {
+    const branch_id = getBranchId();
+    if (branch_id) {
+      if (isEditing) {
+        update(branch_id, values);
+      } else {
+        create(branch_id, values);
+      }
+    }
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">Add New Group</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">{isEditing ? "Edit" : "Add New"} Group</DialogTitle>
           <DialogDescription className="text-base text-muted-foreground">
-            Create a new borrower group for organizational purposes
+            {isEditing ? "Edit" : "Create a new "} borrower group for organizational purposes
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
             <FormField
+              disabled={creationHandler.isPending || editingHandler.isPending}
               control={form.control}
               name="code"
               render={({ field }) => (
@@ -67,6 +123,7 @@ export function AddGroupDialog({ open, onOpenChange, onSubmit }: AddGroupDialogP
               )}
             />
             <FormField
+              disabled={creationHandler.isPending || editingHandler.isPending}
               control={form.control}
               name="name"
               render={({ field }) => (
@@ -84,17 +141,21 @@ export function AddGroupDialog({ open, onOpenChange, onSubmit }: AddGroupDialogP
             />
             <div className="flex justify-end gap-2">
               <Button
+                disabled={creationHandler.isPending || editingHandler.isPending}
                 type="button"
                 variant="outline"
                 onClick={() => {
-                  form.reset()
+                  onCancel();
                   onOpenChange(false)
+                  form.reset()
                 }}
               >
                 Cancel
               </Button>
-              <Button type="submit" className="bg-blue-500 hover:bg-blue-600">
-                Add Group
+              <Button
+                disabled={creationHandler.isPending || editingHandler.isPending}
+                type="submit" className="bg-blue-500 hover:bg-blue-600">
+                {isEditing ? "Edit" : "Add"} Group {(creationHandler.isPending || editingHandler.isPending) && <span><Loader2 className="animate-spin" /></span>}
               </Button>
             </div>
           </form>

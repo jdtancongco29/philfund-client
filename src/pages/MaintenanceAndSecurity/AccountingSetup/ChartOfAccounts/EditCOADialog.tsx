@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -41,7 +41,7 @@ interface Module {
 interface EditCOADialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: (values: FormValues) => Promise<void> 
+  onSubmit: (values: FormValues) => Promise<void>
   onReset: boolean
   initialValues?: FormValues | null
   modules: Module[]
@@ -50,7 +50,7 @@ interface EditCOADialogProps {
 export function EditCOADialog({
   open,
   onOpenChange,
-  onSubmit,
+  //onSubmit,
   onReset,
   initialValues,
   modules,
@@ -67,11 +67,11 @@ export function EditCOADialog({
 
   const isEditMode = Boolean(initialValues)
 
-  const [moduleDialogOpen, setModuleDialogOpen] = useState(false)
+  const [, setModuleDialogOpen] = useState(false)
   const [selectedModuleName, setSelectedModuleName] = useState<string>("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  
+
   useEffect(() => {
     if (open) {
       form.reset(initialValues || {
@@ -102,25 +102,25 @@ export function EditCOADialog({
     setSelectedModuleName("")
   }, [onReset])
 
-  async function handleSubmit(values: FormValues) {
+  async function handleSubmit() {
     setIsSubmitting(true)
-    
+
     try {
- 
+
       form.clearErrors()
-      
-      const result = await onSubmit(values)
+
+      // const result = await onSubmit(values)
 
       form.reset()
       setSelectedModuleName("")
       onOpenChange(false)
-      
+
     } catch (error: any) {
       console.log("Caught error:", error) // Debug log
-      
+
 
       const response = error.response?.data || error
-      
+
       if (response?.errors) {
 
         for (const [field, messages] of Object.entries(response.errors)) {
@@ -136,7 +136,7 @@ export function EditCOADialog({
           message: response.message,
         })
       } else if (typeof error === 'string') {
-    
+
         form.setError("root", {
           type: "server",
           message: error,
@@ -148,8 +148,8 @@ export function EditCOADialog({
           message: "An unexpected error occurred. Please try again.",
         })
       }
-      
-      console.log("Form errors after setting:", form.formState.errors) 
+
+      console.log("Form errors after setting:", form.formState.errors)
     } finally {
       setIsSubmitting(false)
     }
@@ -222,7 +222,7 @@ export function EditCOADialog({
             <FormField
               control={form.control}
               name="module_id"
-              render={({ field }) => (
+              render={() => (
                 <FormItem>
                   <FormLabel>
                     Module <span className="text-red-500">*</span>
@@ -258,8 +258,8 @@ export function EditCOADialog({
               >
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="bg-blue-500 hover:bg-blue-600"
                 disabled={isSubmitting}
               >
@@ -270,7 +270,7 @@ export function EditCOADialog({
         </Form>
 
         {/* Module Selection Dialog */}
-        
+
       </DialogContent>
     </Dialog>
   )

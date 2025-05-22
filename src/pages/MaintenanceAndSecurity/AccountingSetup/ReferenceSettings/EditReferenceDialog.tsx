@@ -1,213 +1,286 @@
+import React, { useEffect, useState } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { apiRequest } from "@/lib/api";
-import { ModuleSelectionDialog } from "./ModuleSelectionDialog";
-const formSchema = z.object({
-  code: z.string().min(1, "Code is required").max(2, "Code must be at most 2 characters"),
-  name: z.string().min(1, "Name is required"),
-  module: z.object({
-    id: z.string().min(1, "Module is required"),
-    name: z.string(),
-  }),
-});
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Switch } from "@/components/ui/switch"
+import { ModuleSelectionDialog } from "./ModuleSelectionDialog" // Adjust import path accordingly
 
-type FormValues = z.infer<typeof formSchema>;
+const formSchema = z.object({
+  code: z.string().length(2, "Reference code must be exactly 2 characters."),
+  name: z.string()
+    .min(3, { message: "Reference name must be at least 3 characters." })
+    .max(50, { message: "Reference name must not be greater than 50 characters." }),
+  module_id: z.string().uuid({ message: "Please select a module." }),
+  status: z.boolean(),
+})
+
+export type FormValues = z.infer<typeof formSchema>
+
+interface Module {
+  id: string
+  name: string
+}
 
 interface EditReferenceDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  reference: { id: string; code: string; name: string; modules: string[]; module_id?: string } | null;
-  onEditReference: (reference: { id: string; code: string; name: string; modules: string[] }) => void;
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSubmit: (values: FormValues) => Promise<void> 
+  onReset: boolean
+  initialValues?: FormValues | null
+  modules: Module[]
 }
 
 export function EditReferenceDialog({
   open,
   onOpenChange,
-  reference,
-  onEditReference,
+  onSubmit,
+  onReset,
+  initialValues,
+  modules,
 }: EditReferenceDialogProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       code: "",
       name: "",
-      module: { id: "", name: "" },
+      module_id: "",
+      status: true,
     },
-  });
+  })
 
-  const [moduleDialogOpen, setModuleDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [generalError, setGeneralError] = useState("");
+  const isEditMode = Boolean(initialValues)
 
-  const isEditMode = Boolean(reference);
+  const [moduleDialogOpen, setModuleDialogOpen] = useState(false)
+  const [selectedModuleName, setSelectedModuleName] = useState<string>("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
+  
   useEffect(() => {
-    if (open && reference) {
-      form.reset({
-        code: reference.code,
-        name: reference.name,
-        module: {
-          id: reference.module_id || "",
-          name: reference.modules[0] || "",
-        },
-      });
-      setGeneralError("");
+    if (open) {
+      form.reset(initialValues || {
+        code: "",
+        name: "",
+        module_id: "",
+        status: true,
+      })
+
+      if (initialValues?.module_id) {
+        const foundModule = modules.find(mod => mod.id === initialValues.module_id)
+        setSelectedModuleName(foundModule ? foundModule.name : "")
+      } else {
+        setSelectedModuleName("")
+      }
+
       setTimeout(() => {
         if (document.activeElement instanceof HTMLElement) {
-          document.activeElement.blur();
+          document.activeElement.blur()
         }
-      }, 0);
+      }, 0)
     }
-  }, [reference, open, form]);
+  }, [initialValues, open, form, modules])
+
+
+  useEffect(() => {
+    form.reset()
+    setSelectedModuleName("")
+  }, [onReset])
 
   async function handleSubmit(values: FormValues) {
-    if (!reference) return;
-
-    setIsLoading(true);
-    setGeneralError("");
-
+    setIsSubmitting(true)
+    
     try {
-      const response = await apiRequest(
-        "put",
-        `/reference/${reference.id}`,
-        {
-          code: values.code,
-          name: values.name,
-          module_id: values.module.id,
-        },
-        { useAuth: true, useBranchId: true }
-      );
+ 
+      form.clearErrors()
+      
+      const result = await onSubmit(values)
 
-      const updated = response.data.data;
-      onEditReference({
-        id: updated.id,
-        code: updated.code,
-        name: updated.name,
-        modules: [updated.module.name],
-      });
-      onOpenChange(false);
+      form.reset()
+      setSelectedModuleName("")
+      onOpenChange(false)
+      
     } catch (error: any) {
-      console.error("Error updating reference:", error);
+      console.log("Caught error:", error) // Debug log
+      
 
-      if (error.response?.data) {
-        if (error.response.data.message) {
-          setGeneralError(error.response.data.message);
-        }
+      const response = error.response?.data || error
+      
+      if (response?.errors) {
 
-        if (error.response.data.errors) {
-          const backendErrors = error.response.data.errors;
-          Object.entries(backendErrors).forEach(([key, messages]) => {
-            if (form.getFieldState(key as keyof FormValues)) {
-              form.setError(key as keyof FormValues, {
-                message: Array.isArray(messages) ? messages[0] : String(messages),
-              });
-            }
-          });
+        for (const [field, messages] of Object.entries(response.errors)) {
+          form.setError(field as keyof FormValues, {
+            type: "server",
+            message: Array.isArray(messages) ? messages[0] : String(messages),
+          })
         }
+      } else if (response?.message) {
+
+        form.setError("root", {
+          type: "server",
+          message: response.message,
+        })
+      } else if (typeof error === 'string') {
+    
+        form.setError("root", {
+          type: "server",
+          message: error,
+        })
+      } else {
+
+        form.setError("root", {
+          type: "server",
+          message: "An unexpected error occurred. Please try again.",
+        })
       }
+      
+      console.log("Form errors after setting:", form.formState.errors) 
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false)
     }
   }
 
+  const handleCancel = () => {
+    form.reset()
+    setSelectedModuleName("")
+    onOpenChange(false)
+  }
+
   return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[500px]" aria-describedby={undefined}>
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">Edit Reference</DialogTitle>
-          </DialogHeader>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]" aria-describedby={undefined}>
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold">
+            {isEditMode ? "Edit Reference" : "Add New Reference"}
+          </DialogTitle>
+        </DialogHeader>
 
-          {generalError && (
-            <div className="bg-red-50 border border-red-200 text-red-800 rounded-md p-3 mb-4">
-              {generalError}
-            </div>
-          )}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 py-4">
+            {form.formState.errors.root && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-600">{form.formState.errors.root.message}</p>
+              </div>
+            )}
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 py-4">
-              <FormField
-                control={form.control}
-                name="code"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Reference Code <span className="text-red-500">*</span></FormLabel>
-                    <FormControl>
-                      <Input maxLength={2} {...field} onChange={(e) => field.onChange(e.target.value.slice(0, 2))} />
-                    </FormControl>
-                    <FormDescription>Maximum 2 characters</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Reference Name <span className="text-red-500">*</span></FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name="code"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Reference Code <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter 2-character reference code"
+                      autoFocus={false}
+                      maxLength={2}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>A unique code to identify this reference</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name="module"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Module Used <span className="text-red-500">*</span></FormLabel>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full text-left"
-                      onClick={() => setModuleDialogOpen(true)}
-                    >
-                      {field.value.name || "Select a module"}
+
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Reference Name <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter reference name" {...field} />
+                  </FormControl>
+                  <FormDescription>The full name of the reference</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="module_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Module <span className="text-red-500">*</span>
+                  </FormLabel>
+
+                  <div className="flex items-center space-x-3">
+                    <Button type="button" onClick={() => setModuleDialogOpen(true)}>
+                      {selectedModuleName ? "Change Module" : "Select Module"}
                     </Button>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                    <div className="flex-1">
+                      {selectedModuleName ? (
+                        <div className="p-2 bg-gray-50 rounded border">
+                          <span className="font-medium text-sm text-gray-700">Selected:</span>
+                          <span className="ml-2 font-semibold">{selectedModuleName}</span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-500 italic">No module selected</span>
+                      )}
+                    </div>
+                  </div>
 
-              <DialogFooter className="pt-4">
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
-                  Cancel
-                </Button>
-                <Button type="submit" className="bg-blue-500 hover:bg-blue-600" disabled={isLoading}>
-                  {isLoading ? "Saving..." : "Save Changes"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-      <ModuleSelectionDialog
-        open={moduleDialogOpen}
-        onClose={() => setModuleDialogOpen(false)}
-        onSelect={(mod) => {
-          form.setValue("module", mod, { shouldValidate: true });
-          setModuleDialogOpen(false);
-        }}
-      />
-    </>
-  );
+            <DialogFooter className="pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCancel}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                className="bg-blue-500 hover:bg-blue-600"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Saving..." : (isEditMode ? "Save Changes" : "Add Reference")}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+
+        {/* Module Selection Dialog */}
+        <ModuleSelectionDialog
+          open={moduleDialogOpen}
+          onClose={() => setModuleDialogOpen(false)}
+          onSelect={(mod) => {
+            form.setValue("module_id", mod.id, { shouldValidate: true })
+            setSelectedModuleName(mod.name)
+            setModuleDialogOpen(false)
+          }}
+        />
+      </DialogContent>
+    </Dialog>
+  )
 }

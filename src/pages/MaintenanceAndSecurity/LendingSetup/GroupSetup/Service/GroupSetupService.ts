@@ -8,6 +8,8 @@ import type {
   UpdateGroupPayload,
   UpdateGroupStatusPayload,
 } from "./GroupSetupTypes";
+import { toast } from "sonner";
+import { AxiosError } from "axios";
 
 // BorrowGroup Service
 export const GroupSetupService = {
@@ -69,17 +71,22 @@ export const GroupSetupService = {
     payload: CreateGroupPayload
   ): Promise<ApiResponse<BorrowGroup>> => {
     const endpoint = "/borrower/group";
-    const response = await apiRequest<ApiResponse<BorrowGroup>>(
-      "post",
-      endpoint,
-      payload,
-      {
-        useAuth: true,
-        useBranchId: true,
-      }
-    );
+    try {
+      const response = await apiRequest<ApiResponse<BorrowGroup>>(
+        "post",
+        endpoint,
+        payload,
+        {
+          useAuth: true,
+          useBranchId: true,
+        }
+      );
 
-    return response.data;
+      return response.data;
+    } catch (error: AxiosError) {
+      toast.error(error.response.data.message);
+      throw new Error(error.response.data.message);
+    }
   },
 
   /**
@@ -92,17 +99,21 @@ export const GroupSetupService = {
     payload: UpdateGroupPayload
   ): Promise<ApiResponse<BorrowGroup>> => {
     const endpoint = `/borrower/group/${id}`;
-    const response = await apiRequest<ApiResponse<BorrowGroup>>(
-      "put",
-      endpoint,
-      payload,
-      {
-        useAuth: true,
-        useBranchId: true,
-      }
-    );
-
-    return response.data;
+    try {
+      const response = await apiRequest<ApiResponse<BorrowGroup>>(
+        "put",
+        endpoint,
+        payload,
+        {
+          useAuth: true,
+          useBranchId: true,
+        }
+      );
+      return response.data;
+    } catch (error: AxiosError) {
+      toast.error(error.response.data.message);
+      throw new Error(error.response.data.message);
+    }
   },
 
   /**
@@ -111,17 +122,21 @@ export const GroupSetupService = {
    */
   deleteGroup: async (id: string): Promise<ApiResponse<null>> => {
     const endpoint = `/borrower/group/${id}`;
-    const response = await apiRequest<ApiResponse<null>>(
-      "delete",
-      endpoint,
-      null,
-      {
-        useAuth: true,
-        useBranchId: true,
-      }
-    );
-
-    return response.data;
+    try {
+      const response = await apiRequest<ApiResponse<null>>(
+        "delete",
+        endpoint,
+        null,
+        {
+          useAuth: true,
+          useBranchId: true,
+        }
+      );
+      return response.data;
+    } catch (error: AxiosError) {
+      toast.error(error.response.data.message);
+      throw new Error(error.response.data.message);
+    }
   },
 
   /**
@@ -134,17 +149,22 @@ export const GroupSetupService = {
     payload: UpdateGroupStatusPayload
   ): Promise<ApiResponse<null>> => {
     const endpoint = `/borrower/group/status/${id}`;
-    const response = await apiRequest<ApiResponse<null>>(
-      "put",
-      endpoint,
-      payload,
-      {
-        useAuth: true,
-        useBranchId: true,
-      }
-    );
+    try {
+      const response = await apiRequest<ApiResponse<null>>(
+        "put",
+        endpoint,
+        payload,
+        {
+          useAuth: true,
+          useBranchId: true,
+        }
+      );
 
-    return response.data;
+      return response.data;
+    } catch (error: AxiosError) {
+      toast.error(error.response.data.message);
+      throw new Error(error.response.data.message);
+    }
   },
 };
 

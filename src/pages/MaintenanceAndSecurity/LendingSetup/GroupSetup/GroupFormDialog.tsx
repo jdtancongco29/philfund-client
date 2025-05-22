@@ -65,8 +65,8 @@ export function GroupDialogForm({ open, isEditing, item, onOpenChange, onCancel,
       queryClient.invalidateQueries({ queryKey: ['borrower-group-table'] })
       onSubmit();
       form.reset()
-    } catch (_error) {
-      console.log(_error);
+    } catch (errorData: any) {
+      console.error(errorData);
     }
   }
 

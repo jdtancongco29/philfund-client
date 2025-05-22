@@ -9,7 +9,6 @@ import type {
   UpdateGroupStatusPayload,
 } from "./GroupSetupTypes";
 import { toast } from "sonner";
-import { AxiosError } from "axios";
 
 // BorrowGroup Service
 export const GroupSetupService = {
@@ -83,7 +82,7 @@ export const GroupSetupService = {
       );
 
       return response.data;
-    } catch (error: AxiosError) {
+    } catch (error: any) {
       toast.error(error.response.data.message);
       throw new Error(error.response.data.message);
     }
@@ -110,7 +109,7 @@ export const GroupSetupService = {
         }
       );
       return response.data;
-    } catch (error: AxiosError) {
+    } catch (error: any) {
       toast.error(error.response.data.message);
       throw new Error(error.response.data.message);
     }
@@ -133,7 +132,7 @@ export const GroupSetupService = {
         }
       );
       return response.data;
-    } catch (error: AxiosError) {
+    } catch (error: any) {
       toast.error(error.response.data.message);
       throw new Error(error.response.data.message);
     }
@@ -161,7 +160,7 @@ export const GroupSetupService = {
       );
 
       return response.data;
-    } catch (error: AxiosError) {
+    } catch (error: any) {
       toast.error(error.response.data.message);
       throw new Error(error.response.data.message);
     }

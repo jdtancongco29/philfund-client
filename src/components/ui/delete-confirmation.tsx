@@ -49,6 +49,7 @@ interface DeleteConfirmationProps {
    * Optional children to use as trigger instead of default button
    */
   children?: React.ReactNode
+  isLoading: boolean
 }
 
 export function DeleteConfirmation({
@@ -59,8 +60,6 @@ export function DeleteConfirmation({
   onCancel,
   confirmText = "Delete",
   cancelText = "Cancel",
-  triggerButtonProps,
-  children,
 }: DeleteConfirmationProps) {
   const handleConfirm = () => {
     onConfirm()

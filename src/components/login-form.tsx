@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { 
+import {
   useNavigate
   // , useLocation 
 } from "react-router-dom";
@@ -22,7 +22,7 @@ export default function LoginForm() {
 
   const cookieOptions = {
     expires: 7,
-    secure: true,
+    secure: false,
     sameSite: "strict" as const,
   };
   // Clear all cookies on mount
@@ -49,17 +49,17 @@ export default function LoginForm() {
         const errorStatuses = ["ACCOUNT_BLOCKED", "BRANCH_OPENER_REQUIRED", "ACCESS_DENIED", "INVALID_CREDENTIALS"];
         const passwordExpired = ["PASSWORD_EXPIRED"];
         const twoFactor = ["2FA_REQUIRED"];
-        if(errorStatuses.includes(data.status)){
+        if (errorStatuses.includes(data.status)) {
           setError(true);
           setValidation(data.message);
-        }else if(passwordExpired.includes(data.status)){
+        } else if (passwordExpired.includes(data.status)) {
           Cookies.set("password_expire", "true", cookieOptions);
           navigate('/forgot-password');
-        }else if(twoFactor.includes(data.status)){
+        } else if (twoFactor.includes(data.status)) {
           Cookies.set("temp_token", data.data.temp_token, cookieOptions);
           Cookies.set("message", data.message, cookieOptions);
           navigate('/2fa-verification');
-        }else{
+        } else {
           Cookies.set("authToken", data.data.access_token, cookieOptions);
           Cookies.set("user", JSON.stringify(data.data.user), cookieOptions);
           navigate('/dashboard');

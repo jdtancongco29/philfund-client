@@ -6,6 +6,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { CreateGroupPayload } from "./Service/GroupSetupTypes"
+import { getBranchId } from "@/lib/api"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import GroupSetupService from "./Service/GroupSetupService"
 
 // Define the form schema with validation
 const formSchema = z.object({
@@ -20,10 +24,16 @@ type FormValues = z.infer<typeof formSchema>
 interface AddGroupDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: (values: FormValues) => void
+  onSubmit: () => void
 }
 
 export function AddGroupDialog({ open, onOpenChange, onSubmit }: AddGroupDialogProps) {
+  const queryClient = useQueryClient()
+  const creationHandler = useMutation({
+    mutationFn: (newGroup: CreateGroupPayload) => {
+      return GroupSetupService.createGroup(newGroup);
+    },
+  })
   // Initialize the form
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -34,9 +44,19 @@ export function AddGroupDialog({ open, onOpenChange, onSubmit }: AddGroupDialogP
   })
 
   // Handle form submission
-  const handleSubmit = (values: FormValues) => {
-    onSubmit(values)
-    form.reset()
+  const handleSubmit = async (values: FormValues) => {
+    const branch_id = getBranchId();
+    if (branch_id) {
+      const payload: CreateGroupPayload = { code: values.code, name: values.name, branch_id: branch_id }
+      try {
+        await creationHandler.mutateAsync(payload);
+        queryClient.invalidateQueries({ queryKey: ['borrower-group-table'] })
+        onSubmit();
+        form.reset()
+      } catch (_error) {
+        console.log(_error);
+      }
+    }
   }
 
   return (

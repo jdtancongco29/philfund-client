@@ -1,18 +1,16 @@
-import React, { useEffect, useState } from "react";
+import  { useEffect, useState } from "react";
 
 import { Card, CardContent } from "@/components/ui/card";
 
-import { CircleCheck, Delete } from "lucide-react";
+import { CircleCheck } from "lucide-react";
 import { apiRequest } from "@/lib/api";
 import {
   DataTable,
   type ColumnDefinition,
   type FilterDefinition,
-  type SearchDefinition,
 } from "@/components/data-table/data-table";
 import { toast } from "sonner";
 import { EditBankDialog, FormValues } from "./EditBankDialog";
-import { EditReferenceDialog } from "../ReferenceSettings/EditReferenceDialog";
 import { DeleteDataDialog } from "./DeleteDataDialog";
 
 interface Bank {

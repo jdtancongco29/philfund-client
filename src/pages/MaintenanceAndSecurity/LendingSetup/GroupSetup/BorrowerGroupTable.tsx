@@ -1,12 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { DataTable, type SearchDefinition, type ColumnDefinition, type FilterDefinition } from "@/components/data-table/data-table"
+import { type SearchDefinition, type ColumnDefinition, type FilterDefinition } from "@/components/data-table/data-table"
 import { GroupDialogForm } from "./GroupFormDialog"
 import { BorrowGroup } from "./Service/GroupSetupTypes"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import GroupSetupService from "./Service/GroupSetupService"
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog"
+import { DataTableV2 } from "@/components/data-table/data-table-v2"
 
 export function BorrowerGroupTable() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -14,10 +15,14 @@ export function BorrowerGroupTable() {
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const queryClient = useQueryClient()
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [searchQuery, setSearchQuery] = useState<string | null>(null);
+  const [resetTable, setResetTable] = useState(false);
 
   const { isPending, error, data: borrowerGroups } = useQuery({
-    queryKey: ['borrower-group-table'],
-    queryFn: () => GroupSetupService.getAllGroups()
+    queryKey: ['borrower-group-table', currentPage, rowsPerPage, searchQuery],
+    queryFn: () => GroupSetupService.getAllGroups(currentPage, rowsPerPage, searchQuery)
   })
 
   const deletionHandler = useMutation({
@@ -65,9 +70,13 @@ export function BorrowerGroupTable() {
     setOpenDeleteModal(false);
     if (selectedItem) {
       try {
+        if (borrowerGroups?.data.groups.length == 1) {
+          setResetTable(true);
+        }
         await deletionHandler.mutateAsync(selectedItem.id);
         queryClient.invalidateQueries({ queryKey: ['borrower-group-table'] })
         setSelectedItem(null);
+        setResetTable(false);
       } catch (error) {
         console.log(error);
       }
@@ -84,10 +93,27 @@ export function BorrowerGroupTable() {
     setIsDialogOpen(false)
   }
 
+  const onPaginationChange = (page: number) => {
+    setCurrentPage(page);
+  }
+
+  const onRowCountChange = (row: number) => {
+    setRowsPerPage(row);
+  }
+
+  const onSearchChange = (search: string) => {
+    setSearchQuery(search);
+  }
+
 
   return (
     <>
-      <DataTable
+      <DataTableV2
+        totalCount={borrowerGroups?.data.pagination.total_items ?? 1}
+        perPage={borrowerGroups?.data.pagination.per_page ?? 10}
+        pageNumber={borrowerGroups?.data.pagination.current_page ?? 10}
+        onPaginationChange={onPaginationChange}
+        onRowCountChange={onRowCountChange}
         title="Borrower Groups"
         subtitle=""
         data={borrowerGroups?.data.groups ?? []}
@@ -106,21 +132,32 @@ export function BorrowerGroupTable() {
         enablePdfExport={true}
         enableCsvExport={true}
         enableFilter={false}
+        onResetTable={resetTable}
+        onSearchChange={onSearchChange}
       />
       <DeleteConfirmationDialog
         isOpen={openDeleteModal}
-        onClose={() => setSelectedItem(null)}
+        onClose={() => {
+          setSelectedItem(null)
+          setOpenDeleteModal(false);
+          setCurrentPage(1);
+        }}
         onConfirm={handleDelete}
         title="Delete Borrower Group"
         description="Are you sure you want to delete the department '{name}'? This action cannot be undone."
         itemName={selectedItem?.name ?? "No group selected"}
       />
-      <GroupDialogForm item={selectedItem} open={isDialogOpen} onCancel={() => {
-        setSelectedItem(null);
-      }} isEditing={isEditing} onOpenChange={() => {
-        setIsDialogOpen(false);
-        setIsEditing(false);
-      }} onSubmit={onSubmit} />
+      <GroupDialogForm
+        item={selectedItem}
+        open={isDialogOpen}
+        onCancel={() => {
+          setSelectedItem(null);
+        }}
+        isEditing={isEditing} onOpenChange={() => {
+          setIsDialogOpen(false);
+          setIsEditing(false);
+        }}
+        onSubmit={onSubmit} />
     </>
   )
 }

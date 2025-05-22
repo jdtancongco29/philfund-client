@@ -10,6 +10,8 @@ import { BorrowGroup, CreateGroupPayload, UpdateGroupPayload } from "./Service/G
 import { getBranchId } from "@/lib/api"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import GroupSetupService from "./Service/GroupSetupService"
+import { Loader2 } from "lucide-react"
+import { useEffect } from "react"
 
 // Define the form schema with validation
 const formSchema = z.object({
@@ -50,6 +52,11 @@ export function GroupDialogForm({ open, isEditing, item, onOpenChange, onCancel,
       name: item?.name ?? "",
     },
   })
+
+  useEffect(() => {
+    form.setValue("code", item?.code ?? "");
+    form.setValue("name", item?.name ?? "");
+  }, [item, form])
 
   const create = async (branch_id: string, values: FormValues) => {
     const payload: CreateGroupPayload = { code: values.code, name: values.name, branch_id: branch_id }
@@ -99,6 +106,7 @@ export function GroupDialogForm({ open, isEditing, item, onOpenChange, onCancel,
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
             <FormField
+              disabled={creationHandler.isPending || editingHandler.isPending}
               control={form.control}
               name="code"
               render={({ field }) => (
@@ -115,6 +123,7 @@ export function GroupDialogForm({ open, isEditing, item, onOpenChange, onCancel,
               )}
             />
             <FormField
+              disabled={creationHandler.isPending || editingHandler.isPending}
               control={form.control}
               name="name"
               render={({ field }) => (
@@ -132,6 +141,7 @@ export function GroupDialogForm({ open, isEditing, item, onOpenChange, onCancel,
             />
             <div className="flex justify-end gap-2">
               <Button
+                disabled={creationHandler.isPending || editingHandler.isPending}
                 type="button"
                 variant="outline"
                 onClick={() => {
@@ -142,8 +152,10 @@ export function GroupDialogForm({ open, isEditing, item, onOpenChange, onCancel,
               >
                 Cancel
               </Button>
-              <Button type="submit" className="bg-blue-500 hover:bg-blue-600">
-                {isEditing ? "Edit" : "Add"} Group
+              <Button
+                disabled={creationHandler.isPending || editingHandler.isPending}
+                type="submit" className="bg-blue-500 hover:bg-blue-600">
+                {isEditing ? "Edit" : "Add"} Group {(creationHandler.isPending || editingHandler.isPending) && <span><Loader2 className="animate-spin" /></span>}
               </Button>
             </div>
           </form>

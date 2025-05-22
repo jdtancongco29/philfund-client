@@ -2,20 +2,29 @@
 
 import { useState } from "react"
 import { DataTable, type SearchDefinition, type ColumnDefinition, type FilterDefinition } from "@/components/data-table/data-table"
-import { AddGroupDialog } from "./AddGroupDialog"
+import { GroupDialogForm } from "./GroupFormDialog"
 import { BorrowGroup } from "./Service/GroupSetupTypes"
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import GroupSetupService from "./Service/GroupSetupService"
+import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog"
 
 export function BorrowerGroupTable() {
-  const [addDialogOpen, setAddDialogOpen] = useState(false)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<BorrowGroup | null>(null);
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const queryClient = useQueryClient()
 
   const { isPending, error, data: borrowerGroups } = useQuery({
     queryKey: ['borrower-group-table'],
     queryFn: () => GroupSetupService.getAllGroups()
   })
 
-  if (isPending) return 'Loading...'
+  const deletionHandler = useMutation({
+    mutationFn: (uuid: string) => {
+      return GroupSetupService.deleteGroup(uuid);
+    },
+  })
 
   if (error) return 'An error has occurred: ' + error.message
 
@@ -45,23 +54,34 @@ export function BorrowerGroupTable() {
   };
 
   // Handle edit
-  const handleEdit = (borrowerGroup: BorrowGroup) => {
-    console.log("Edit borrower group", borrowerGroup)
-    // Open edit modal or navigate to edit page
+  const handleEdit = (item: BorrowGroup) => {
+    setSelectedItem(item);
+    setIsEditing(true);
+    setIsDialogOpen(true)
   }
 
   // Handle delete
-  const handleDelete = (borrowerGroup: BorrowGroup) => {
-    console.log("Delete borrower group", borrowerGroup)
+  const handleDelete = async () => {
+    setOpenDeleteModal(false);
+    if (selectedItem) {
+      try {
+        await deletionHandler.mutateAsync(selectedItem.id);
+        queryClient.invalidateQueries({ queryKey: ['borrower-group-table'] })
+        setSelectedItem(null);
+      } catch (error) {
+        console.log(error);
+      }
+    }
   }
 
   // Handle new
   const handleNew = () => {
-    setAddDialogOpen(true)
+    setIsDialogOpen(true)
   }
 
   const onSubmit = () => {
-    setAddDialogOpen(false)
+    setSelectedItem(null);
+    setIsDialogOpen(false)
   }
 
 
@@ -70,12 +90,16 @@ export function BorrowerGroupTable() {
       <DataTable
         title="Borrower Groups"
         subtitle=""
-        data={borrowerGroups.data.groups}
+        data={borrowerGroups?.data.groups ?? []}
         columns={columns}
         filters={filters}
         search={search}
         onEdit={handleEdit}
-        onDelete={handleDelete}
+        onLoading={isPending || deletionHandler.isPending}
+        onDelete={(item) => {
+          setOpenDeleteModal(true);
+          setSelectedItem(item)
+        }}
         onNew={handleNew}
         idField="id"
         enableNew={true}
@@ -83,7 +107,20 @@ export function BorrowerGroupTable() {
         enableCsvExport={true}
         enableFilter={false}
       />
-      <AddGroupDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} onSubmit={onSubmit} />
+      <DeleteConfirmationDialog
+        isOpen={openDeleteModal}
+        onClose={() => setSelectedItem(null)}
+        onConfirm={handleDelete}
+        title="Delete Borrower Group"
+        description="Are you sure you want to delete the department '{name}'? This action cannot be undone."
+        itemName={selectedItem?.name ?? "No group selected"}
+      />
+      <GroupDialogForm item={selectedItem} open={isDialogOpen} onCancel={() => {
+        setSelectedItem(null);
+      }} isEditing={isEditing} onOpenChange={() => {
+        setIsDialogOpen(false);
+        setIsEditing(false);
+      }} onSubmit={onSubmit} />
     </>
   )
 }

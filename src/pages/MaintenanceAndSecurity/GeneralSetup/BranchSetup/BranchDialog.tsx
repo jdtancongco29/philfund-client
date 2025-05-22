@@ -11,35 +11,27 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-// import { Badge } from "@/components/ui/badge"
-// import {
-//   DropdownMenu,
-//   DropdownMenuCheckboxItem,
-//   DropdownMenuContent,
-//   DropdownMenuLabel,
-//   DropdownMenuSeparator,
-//   DropdownMenuTrigger,
-// } from "@/components/ui/dropdown-menu"
-// import Multiselect from 'multiselect-react-dropdown';
 
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import Multiselect from 'multiselect-react-dropdown';
 
-// Sample departments data
-const departments = [
-  { id: "1", name: "Department 1" },
-  { id: "2", name: "Department 2" },
-  { id: "3", name: "Department 3" },
-  { id: "4", name: "Department 4" },
-  { id: "5", name: "Department 5" },
-]
+type DepartmentItems = {
+  id: string,
+  name: string
+}
 
 // Define the form schema with Zod
 const formSchema = z.object({
-  code: z.string().min(1, "Branch code is required"),
-  name: z.string().min(1, "Branch name is required"),
+  code: z
+    .string()
+    .length(3, "Branch code must be exactly 3 characters."),
+  name: z
+    .string()
+    .min(3, { message: "Branch name must be at least 3 characters."})
+    .max(20, { message: "Branch name must must not be greater than 20 characters."}),
   address: z.string().min(1, "Address is required"),
-  contact: z.string().min(1, "Contact is required"),
+  contact: z.string({
+    required_error: "Contact is required",
+  }).min(11, "Contact must be atleast 11 digits"),
   email: z.string().email("Invalid email address"),
   city: z.string().min(1, "City/Municipality is required"),
   departments: z.array(z.object({ id: z.string(), name: z.string() })).min(1, "At least one department is required"),
@@ -56,10 +48,10 @@ export interface BranchDialogProps {
   onSubmit: (values: FormValues) => void
   onReset: boolean
   initialValues?: FormValues | null
+  departments: DepartmentItems[]
 }
 
-export function BranchDialog({ open, onOpenChange, onSubmit, onReset, initialValues }: BranchDialogProps) {
-  const [popoverOpen, setPopoverOpen] = React.useState(false)
+export function BranchDialog({ open, onOpenChange, onSubmit, onReset, initialValues, departments }: BranchDialogProps) {
   // Initialize the form
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -122,7 +114,7 @@ export function BranchDialog({ open, onOpenChange, onSubmit, onReset, initialVal
                     Branch Code <span className="text-red-500">*</span>
                   </FormLabel>
                   <FormControl>
-                    <Input placeholder="BR132154" autoFocus={false} {...field} />
+                    <Input placeholder="BR132154" autoFocus={false} {...field} className="focus-visible:outline-none" />
                   </FormControl>
                   <FormDescription>A unique code to identify this branch</FormDescription>
                   <FormMessage />
@@ -220,84 +212,38 @@ export function BranchDialog({ open, onOpenChange, onSubmit, onReset, initialVal
                   <FormLabel className="text-base">
                     Add Departments <span className="text-red-500">*</span>
                   </FormLabel>
-                  <div className="relative">
-                    <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-                      <div className="border rounded-lg p-1 flex flex-wrap items-center gap-1 bg-white">
-                        {field.value.map((department) => {
-                          return (
-                            <div
-                              key={department.id}
-                              className="flex items-center gap-1 bg-gray-100 rounded-md px-2 py-1"
-                            >
-                              <span>{department.name}</span>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  const newValue = field.value.filter((value) => value.id !== department.id)
-                                  form.setValue("departments", newValue, {
-                                    shouldValidate: true,
-                                  })
-                                }}
-                                className="text-gray-500 hover:text-gray-700"
-                              >
-                                <X className="h-4 w-4" />
-                                <span className="sr-only">Remove {department.name}</span>
-                              </button>
-                            </div>
-                          )
-                        })}
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <button
-                              type="button"
-                              className="px-2 py-1 text-gray-500 flex-1 text-left focus:outline-none"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setPopoverOpen(true)
-                              }}
-                            >
-                              {field.value.length === 0 ? "Select Departments" : "Select Departments"}
-                            </button>
-                          </FormControl>
-                        </PopoverTrigger>
-                      </div>
-                      <PopoverContent
-                        className="w-full p-0"
-                        align="start"
-                        side="bottom"
-                        sideOffset={4}
-                        style={{ zIndex: 9999 }}
-                        forceMount
-                      >
-                        <Command>
-                          <CommandInput placeholder="Search departments..." />
-                          <CommandList>
-                            <CommandEmpty>No department found.</CommandEmpty>
-                            <CommandGroup>
-                              {departments.map((department) => (
-                                <CommandItem
-                                  key={department.id}
-                                  value={department.id}
-                                  onSelect={() => {
-                                    const isSelected = field.value.some((value) => value.id === department.id)
-                                    const newValue = isSelected
-                                      ? field.value.filter((value) => value.id !== department.id)
-                                      : [...field.value, department]
-                                    form.setValue("departments", newValue, {
-                                      shouldValidate: true,
-                                    })
-                                  }}
-                                >
-                                  {department.name}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
+                  <Multiselect
+                    options={departments}
+                    selectedValues={field.value}
+                    onSelect={field.onChange}
+                    onRemove={field.onChange}
+                    displayValue="name"
+                    showCheckbox
+                    placeholder="Select Departments"
+                    id="multiselect-departments"
+                    customCloseIcon={<X className="ml-1 w-4 h-4 cursor-pointer"/>}
+                    style={{
+                      chips: {
+                        background: "var(--secondary)",
+                        color: "var(--foreground)",
+                        fontSize: "14px",
+                        margin: "0px",
+                        borderRadius: "5px"
+                      },
+                      searchBox: {
+                        display: "flex",
+                        gap: "5px",
+                        border: "1px solid #cbd5e0",
+                        borderRadius: "8px",
+                        padding: "6px 12px",
+                        fontSize: "14px",
+                        flexWrap: "wrap"
+                      },
+                      inputField: {
+                        margin: "0px"
+                      }
+                    }}
+                  />
                   <FormDescription>Select the departments that will be available in this branch</FormDescription>
                   <FormMessage />
                 </FormItem>

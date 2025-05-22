@@ -22,7 +22,8 @@ export function BorrowerGroupTable() {
 
   const { isPending, error, data: borrowerGroups } = useQuery({
     queryKey: ['borrower-group-table', currentPage, rowsPerPage, searchQuery],
-    queryFn: () => GroupSetupService.getAllGroups(currentPage, rowsPerPage, searchQuery)
+    queryFn: () => GroupSetupService.getAllGroups(currentPage, rowsPerPage, searchQuery),
+    staleTime: Infinity
   })
 
   const deletionHandler = useMutation({

@@ -27,7 +27,7 @@ export function SchoolOfficeTable() {
   } = useQuery({
     queryKey: ["school-table", currentPage, rowsPerPage, searchQuery],
     queryFn: () => SchoolSetupService.getAllSchools(currentPage, rowsPerPage, searchQuery),
-    staleTime: Number.POSITIVE_INFINITY,
+    staleTime: Infinity,
   })
 
   const deletionHandler = useMutation({

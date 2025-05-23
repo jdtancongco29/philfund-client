@@ -1,288 +1,310 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
+import { useEffect, useState } from "react"
+import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { toast } from "sonner"
+import { CircleCheck } from "lucide-react"
 
-// Define the type for account data
-interface AccountField {
-  accountCode: string
-  selectedAccount: string
+import { apiRequest } from "@/lib/api"
+import { COADialog } from "./COADialog"
+
+interface ChartOfAccount {
+  id: string
+  code: string
+  name: string
+  description?: string
+  major_classification?: string
+  category?: string
+  is_header?: boolean
+  parent_id?: string | null
+  is_contra?: boolean
+  normal_balance?: string
+  special_classification?: string
+  status?: boolean
 }
 
-// Define the type for the form data
-interface FormData {
-  outstandingCashFundSalary: AccountField
-  outstandingCashFundBonus: AccountField
-  cohEncashmentFund: AccountField
-  cohInternalCashier: AccountField
-  pettyCashFundTaxable: AccountField
-  pettyCashFundNonTaxable: AccountField
+interface AccountFieldProps {
+  label: string
+  description: string
+  required?: boolean
+  selectedAccount: ChartOfAccount | null
+  onAccountSelect: (account: ChartOfAccount | null) => void
+  error?: string | null
 }
 
-// Sample account options for the dropdowns
-const accountOptions = [
-  { value: "1001", label: "Cash on Hand - Main" },
-  { value: "1002", label: "Cash on Hand - Branch 1" },
-  { value: "1003", label: "Cash on Hand - Branch 2" },
-  { value: "1010", label: "Petty Cash - Main Office" },
-  { value: "1011", label: "Petty Cash - Branch 1" },
-  { value: "1020", label: "Salary Fund" },
-  { value: "1021", label: "Bonus Fund" },
-]
+interface ApiResponse {
+  status: string
+  message: string
+  data: any
+}
+
+const AccountField = ({ label, description, required = false, selectedAccount, onAccountSelect, error }: AccountFieldProps) => {
+  const [dialogOpen, setDialogOpen] = useState(false)
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center">
+        <Label className="font-medium">
+          {label} {required && <span className="text-red-500">*</span>}
+        </Label>
+      </div>
+      <div className="space-y-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <Label>Account Code</Label>
+            <Input
+              readOnly
+              placeholder="Select account..."
+              value={selectedAccount?.code || ""}
+              onClick={() => setDialogOpen(true)}
+              className={error ? "border-red-500" : ""}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Account Name</Label>
+            <Input
+              readOnly
+              placeholder="Select account..."
+              value={selectedAccount?.name || ""}
+              onClick={() => setDialogOpen(true)}
+              className={error ? "border-red-500" : ""}
+            />
+          </div>
+        </div>
+        {error && <p className="text-sm text-red-500">{error}</p>}
+        {selectedAccount && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => onAccountSelect(null)}
+            className="text-red-500 hover:text-red-700"
+          >
+            Clear Selection
+          </Button>
+        )}
+      </div>
+      <p className="text-sm text-muted-foreground">{description}</p>
+      <COADialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        onSelect={(account) => {
+          onAccountSelect(account)
+          setDialogOpen(false)
+        }}
+      />
+    </div>
+  )
+}
 
 export default function CashieringAccountsForm() {
-  // Initialize form state
-  const [formData, setFormData] = useState<FormData>({
-    outstandingCashFundSalary: { accountCode: "", selectedAccount: "" },
-    outstandingCashFundBonus: { accountCode: "", selectedAccount: "" },
-    cohEncashmentFund: { accountCode: "", selectedAccount: "" },
-    cohInternalCashier: { accountCode: "", selectedAccount: "" },
-    pettyCashFundTaxable: { accountCode: "", selectedAccount: "" },
-    pettyCashFundNonTaxable: { accountCode: "", selectedAccount: "" },
-  })
+  const [outstandingCashSalary, setOutstandingCashSalary] = useState<ChartOfAccount | null>(null)
+  const [outstandingCashBonus, setOutstandingCashBonus] = useState<ChartOfAccount | null>(null)
+  const [encashmentFund, setEncashmentFund] = useState<ChartOfAccount | null>(null)
+  const [internalCashier, setInternalCashier] = useState<ChartOfAccount | null>(null)
+  const [pettyCashTaxable, setPettyCashTaxable] = useState<ChartOfAccount | null>(null)
+  const [pettyCashNonTaxable, setPettyCashNonTaxable] = useState<ChartOfAccount | null>(null)
 
-  // Handle input change for account code fields
-  const handleAccountCodeChange = (field: keyof FormData, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: {
-        ...prev[field],
-        accountCode: value,
-      },
-    }))
+  const [isLoading, setIsLoading] = useState(true)
+  const [, setError] = useState<string | null>(null)
+  const [configId, setConfigId] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    const fetchCashieringDefaults = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+
+        const result = await apiRequest<ApiResponse>("get", "/accounting-cashiering-defaults", null, {
+          useAuth: true,
+          useBranchId: true,
+        })
+
+        if (result.status === 200 && result.data) {
+          const { data } = result
+
+          setConfigId(data.data.id)
+          setOutstandingCashSalary(data.data.coa_outstanding_cash_salary)
+          setOutstandingCashBonus(data.data.coa_outstanding_cash_bonus)
+          setEncashmentFund(data.data.coa_encashment_fund)
+          setInternalCashier(data.data.coa_internal_cashier)
+          setPettyCashTaxable(data.data.coa_petty_cash_taxable)
+          setPettyCashNonTaxable(data.data.coa_petty_cash_non_taxable)
+        }
+      } catch (err) {
+        console.error('Error fetching cashiering defaults:', err)
+        setError(err instanceof Error ? err.message : 'An error occurred while fetching data')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchCashieringDefaults()
+  }, [])
+
+  const handleSave = async () => {
+    try {
+      setFieldErrors({})
+      const formData = {
+        coa_outstanding_cash_salary: outstandingCashSalary?.id || null,
+        coa_outstanding_cash_bonus: outstandingCashBonus?.id || null,
+        coa_encashment_fund: encashmentFund?.id || null,
+        coa_internal_cashier: internalCashier?.id || null,
+        coa_petty_cash_taxable: pettyCashTaxable?.id || null,
+        coa_petty_cash_non_taxable: pettyCashNonTaxable?.id || null,
+      }
+
+      const endpoint = `/accounting-cashiering-defaults/${configId}`
+      const method = "put"
+
+      const saveResult = await apiRequest<ApiResponse>(method, endpoint, formData, {
+        useAuth: true,
+        useBranchId: true,
+      })
+
+      if (saveResult.status === 200) {
+        toast.success("Cashiering Accounts Saved", {
+          description: `Configuration saved successfully.`,
+          icon: <CircleCheck className="h-5 w-5" />,
+          duration: 5000,
+        })
+      }
+    } catch (err: any) {
+      console.error("Error saving data:", err)
+      const apiError = err?.response?.data || err
+
+      if (apiError?.errors) {
+        const newFieldErrors: Record<string, string> = {}
+        
+        
+        Object.keys(apiError.errors).forEach(field => {
+          if (apiError.errors[field] && apiError.errors[field].length > 0) {
+            newFieldErrors[field] = apiError.errors[field][0]
+          }
+        })
+
+        setFieldErrors(newFieldErrors)
+
+        toast.error("Save Failed", {
+          description: "There are duplicate data in the fields.",
+          duration: 6000,
+        })
+      } else if (apiError?.message) {
+        toast.error("Save Failed", {
+          description: apiError.message,
+          duration: 6000,
+        })
+        setError(apiError.message)
+      } else {
+        toast.error("Save Failed", {
+          description: "An unknown error occurred while saving.",
+          duration: 6000,
+        })
+        setError("An error occurred while saving configuration.")
+      }
+    }
   }
 
-  // Handle select change for account dropdowns
-  const handleSelectChange = (field: keyof FormData, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: {
-        ...prev[field],
-        selectedAccount: value,
-      },
-    }))
-
-    // Log the selection
-    console.log(`Selected ${field}: ${value}`)
-  }
-
-  // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("Saving accounts:", formData)
-  }
-
-  // Handle cancel button click
   const handleCancel = () => {
+    // Reset to original values or navigate away
     console.log("Form cancelled")
   }
 
+  if (isLoading) {
+    return (
+      <Card className="w-full">
+        <CardContent className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+            <p className="mt-2 text-sm text-muted-foreground">Loading configuration...</p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
-    <div className="max-w-3xl">
-      <div className="border rounded-lg p-6 h-[calc(100vh - 125px)]">
-        <form onSubmit={handleSubmit} className="flex flex-col h-full justify-between">
-            <div className="space-y-6">
-                <h1 className="text-2xl font-bold mb-6">Cashiering Accounts</h1>
-                {/* Outstanding Cash Fund (Salary) */}
-                <div className="space-y-2">
-                    <label className="block text-sm font-medium">
-                    Outstanding Cash Fund (Salary) <span className="text-red-500">*</span>
-                    </label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
-                        placeholder="Account Code"
-                        value={formData.outstandingCashFundSalary.accountCode}
-                        onChange={(e) => handleAccountCodeChange("outstandingCashFundSalary", e.target.value)}
-                        required
-                    />
-                    <Select
-                        value={formData.outstandingCashFundSalary.selectedAccount}
-                        onValueChange={(value) => handleSelectChange("outstandingCashFundSalary", value)}
-                        required
-                    >
-                        <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                        {accountOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                            </SelectItem>
-                        ))}
-                        </SelectContent>
-                    </Select>
-                    </div>
-                </div>
-
-                {/* Outstanding Cash Fund (Bonus) */}
-                <div className="space-y-2">
-                    <label className="block text-sm font-medium">
-                    Outstanding Cash Fund (Bonus) <span className="text-red-500">*</span>
-                    </label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
-                        placeholder="Account Code"
-                        value={formData.outstandingCashFundBonus.accountCode}
-                        onChange={(e) => handleAccountCodeChange("outstandingCashFundBonus", e.target.value)}
-                        required
-                    />
-                    <Select
-                        value={formData.outstandingCashFundBonus.selectedAccount}
-                        onValueChange={(value) => handleSelectChange("outstandingCashFundBonus", value)}
-                        required
-                    >
-                        <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                        {accountOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                            </SelectItem>
-                        ))}
-                        </SelectContent>
-                    </Select>
-                    </div>
-                </div>
-
-                {/* COH: Encashment Fund */}
-                <div className="space-y-2">
-                    <label className="block text-sm font-medium">
-                    COH: Encashment Fund <span className="text-red-500">*</span>
-                    </label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
-                        placeholder="Account Code"
-                        value={formData.cohEncashmentFund.accountCode}
-                        onChange={(e) => handleAccountCodeChange("cohEncashmentFund", e.target.value)}
-                        required
-                    />
-                    <Select
-                        value={formData.cohEncashmentFund.selectedAccount}
-                        onValueChange={(value) => handleSelectChange("cohEncashmentFund", value)}
-                        required
-                    >
-                        <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                        {accountOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                            </SelectItem>
-                        ))}
-                        </SelectContent>
-                    </Select>
-                    </div>
-                </div>
-
-                {/* COH: Internal Cashier */}
-                <div className="space-y-2">
-                    <label className="block text-sm font-medium">
-                    COH: Internal Cashier <span className="text-red-500">*</span>
-                    </label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
-                        placeholder="Account Code"
-                        value={formData.cohInternalCashier.accountCode}
-                        onChange={(e) => handleAccountCodeChange("cohInternalCashier", e.target.value)}
-                        required
-                    />
-                    <Select
-                        value={formData.cohInternalCashier.selectedAccount}
-                        onValueChange={(value) => handleSelectChange("cohInternalCashier", value)}
-                        required
-                    >
-                        <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                        {accountOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                            </SelectItem>
-                        ))}
-                        </SelectContent>
-                    </Select>
-                    </div>
-                </div>
-
-                {/* Petty Cash Fund (Taxable) */}
-                <div className="space-y-2">
-                    <label className="block text-sm font-medium">
-                    Petty Cash Fund (Taxable) <span className="text-red-500">*</span>
-                    </label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
-                        placeholder="Account Code"
-                        value={formData.pettyCashFundTaxable.accountCode}
-                        onChange={(e) => handleAccountCodeChange("pettyCashFundTaxable", e.target.value)}
-                        required
-                    />
-                    <Select
-                        value={formData.pettyCashFundTaxable.selectedAccount}
-                        onValueChange={(value) => handleSelectChange("pettyCashFundTaxable", value)}
-                        required
-                    >
-                        <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                        {accountOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                            </SelectItem>
-                        ))}
-                        </SelectContent>
-                    </Select>
-                    </div>
-                </div>
-
-                {/* Petty Cash Fund (Non-Taxable) */}
-                <div className="space-y-2">
-                    <label className="block text-sm font-medium">
-                    Petty Cash Fund (Non-Taxable) <span className="text-red-500">*</span>
-                    </label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
-                        placeholder="Account Code"
-                        value={formData.pettyCashFundNonTaxable.accountCode}
-                        onChange={(e) => handleAccountCodeChange("pettyCashFundNonTaxable", e.target.value)}
-                        required
-                    />
-                    <Select
-                        value={formData.pettyCashFundNonTaxable.selectedAccount}
-                        onValueChange={(value) => handleSelectChange("pettyCashFundNonTaxable", value)}
-                        required
-                    >
-                        <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                        {accountOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                            </SelectItem>
-                        ))}
-                        </SelectContent>
-                    </Select>
-                    </div>
-                </div>
-            </div>
-
-            {/* Form Actions */}
-            <div className="flex justify-end gap-4 pt-4">
-                <Button type="button" variant="outline" onClick={handleCancel}>
-                Cancel
-                </Button>
-                <Button type="submit">Save Accounts</Button>
-            </div>
-        </form>
-      </div>
-    </div>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle className="text-2xl">Cashiering Accounts Configuration</CardTitle>
+        <CardDescription>
+          Configure default accounts for cashiering operations and petty cash management
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-8">
+        <div className="space-y-6">
+          <h3 className="text-lg font-semibold">Outstanding Cash Fund Accounts</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <AccountField 
+              label="Outstanding Cash Fund (Salary)" 
+              description="Account for outstanding cash fund for salary payments" 
+              required 
+              selectedAccount={outstandingCashSalary} 
+              onAccountSelect={setOutstandingCashSalary} 
+              error={fieldErrors.coa_outstanding_cash_salary} 
+            />
+            <AccountField 
+              label="Outstanding Cash Fund (Bonus)" 
+              description="Account for outstanding cash fund for bonus payments" 
+              required 
+              selectedAccount={outstandingCashBonus} 
+              onAccountSelect={setOutstandingCashBonus} 
+              error={fieldErrors.coa_outstanding_cash_bonus} 
+            />
+          </div>
+        </div>
+        
+        <div className="space-y-6">
+          <h3 className="text-lg font-semibold">Cash On Hand Accounts</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <AccountField 
+              label="COH: Encashment Fund" 
+              description="Account for cash on hand encashment fund" 
+              required 
+              selectedAccount={encashmentFund} 
+              onAccountSelect={setEncashmentFund} 
+              error={fieldErrors.coa_encashment_fund} 
+            />
+            <AccountField 
+              label="COH: Internal Cashier" 
+              description="Account for internal cashier cash on hand" 
+              required 
+              selectedAccount={internalCashier} 
+              onAccountSelect={setInternalCashier} 
+              error={fieldErrors.coa_internal_cashier} 
+            />
+          </div>
+        </div>
+        
+        <div className="space-y-6">
+          <h3 className="text-lg font-semibold">Petty Cash Fund Accounts</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <AccountField 
+              label="Petty Cash Fund (Taxable)" 
+              description="Account for taxable petty cash fund transactions" 
+              required 
+              selectedAccount={pettyCashTaxable} 
+              onAccountSelect={setPettyCashTaxable} 
+              error={fieldErrors.coa_petty_cash_taxable} 
+            />
+            <AccountField 
+              label="Petty Cash Fund (Non-Taxable)" 
+              description="Account for non-taxable petty cash fund transactions" 
+              required 
+              selectedAccount={pettyCashNonTaxable} 
+              onAccountSelect={setPettyCashNonTaxable} 
+              error={fieldErrors.coa_petty_cash_non_taxable} 
+            />
+          </div>
+        </div>
+      </CardContent>
+      <CardFooter className="flex justify-end gap-4">
+        <Button variant="outline" onClick={handleCancel}>Cancel</Button>
+        <Button onClick={handleSave}>Save Changes</Button>
+      </CardFooter>
+    </Card>
   )
 }

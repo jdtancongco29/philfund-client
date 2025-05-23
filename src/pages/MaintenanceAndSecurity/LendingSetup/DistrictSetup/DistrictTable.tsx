@@ -1,119 +1,178 @@
 "use client"
 
 import { useState } from "react"
-import { DataTable, type SearchDefinition, type ColumnDefinition, type FilterDefinition } from "@/components/data-table/data-table"
-import { AddDistrictDialog } from "./AddDistrictDialog"
-
-interface District {
-    id: string
-    divisionCode: React.ReactNode
-    districtCode: string
-    districtName: string
-}
+import type { SearchDefinition, ColumnDefinition, FilterDefinition } from "@/components/data-table/data-table"
+import { DistrictDialogForm } from "./DistrictFormDialog"
+import type { District } from "./Service/DistrictSetupTypes"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import DistrictSetupService from "./Service/DistrictSetupService"
+import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog"
+import { DataTableV2 } from "@/components/data-table/data-table-v2"
 
 export function DistrictTable() {
-    const [addDialogOpen, setAddDialogOpen] = useState(false)
-    const [districts, setDistricts] = useState<District[]>([
-        {
-            id: "1",
-            divisionCode: "BUKIDNON",
-            districtCode: "DIST1",
-            districtName: "District 1",
-        },
-    ])
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<District | null>(null)
+  const [openDeleteModal, setOpenDeleteModal] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const queryClient = useQueryClient()
+  const [currentPage, setCurrentPage] = useState(1)
+  const [rowsPerPage, setRowsPerPage] = useState(10)
+  const [searchQuery, setSearchQuery] = useState<string | null>(null)
+  const [resetTable, setResetTable] = useState(false)
 
-    // Define columns
-    const columns: ColumnDefinition<District>[] = [
-        {
-            id: "divisionCode",
-            header: "Division Code",
-            accessorKey: "divisionCode",
-            enableSorting: true,
-        },
-        {
-            id: "districtCode",
-            header: "District Code",
-            accessorKey: "districtCode",
-            enableSorting: true,
-        },
-        {
-            id: "districtName",
-            header: "District Name",
-            accessorKey: "districtName",
-            enableSorting: true,
+  const {
+    isPending,
+    error,
+    data: districts,
+  } = useQuery({
+    queryKey: ["district-table", currentPage, rowsPerPage, searchQuery],
+    queryFn: () => DistrictSetupService.getAllDistricts(currentPage, rowsPerPage, searchQuery),
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+
+  console.log(districts);
+
+
+  const deletionHandler = useMutation({
+    mutationFn: (uuid: string) => {
+      return DistrictSetupService.deleteDistrict(uuid)
+    },
+  })
+
+  if (error) return "An error has occurred: " + error.message
+
+  // Define columns
+  const columns: ColumnDefinition<District>[] = [
+    {
+      id: "division",
+      header: "Division Code",
+      accessorKey: "code",
+      enableSorting: true,
+    },
+    {
+      id: "code",
+      header: "District Code",
+      accessorKey: "code",
+      enableSorting: true,
+    },
+    {
+      id: "name",
+      header: "District Name",
+      accessorKey: "name",
+      enableSorting: true,
+    },
+  ]
+
+  // Define filters
+  const filters: FilterDefinition[] = []
+
+  const search: SearchDefinition = {
+    title: "Search",
+    placeholder: "Search District",
+    enableSearch: true,
+  }
+
+  // Handle edit
+  const handleEdit = (item: District) => {
+    setSelectedItem(item)
+    setIsEditing(true)
+    setIsDialogOpen(true)
+  }
+
+  // Handle delete
+  const handleDelete = async () => {
+    setOpenDeleteModal(false)
+    if (selectedItem) {
+      try {
+        if (districts?.data.districts.length == 1) {
+          setResetTable(true)
         }
-    ]
-
-    // Define filters
-    const filters: FilterDefinition[] = []
-
-    const search: SearchDefinition = {
-        title: "Search",
-        placeholder: "Search District",
-        enableSearch: true,
-    };
-
-    // Handle edit
-    const handleEdit = (district: District) => {
-        console.log("Edit district", district)
-        // Open edit modal or navigate to edit page
+        await deletionHandler.mutateAsync(selectedItem.id)
+        queryClient.invalidateQueries({ queryKey: ["district-table"] })
+        setSelectedItem(null)
+        setResetTable(false)
+      } catch (error) {
+        console.log(error)
+      }
     }
+  }
 
-    // Handle delete
-    const handleDelete = (district: District) => {
-        console.log("Delete district", district)
-        // Show confirmation dialog and delete if confirmed
-        if (confirm(`Are you sure you want to delete this district?`)) {
-        setDistricts(districts.filter((d) => d.id !== district.id))
-        }
-    }
+  // Handle new
+  const handleNew = () => {
+    setIsDialogOpen(true)
+  }
 
-    // Handle new
-    const handleNew = () => {
-        setAddDialogOpen(true)
-        console.log("Create new classification")
-        // Open create modal or navigate to create page
-    }
+  const onSubmit = () => {
+    setSelectedItem(null)
+    setIsDialogOpen(false)
+  }
 
-    const borrowerGroups = [
-        { label: "PHILFUND", value: "PHILFUND" },
-        { label: "DEPED", value: "DEPED" },
-        { label: "PRIVATE", value: "PRIVATE" },
-        { label: "BUKIDNON", value: "BUKIDNON" },
-    ]
-    const handleAddDistrict = (values: { divisionCode: React.ReactNode, districtCode: string, districtName: string }) => {
-        const newDistrict = {
-            id: Date.now().toString(),
-            ...values,
-        }
-        setDistricts([...districts, newDistrict])
-        setAddDialogOpen(false)
-    }
-    return (
-        <>
-            <DataTable
-                title="Borrower Districts"
-                subtitle="Manage existing borrower districts"
-                data={districts}
-                columns={columns}
-                filters={filters}
-                search={search}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onNew={handleNew}
-                idField="id"
-                enableNew={true}
-                enablePdfExport={true}
-                enableCsvExport={true}
-                enableFilter={false}
-            />
+  const onPaginationChange = (page: number) => {
+    setCurrentPage(page)
+  }
 
-            <AddDistrictDialog
-                open={addDialogOpen}
-                onOpenChange={setAddDialogOpen}
-                onSubmit={handleAddDistrict}
-                borrowerGroups={borrowerGroups}
-            />
-        </>
-    )
+  const onRowCountChange = (row: number) => {
+    setRowsPerPage(row)
+  }
+
+  const onSearchChange = (search: string) => {
+    setSearchQuery(search)
+  }
+
+  return (
+    <>
+      <DataTableV2
+        totalCount={districts?.data.pagination.total_items ?? 1}
+        perPage={districts?.data.pagination.per_page ?? 10}
+        pageNumber={districts?.data.pagination.current_page ?? 10}
+        onPaginationChange={onPaginationChange}
+        onRowCountChange={onRowCountChange}
+        title="Borrower Districts"
+        subtitle="Manage existing borrower districts"
+        data={districts?.data.districts ?? []}
+        columns={columns}
+        filters={filters}
+        search={search}
+        onEdit={handleEdit}
+        onLoading={isPending || deletionHandler.isPending}
+        onDelete={(item) => {
+          setOpenDeleteModal(true)
+          setSelectedItem(item)
+        }}
+        onNew={handleNew}
+        idField="id"
+        enableNew={true}
+        enablePdfExport={true}
+        enableCsvExport={true}
+        enableFilter={false}
+        onResetTable={resetTable}
+        onSearchChange={onSearchChange}
+      />
+      <DeleteConfirmationDialog
+        isOpen={openDeleteModal}
+        onClose={() => {
+          setSelectedItem(null)
+          setOpenDeleteModal(false)
+          setCurrentPage(1)
+        }}
+        onConfirm={handleDelete}
+        title="Delete District"
+        description="Are you sure you want to delete the district '{name}'? This action cannot be undone."
+        itemName={selectedItem?.name ?? "No district selected"}
+      />
+      <DistrictDialogForm
+        item={selectedItem}
+        open={isDialogOpen}
+        onCancel={() => {
+          setSelectedItem(null)
+        }}
+        isEditing={isEditing}
+        onOpenChange={() => {
+          setIsDialogOpen(false)
+          setIsEditing(false)
+        }}
+        onSubmit={onSubmit}
+      />
+    </>
+  )
 }

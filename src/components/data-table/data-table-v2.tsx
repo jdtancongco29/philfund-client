@@ -256,8 +256,6 @@ export function DataTableV2<T>({
   const totalPages = Math.ceil(totalCount / rowsPerPage)
   // const paginatedData = sortedData.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
   const paginatedData = data;
-  console.log(paginatedData);
-
 
   // Handle filter changes
   const handleFilterChange = (filterId: string, value: any) => {

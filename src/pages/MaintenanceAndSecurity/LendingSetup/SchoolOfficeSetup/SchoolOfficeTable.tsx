@@ -1,128 +1,181 @@
 "use client"
 
 import { useState } from "react"
-import { DataTable, type SearchDefinition, type ColumnDefinition, type FilterDefinition } from "@/components/data-table/data-table"
-import { AddDivisionDialog } from "./AddSchoolOfficeDialog"
-// import { AddDistrictDialog } from "./AddDistrictDialog"
-
-interface SchoolOffice {
-    id: string
-    districtCode: React.ReactNode
-    divisionCode: React.ReactNode
-    schoolCode: string
-    schoolName: string
-}
+import type { SearchDefinition, ColumnDefinition, FilterDefinition } from "@/components/data-table/data-table"
+import { SchoolFormDialog } from "./SchoolFormDialog"
+import type { School } from "./Service/SchoolSetupTypes"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import SchoolSetupService from "./Service/SchoolSetupService"
+import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog"
+import { DataTableV2 } from "@/components/data-table/data-table-v2"
 
 export function SchoolOfficeTable() {
-    const [addDialogOpen, setAddDialogOpen] = useState(false)
-    const [schoolOffices, setSchooOffices] = useState<SchoolOffice[]>([
-        {
-            id: "1",
-            districtCode: "DIST1",
-            divisionCode: "BUKIDNON",
-            schoolCode: "SCHL1",
-            schoolName: "School 1",
-        },
-    ])
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<School | null>(null)
+  const [openDeleteModal, setOpenDeleteModal] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const queryClient = useQueryClient()
+  const [currentPage, setCurrentPage] = useState(1)
+  const [rowsPerPage, setRowsPerPage] = useState(10)
+  const [searchQuery, setSearchQuery] = useState<string | null>(null)
+  const [resetTable, setResetTable] = useState(false)
 
-    // Define columns
-    const columns: ColumnDefinition<SchoolOffice>[] = [
-        {
-            id: "districtCode",
-            header: "Division Code",
-            accessorKey: "districtCode",
-            enableSorting: true,
-        },
-        {
-            id: "divisionCode",
-            header: "Division Code",
-            accessorKey: "divisionCode",
-            enableSorting: true,
-        },
-        {
-            id: "schoolCode",
-            header: "School Code",
-            accessorKey: "schoolCode",
-            enableSorting: true,
-        },
-        {
-            id: "schoolName",
-            header: "School Name",
-            accessorKey: "schoolName",
-            enableSorting: true,
+  const {
+    isPending,
+    error,
+    data: schools,
+  } = useQuery({
+    queryKey: ["school-table", currentPage, rowsPerPage, searchQuery],
+    queryFn: () => SchoolSetupService.getAllSchools(currentPage, rowsPerPage, searchQuery),
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+
+  const deletionHandler = useMutation({
+    mutationFn: (uuid: string) => {
+      return SchoolSetupService.deleteSchool(uuid)
+    },
+  })
+
+  if (error) return "An error has occurred: " + error.message
+
+  // Define columns
+  const columns: ColumnDefinition<School>[] = [
+    {
+      id: "division",
+      header: "Division Code",
+      accessorKey: "code",
+      enableSorting: true,
+    },
+    {
+      id: "district",
+      header: "District Code",
+      accessorKey: "district_name",
+      enableSorting: true,
+    },
+    {
+      id: "code",
+      header: "School Code",
+      accessorKey: "code",
+      enableSorting: true,
+    },
+    {
+      id: "name",
+      header: "School Name",
+      accessorKey: "name",
+      enableSorting: true,
+    },
+  ]
+
+  // Define filters
+  const filters: FilterDefinition[] = []
+
+  const search: SearchDefinition = {
+    title: "Search",
+    placeholder: "Search School/Office",
+    enableSearch: true,
+  }
+
+  // Handle edit
+  const handleEdit = (item: School) => {
+    setSelectedItem(item)
+    setIsEditing(true)
+    setIsDialogOpen(true)
+  }
+
+  // Handle delete
+  const handleDelete = async () => {
+    setOpenDeleteModal(false)
+    if (selectedItem) {
+      try {
+        if (schools?.data.schools.length == 1) {
+          setResetTable(true)
         }
-    ]
-
-    // Define filters
-    const filters: FilterDefinition[] = []
-
-    const search: SearchDefinition = {
-        title: "Search",
-        placeholder: "Search School/Office",
-        enableSearch: true,
-    };
-
-    // Handle edit
-    const handleEdit = (schoolOffice: SchoolOffice) => {
-        console.log("Edit School/Office", schoolOffice)
-        // Open edit modal or navigate to edit page
+        await deletionHandler.mutateAsync(selectedItem.id)
+        queryClient.invalidateQueries({ queryKey: ["school-table"] })
+        setSelectedItem(null)
+        setResetTable(false)
+      } catch (error) {
+        console.log(error)
+      }
     }
+  }
 
-    // Handle delete
-    const handleDelete = (schoolOffice: SchoolOffice) => {
-        console.log("Delete School/Office", schoolOffice)
-        // Show confirmation dialog and delete if confirmed
-        if (confirm(`Are you sure you want to delete this School/Office?`)) {
-        setSchooOffices(schoolOffices.filter((d) => d.id !== schoolOffice.id))
-        }
-    }
+  // Handle new
+  const handleNew = () => {
+    setIsDialogOpen(true)
+  }
 
-    // Handle new
-    const handleNew = () => {
-        setAddDialogOpen(true)
-        console.log("Create new School/Office")
-        // Open create modal or navigate to create page
-    }
+  const onSubmit = () => {
+    setSelectedItem(null)
+    setIsDialogOpen(false)
+  }
 
-    const borrowerGroups = [
-        { label: "PHILFUND", value: "PHILFUND" },
-        { label: "DEPED", value: "DEPED" },
-        { label: "PRIVATE", value: "PRIVATE" },
-        { label: "BUKIDNON", value: "BUKIDNON" },
-    ]
-    const handleAddSchoolOffice = (values: { districtCode: React.ReactNode, divisionCode: React.ReactNode, schoolName: string, schoolCode: string}) => {
-        const newSchoolOffices = {
-            id: Date.now().toString(),
-            ...values,
-        }
-        setSchooOffices([...schoolOffices, newSchoolOffices])
-        setAddDialogOpen(false)
-    }
-    return (
-        <>
-            <DataTable
-                title="School List"
-                subtitle="Manage existing borrower districts"
-                data={schoolOffices}
-                columns={columns}
-                filters={filters}
-                search={search}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onNew={handleNew}
-                idField="id"
-                enableNew={true}
-                enablePdfExport={true}
-                enableCsvExport={true}
-                enableFilter={false}
-            />
+  const onPaginationChange = (page: number) => {
+    setCurrentPage(page)
+  }
 
-            <AddDivisionDialog
-                open={addDialogOpen}
-                onOpenChange={setAddDialogOpen}
-                onSubmit={handleAddSchoolOffice}
-                borrowerGroups={borrowerGroups}
-            />
-        </>
-    )
+  const onRowCountChange = (row: number) => {
+    setRowsPerPage(row)
+  }
+
+  const onSearchChange = (search: string) => {
+    setSearchQuery(search)
+  }
+
+  return (
+    <>
+      <DataTableV2
+        totalCount={schools?.data.pagination.total_items ?? 1}
+        perPage={schools?.data.pagination.per_page ?? 10}
+        pageNumber={schools?.data.pagination.current_page ?? 10}
+        onPaginationChange={onPaginationChange}
+        onRowCountChange={onRowCountChange}
+        title="School List"
+        subtitle="Manage existing borrower schools"
+        data={schools?.data.schools ?? []}
+        columns={columns}
+        filters={filters}
+        search={search}
+        onEdit={handleEdit}
+        onLoading={isPending || deletionHandler.isPending}
+        onDelete={(item) => {
+          setOpenDeleteModal(true)
+          setSelectedItem(item)
+        }}
+        onNew={handleNew}
+        idField="id"
+        enableNew={true}
+        enablePdfExport={true}
+        enableCsvExport={true}
+        enableFilter={false}
+        onResetTable={resetTable}
+        onSearchChange={onSearchChange}
+      />
+      <DeleteConfirmationDialog
+        isOpen={openDeleteModal}
+        onClose={() => {
+          setSelectedItem(null)
+          setOpenDeleteModal(false)
+          setCurrentPage(1)
+        }}
+        onConfirm={handleDelete}
+        title="Delete School"
+        description="Are you sure you want to delete the school '{name}'? This action cannot be undone."
+        itemName={selectedItem?.name ?? "No school selected"}
+      />
+      <SchoolFormDialog
+        item={selectedItem}
+        open={isDialogOpen}
+        onCancel={() => {
+          setSelectedItem(null)
+        }}
+        isEditing={isEditing}
+        onOpenChange={() => {
+          setIsDialogOpen(false)
+          setIsEditing(false)
+        }}
+        onSubmit={onSubmit}
+      />
+    </>
+  )
 }

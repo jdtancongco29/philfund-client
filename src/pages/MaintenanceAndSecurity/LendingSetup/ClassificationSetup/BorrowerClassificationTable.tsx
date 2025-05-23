@@ -61,7 +61,7 @@ export function BorrowerClassificationTable() {
     {
       accessorKey: "qualified_for_restructure",
       id: "qualified_for_restructure",
-      header: "Restructure Eligible",
+      header: "Reloan Eligible",
       cell: (row) => (
         <div className="flex justify-start">
           {row.qualified_for_restructure ? (
@@ -75,12 +75,28 @@ export function BorrowerClassificationTable() {
       ),
     },
     {
-      accessorKey: "qualified_for_reloan",
-      id: "qualified_for_reloan",
+      accessorKey: "bonus_loan_eligible",
+      id: "bonus_loan_eligible",
+      header: "Eligible for Bonus Loan",
+      cell: (row) => (
+        <div className="flex justify-start">
+          {row.bonus_loan_eligible ? (
+            "Yes"
+          ) : (
+            <span className="text-red-500">
+              No
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "allow_3mo_grace",
+      id: "allow_3mo_grace",
       header: "3 Month Grace Period Eligble",
       cell: (row) => (
         <div className="flex justify-start">
-          {row.qualified_for_reloan ? (
+          {row.allow_3mo_grace ? (
             "Yes"
           ) : (
             <span className="text-red-500">
@@ -135,6 +151,7 @@ export function BorrowerClassificationTable() {
   const onSubmit = () => {
     setSelectedItem(null)
     setIsDialogOpen(false)
+    setIsEditing(false)
   }
 
   const onPaginationChange = (page: number) => {
@@ -198,6 +215,7 @@ export function BorrowerClassificationTable() {
         }}
         isEditing={isEditing}
         onOpenChange={() => {
+          setSelectedItem(null)
           setIsDialogOpen(false)
           setIsEditing(false)
         }}

@@ -20,7 +20,8 @@ export interface BorrowerClassification {
   code: string;
   name: string;
   qualified_for_restructure: boolean;
-  qualified_for_reloan: boolean;
+  bonus_loan_eligible: boolean;
+  allow_3mo_grace: boolean;
   eligible_for_bonus_loan?: boolean;
   allow_grace_period?: boolean;
   status: boolean;
@@ -47,9 +48,8 @@ export interface CreateClassificationPayload {
   code: string;
   name: string;
   qualified_for_restructure: number;
-  qualified_for_reloan: number;
-  eligible_for_bonus_loan?: number;
-  allow_grace_period?: number;
+  bonus_loan_eligible: number;
+  allow_3mo_grace?: number;
   branch_id: string;
   group_id: string;
 }
@@ -58,9 +58,8 @@ export interface UpdateClassificationPayload {
   code: string;
   name: string;
   qualified_for_restructure: number;
-  qualified_for_reloan: number;
-  eligible_for_bonus_loan?: number;
-  allow_grace_period?: number;
+  bonus_loan_eligible: number;
+  allow_3mo_grace?: number;
   branch_id: string;
   group_id: string;
 }

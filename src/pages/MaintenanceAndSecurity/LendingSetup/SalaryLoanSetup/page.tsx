@@ -1,5 +1,5 @@
-import MainLayout from '@/components/layout/MainLayout'
-import { SalaryLoanTable } from './SalaryLoanTable'
+import MainLayout from "@/components/layout/MainLayout"
+import { SalaryLoanTable } from "./SalaryLoanTable"
 
 function SalaryLoanSetupPage() {
   return (

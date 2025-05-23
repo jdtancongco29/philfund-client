@@ -49,7 +49,7 @@ export function SchoolOfficeTable() {
     {
       id: "district",
       header: "District Code",
-      accessorKey: "district_name",
+      accessorKey: "name",
       enableSorting: true,
     },
     {
@@ -108,6 +108,7 @@ export function SchoolOfficeTable() {
   const onSubmit = () => {
     setSelectedItem(null)
     setIsDialogOpen(false)
+    setIsEditing(false);
   }
 
   const onPaginationChange = (page: number) => {

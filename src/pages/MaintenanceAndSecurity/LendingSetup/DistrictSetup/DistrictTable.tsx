@@ -102,6 +102,7 @@ export function DistrictTable() {
   const onSubmit = () => {
     setSelectedItem(null)
     setIsDialogOpen(false)
+    setIsEditing(false);
   }
 
   const onPaginationChange = (page: number) => {

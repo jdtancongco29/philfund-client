@@ -2,16 +2,16 @@
 
 import { useState } from "react"
 import type { SearchDefinition, ColumnDefinition, FilterDefinition } from "@/components/data-table/data-table"
-import { DistrictDialogForm } from "./DistrictFormDialog"
-import type { District } from "./Service/DistrictSetupTypes"
+import { ClassificationDialogForm } from "./ClassificationFormDialog"
+import type { BorrowerClassification } from "./Service/ClassificationSetupTypes"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import DistrictSetupService from "./Service/DistrictSetupService"
+import ClassificationSetupService from "./Service/ClassificationSetupService"
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog"
 import { DataTableV2 } from "@/components/data-table/data-table-v2"
 
-export function DistrictTable() {
+export function BorrowerClassificationTable() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [selectedItem, setSelectedItem] = useState<District | null>(null)
+  const [selectedItem, setSelectedItem] = useState<BorrowerClassification | null>(null)
   const [openDeleteModal, setOpenDeleteModal] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const queryClient = useQueryClient()
@@ -23,43 +23,75 @@ export function DistrictTable() {
   const {
     isPending,
     error,
-    data: districts,
+    data: borrowerClassifications,
   } = useQuery({
-    queryKey: ["district-table", currentPage, rowsPerPage, searchQuery],
-    queryFn: () => DistrictSetupService.getAllDistricts(currentPage, rowsPerPage, searchQuery),
+    queryKey: ["borrower-classification-table", currentPage, rowsPerPage, searchQuery],
+    queryFn: () => ClassificationSetupService.getAllClassifications(currentPage, rowsPerPage, searchQuery),
     staleTime: Number.POSITIVE_INFINITY,
   })
 
-  console.log(districts);
+  console.log(borrowerClassifications);
 
 
   const deletionHandler = useMutation({
     mutationFn: (uuid: string) => {
-      return DistrictSetupService.deleteDistrict(uuid)
+      return ClassificationSetupService.deleteClassification(uuid)
     },
   })
 
   if (error) return "An error has occurred: " + error.message
 
   // Define columns
-  const columns: ColumnDefinition<District>[] = [
+  const columns: ColumnDefinition<BorrowerClassification>[] = [
     {
-      id: "division",
-      header: "Division Code",
-      accessorKey: "code",
+      id: "group",
+      header: "Group",
+      accessorKey: "name",
       enableSorting: true,
     },
     {
       id: "code",
-      header: "District Code",
+      header: "Code",
       accessorKey: "code",
       enableSorting: true,
     },
     {
       id: "name",
-      header: "District Name",
+      header: "Name",
       accessorKey: "name",
       enableSorting: true,
+    },
+    {
+      accessorKey: "qualified_for_restructure",
+      id: "qualified_for_restructure",
+      header: "Restructure Eligible",
+      cell: (row) => (
+        <div className="flex justify-start">
+          {row.qualified_for_restructure ? (
+            "Yes"
+          ) : (
+            <span className="text-red-500">
+              No
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "qualified_for_reloan",
+      id: "qualified_for_reloan",
+      header: "3 Month Grace Period Eligble",
+      cell: (row) => (
+        <div className="flex justify-start">
+          {row.qualified_for_reloan ? (
+            "Yes"
+          ) : (
+            <span className="text-red-500">
+              No
+            </span>
+          )}
+        </div>
+      ),
     },
   ]
 
@@ -68,12 +100,12 @@ export function DistrictTable() {
 
   const search: SearchDefinition = {
     title: "Search",
-    placeholder: "Search District",
+    placeholder: "Search classifications",
     enableSearch: true,
   }
 
   // Handle edit
-  const handleEdit = (item: District) => {
+  const handleEdit = (item: BorrowerClassification) => {
     setSelectedItem(item)
     setIsEditing(true)
     setIsDialogOpen(true)
@@ -84,11 +116,11 @@ export function DistrictTable() {
     setOpenDeleteModal(false)
     if (selectedItem) {
       try {
-        if (districts?.data.districts.length == 1) {
+        if (borrowerClassifications?.data.classifications.length == 1) {
           setResetTable(true)
         }
         await deletionHandler.mutateAsync(selectedItem.id)
-        queryClient.invalidateQueries({ queryKey: ["district-table"] })
+        queryClient.invalidateQueries({ queryKey: ["borrower-classification-table"] })
         setSelectedItem(null)
         setResetTable(false)
       } catch (error) {
@@ -100,6 +132,7 @@ export function DistrictTable() {
   // Handle new
   const handleNew = () => {
     setIsDialogOpen(true)
+    setSelectedItem(null)
   }
 
   const onSubmit = () => {
@@ -122,14 +155,14 @@ export function DistrictTable() {
   return (
     <>
       <DataTableV2
-        totalCount={districts?.data.pagination.total_items ?? 1}
-        perPage={districts?.data.pagination.per_page ?? 10}
-        pageNumber={districts?.data.pagination.current_page ?? 10}
+        totalCount={borrowerClassifications?.data.pagination.total_items ?? 1}
+        perPage={borrowerClassifications?.data.pagination.per_page ?? 10}
+        pageNumber={borrowerClassifications?.data.pagination.current_page ?? 10}
         onPaginationChange={onPaginationChange}
         onRowCountChange={onRowCountChange}
-        title="Borrower Districts"
-        subtitle="Manage existing borrower districts"
-        data={districts?.data.districts ?? []}
+        title="Classifications"
+        subtitle=""
+        data={borrowerClassifications?.data.classifications ?? []}
         columns={columns}
         filters={filters}
         search={search}
@@ -156,11 +189,11 @@ export function DistrictTable() {
           setCurrentPage(1)
         }}
         onConfirm={handleDelete}
-        title="Delete District"
-        description="Are you sure you want to delete the district '{name}'? This action cannot be undone."
-        itemName={selectedItem?.name ?? "No district selected"}
+        title="Delete Borrower Classification"
+        description="Are you sure you want to delete the classification '{name}'? This action cannot be undone."
+        itemName={selectedItem?.name ?? "No classification selected"}
       />
-      <DistrictDialogForm
+      <ClassificationDialogForm
         item={selectedItem}
         open={isDialogOpen}
         onCancel={() => {

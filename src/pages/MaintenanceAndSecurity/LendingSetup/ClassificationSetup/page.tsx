@@ -1,12 +1,12 @@
-import MainLayout from '@/components/layout/MainLayout'
-import { ClassificationTable } from './ClassificationTable'
+import MainLayout from "@/components/layout/MainLayout"
+import { BorrowerClassificationTable } from "./BorrowerClassificationTable"
 
-function ClasificationSetupPage() {
+function ClassificationSetupPage() {
   return (
     <MainLayout>
-        <ClassificationTable />
+      <BorrowerClassificationTable />
     </MainLayout>
   )
 }
 
-export default ClasificationSetupPage
+export default ClassificationSetupPage

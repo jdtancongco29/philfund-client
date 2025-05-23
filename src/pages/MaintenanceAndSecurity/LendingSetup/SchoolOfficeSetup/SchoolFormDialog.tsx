@@ -87,6 +87,7 @@ export function SchoolFormDialog({ open, isEditing, item, onOpenChange, onCancel
         division_id: item.division.id,
         district_id: item.district_id,
       })
+      console.log(item.division.id);
       setSelectedDivisionId(item.division.id)
     } else {
       form.reset({
@@ -173,7 +174,9 @@ export function SchoolFormDialog({ open, isEditing, item, onOpenChange, onCancel
 
   // Filter districts by selected division
   const filteredDistricts = districtsData?.data.districts.filter(
-    (district) => !selectedDivisionId || district.division_id === selectedDivisionId,
+    (district) => {
+      return !selectedDivisionId || district.division.id === selectedDivisionId
+    },
   )
 
   return (
@@ -251,7 +254,7 @@ export function SchoolFormDialog({ open, isEditing, item, onOpenChange, onCancel
             />
 
             <FormField
-              disabled={creationHandler.isPending || editingHandler.isPending}
+              disabled={creationHandler.isPending || editingHandler.isPending || isEditing}
               control={form.control}
               name="code"
               render={({ field }) => (
@@ -268,7 +271,7 @@ export function SchoolFormDialog({ open, isEditing, item, onOpenChange, onCancel
                       variant="outline"
                       size="icon"
                       onClick={generateSchoolCode}
-                      disabled={isGeneratingCode || creationHandler.isPending || editingHandler.isPending}
+                      disabled={isGeneratingCode || creationHandler.isPending || editingHandler.isPending || isEditing}
                     >
                       {isGeneratingCode ? (
                         <Loader2 className="h-4 w-4 animate-spin" />

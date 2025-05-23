@@ -1,10 +1,10 @@
-import MainLayout from '@/components/layout/MainLayout'
-import { DivisionTable } from './DivisionTable'
+import MainLayout from "@/components/layout/MainLayout"
+import { DivisionTable } from "./DivisionTable"
 
 function DivisionSetupPage() {
   return (
     <MainLayout>
-        <DivisionTable />
+      <DivisionTable />
     </MainLayout>
   )
 }

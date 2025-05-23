@@ -1,10 +1,10 @@
-import MainLayout from '@/components/layout/MainLayout'
-import { DistrictTable } from './DistrictTable'
+import MainLayout from "@/components/layout/MainLayout"
+import { DistrictTable } from "./DistrictTable"
 
 function DistrictSetupPage() {
   return (
     <MainLayout>
-        <DistrictTable />
+      <DistrictTable />
     </MainLayout>
   )
 }

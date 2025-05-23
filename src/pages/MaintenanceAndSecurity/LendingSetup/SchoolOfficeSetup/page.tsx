@@ -1,10 +1,10 @@
-import MainLayout from '@/components/layout/MainLayout'
-import { SchoolOfficeTable } from './SchoolOfficeTable'
+import MainLayout from "@/components/layout/MainLayout"
+import { SchoolOfficeTable } from "./SchoolOfficeTable"
 
 function SchoolOfficeSetupPage() {
   return (
     <MainLayout>
-        <SchoolOfficeTable />
+      <SchoolOfficeTable />
     </MainLayout>
   )
 }

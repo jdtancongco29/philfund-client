@@ -126,6 +126,8 @@ export default function BankAccountsTable() {
       name: bank.name,
       address: bank.address,
       branch_id: bank.branch_id,
+           branch_name: bank.branch_name,
+      coa_name: bank.coa_name,
       coa_id: bank.coa_id,
       account_type: bank.account_type,
       status: bank.status,

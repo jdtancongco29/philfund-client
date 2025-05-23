@@ -27,11 +27,8 @@ export function BorrowerClassificationTable() {
   } = useQuery({
     queryKey: ["borrower-classification-table", currentPage, rowsPerPage, searchQuery],
     queryFn: () => ClassificationSetupService.getAllClassifications(currentPage, rowsPerPage, searchQuery),
-    staleTime: Number.POSITIVE_INFINITY,
+    staleTime: Infinity,
   })
-
-  console.log(borrowerClassifications);
-
 
   const deletionHandler = useMutation({
     mutationFn: (uuid: string) => {

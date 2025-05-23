@@ -1,4 +1,4 @@
-import { useLocation } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import {
   Accordion,
   AccordionContent,
@@ -126,9 +126,9 @@ export default function Sidebar() {
               <AccordionTrigger className="p-1.5">{item.title}</AccordionTrigger>
               <AccordionContent className="flex flex-col gap-1 pb-0">
                 {item.links.map((link) => (
-                  <a
+                  <NavLink
                     key={link.path}
-                    href={link.path}
+                    to={link.path}
                     className={clsx(
                       "text-sm rounded-sm hover:bg-[var(--foreground)] hover:text-white px-2 py-1.5 font-medium",
                       currentPath === link.path
@@ -137,7 +137,7 @@ export default function Sidebar() {
                     )}
                   >
                     {link.label}
-                  </a>
+                  </NavLink>
                 ))}
               </AccordionContent>
             </AccordionItem>

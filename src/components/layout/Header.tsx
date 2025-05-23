@@ -1,6 +1,6 @@
 import React from "react";
 import { FileText } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { Button } from "../ui/button";
 import BranchProfileDropdown from "../branch-select";
 
@@ -32,15 +32,14 @@ const MemoizedNav = React.memo(function NavMenu() {
           : location.pathname === to;
 
         return (
-          <a
+          <NavLink
             key={to}
-            href={to}
-            className={`text-[var(--foreground)] hover:bg-[var(--secondary)] rounded-lg px-4 py-2.5 ${
-              isActive ? "bg-[var(--secondary)] font-semibold" : ""
-            }`}
+            to={to}
+            className={`text-[var(--foreground)] hover:bg-[var(--secondary)] rounded-lg px-4 py-2.5 ${isActive ? "bg-[var(--secondary)] font-semibold" : ""
+              }`}
           >
             {label}
-          </a>
+          </NavLink>
         );
       })}
     </nav>

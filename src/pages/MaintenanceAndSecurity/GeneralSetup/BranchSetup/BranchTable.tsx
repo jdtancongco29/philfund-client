@@ -237,7 +237,6 @@ export function BranchTable() {
     departments: { id: string; name: string }[];
     status: boolean;
   }) => {
-    console.log(values);
     try {
       const method = selectedBranchId ? 'put' : 'post';
       const endpoint = selectedBranchId ? `/branch/${selectedBranchId}` : '/branch';
@@ -251,9 +250,6 @@ export function BranchTable() {
         departments: values.departments?.map((dept: { id: string }) => dept.id) || [],
         status: values.status,
       };
-      console.log(payloadData);
-      console.log(method);
-      console.log(endpoint);
       const response = await apiRequest<{ data: { name: string } }>(
         method,
         endpoint,

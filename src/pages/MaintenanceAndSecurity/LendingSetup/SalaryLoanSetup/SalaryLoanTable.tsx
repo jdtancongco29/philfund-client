@@ -1,46 +1,44 @@
 "use client"
 
 import { useState } from "react"
-import { DataTable, type SearchDefinition, type ColumnDefinition, type FilterDefinition } from "@/components/data-table/data-table"
-import { AddSalaryLoanDialog } from "./AddSalaryDialog"
-interface SalaryLoan {
-  id: string
-  code: string
-  name: string
-  interestRate: string
-  minAmount: string
-  maxAmount: string
-}
+import type { SearchDefinition, ColumnDefinition, FilterDefinition } from "@/components/data-table/data-table"
+import { SalaryLoanFormDialog } from "./SalaryLoanFormDialog"
+import type { SalaryLoan } from "./Service/SalaryLoanSetupTypes"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import SalaryLoanSetupService from "./Service/SalaryLoanSetupService"
+import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog"
+import { DataTableV2 } from "@/components/data-table/data-table-v2"
 
 export function SalaryLoanTable() {
-  const [addDialogOpen, setAddDialogOpen] = useState(false)
-  const [salaryLoans, setSalaryLoans] = useState<SalaryLoan[]>([
-    {
-      id: "1",
-      code: "SLO01",
-      name: "DEPED Long Term",
-      interestRate: "2%",
-      minAmount: "₱10,000.00",
-      maxAmount: "₱179,999.99",
-    },
-    {
-      id: "2",
-      code: "SLO02",
-      name: "DEPED Short Term",
-      interestRate: "1.75%",
-      minAmount: "₱180,000.00",
-      maxAmount: "₱250,000.00",
-    },
-    {
-      id: "3",
-      code: "SLO03",
-      name: "PhilFund Salary Loan",
-      interestRate: "1.5%",
-      minAmount: "₱10,000.00",
-      maxAmount: "₱150,000.00",
-    },
-  ])
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<SalaryLoan | null>(null)
+  const [openDeleteModal, setOpenDeleteModal] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const queryClient = useQueryClient()
+  const [currentPage, setCurrentPage] = useState(1)
+  const [rowsPerPage, setRowsPerPage] = useState(10)
+  const [searchQuery, setSearchQuery] = useState<string | null>(null)
+  const [resetTable, setResetTable] = useState(false)
 
+  const {
+    isPending,
+    error,
+    data: salaryLoans,
+  } = useQuery({
+    queryKey: ["salary-loan-table", currentPage, rowsPerPage, searchQuery],
+    queryFn: () => SalaryLoanSetupService.getAllSalaryLoans(currentPage, rowsPerPage, searchQuery),
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+
+  const deletionHandler = useMutation({
+    mutationFn: (uuid: string) => {
+      return SalaryLoanSetupService.deleteSalaryLoan(uuid)
+    },
+  })
+
+  if (error) return "An error has occurred: " + error.message
+
+  // Define columns
   const columns: ColumnDefinition<SalaryLoan>[] = [
     {
       id: "code",
@@ -55,21 +53,21 @@ export function SalaryLoanTable() {
       enableSorting: true,
     },
     {
-      id: "interestRate",
+      id: "interest_rate",
       header: "Interest Rate",
-      accessorKey: "interestRate",
+      accessorKey: "interest_rate",
       enableSorting: true,
     },
     {
-      id: "minAmount",
+      id: "min_amount",
       header: "Min Amount",
-      accessorKey: "minAmount",
+      accessorKey: "min_amount",
       enableSorting: true,
     },
     {
-      id: "maxAmount",
+      id: "max_amount",
       header: "Max Amount",
-      accessorKey: "maxAmount",
+      accessorKey: "max_amount",
       enableSorting: true,
     },
   ]
@@ -79,51 +77,112 @@ export function SalaryLoanTable() {
 
   const search: SearchDefinition = {
     title: "Search",
-    placeholder: "Search Division",
+    placeholder: "Search Salary Loan",
     enableSearch: true,
-  };
+  }
 
+  // Handle edit
+  const handleEdit = (item: SalaryLoan) => {
+    setSelectedItem(item)
+    setIsEditing(true)
+    setIsDialogOpen(true)
+  }
 
-  const handleDelete = (salaryLoan: SalaryLoan) => {
-    console.log("Delete salary loan", salaryLoan)
-    // Show confirmation dialog and delete if confirmed
-    if (confirm(`Are you sure you want to delete this salary loan?`)) {
-      setSalaryLoans(salaryLoans.filter((loan) => loan.id !== salaryLoan.id))
+  // Handle delete
+  const handleDelete = async () => {
+    setOpenDeleteModal(false)
+    if (selectedItem) {
+      try {
+        if (salaryLoans?.data.salary_loan_setups.length == 1) {
+          setResetTable(true)
+        }
+        await deletionHandler.mutateAsync(selectedItem.id)
+        queryClient.invalidateQueries({ queryKey: ["salary-loan-table"] })
+        setSelectedItem(null)
+        setResetTable(false)
+      } catch (error) {
+        console.log(error)
+      }
     }
   }
 
-  const handleEdit = (salaryLoan: SalaryLoan) => {
-    console.log("Edit salary loan", salaryLoan)
-    alert("Edit salary loan " + salaryLoan.name)
-  }
-
+  // Handle new
   const handleNew = () => {
-    setAddDialogOpen(true)
+    setIsDialogOpen(true)
   }
 
-  const handleAddSalaryLoan = () => {
-    setAddDialogOpen(false)
+  const onSubmit = () => {
+    setSelectedItem(null)
+    setIsDialogOpen(false)
+    setIsEditing(false)
+  }
+
+  const onPaginationChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  const onRowCountChange = (row: number) => {
+    setRowsPerPage(row)
+  }
+
+  const onSearchChange = (search: string) => {
+    setSearchQuery(search)
   }
 
   return (
     <>
-      <DataTable
+      <DataTableV2
+        totalCount={salaryLoans?.data.pagination.total_items ?? 1}
+        perPage={salaryLoans?.data.pagination.per_page ?? 10}
+        pageNumber={salaryLoans?.data.pagination.current_page ?? 10}
+        onPaginationChange={onPaginationChange}
+        onRowCountChange={onRowCountChange}
         title="Salary Loan"
         subtitle=""
-        data={salaryLoans}
+        data={salaryLoans?.data.salary_loan_setups ?? []}
         columns={columns}
         filters={filters}
         search={search}
         onEdit={handleEdit}
-        onDelete={handleDelete}
+        onLoading={isPending || deletionHandler.isPending}
+        onDelete={(item) => {
+          setOpenDeleteModal(true)
+          setSelectedItem(item)
+        }}
         onNew={handleNew}
         idField="id"
         enableNew={true}
         enablePdfExport={true}
         enableCsvExport={true}
         enableFilter={true}
+        onResetTable={resetTable}
+        onSearchChange={onSearchChange}
       />
-      <AddSalaryLoanDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} onSubmit={handleAddSalaryLoan} />
+      <DeleteConfirmationDialog
+        isOpen={openDeleteModal}
+        onClose={() => {
+          setSelectedItem(null)
+          setOpenDeleteModal(false)
+          setCurrentPage(1)
+        }}
+        onConfirm={handleDelete}
+        title="Delete Salary Loan"
+        description="Are you sure you want to delete the salary loan '{name}'? This action cannot be undone."
+        itemName={selectedItem?.name ?? "No salary loan selected"}
+      />
+      <SalaryLoanFormDialog
+        item={selectedItem}
+        open={isDialogOpen}
+        onCancel={() => {
+          setSelectedItem(null)
+        }}
+        isEditing={isEditing}
+        onOpenChange={() => {
+          setIsDialogOpen(false)
+          setIsEditing(false)
+        }}
+        onSubmit={onSubmit}
+      />
     </>
   )
 }

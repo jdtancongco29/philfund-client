@@ -24,10 +24,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 const formSchema = z.object({
   code: z.string().min(1, "Classification code is required"),
   name: z.string().min(1, "Classification name is required"),
-  qualified_for_reloan: z.boolean(),
+  bonus_loan_eligible: z.boolean(),
   qualified_for_restructure: z.boolean(),
   eligible_for_bonus_loan: z.boolean(),
-  allow_grace_period: z.boolean(),
+  allow_3mo_grace: z.boolean(),
   group_id: z.string().min(1, "Group is required"),
 })
 
@@ -77,33 +77,33 @@ export function ClassificationDialogForm({
     defaultValues: {
       code: "",
       name: "",
-      qualified_for_reloan: false,
+      bonus_loan_eligible: false,
       qualified_for_restructure: false,
-      eligible_for_bonus_loan: false,
-      allow_grace_period: false,
+      allow_3mo_grace: false,
       group_id: "",
     },
   })
+
+  console.log(item);
 
   useEffect(() => {
     if (item) {
       form.reset({
         code: item.code,
         name: item.name,
-        qualified_for_reloan: item.qualified_for_reloan,
-        qualified_for_restructure: item.qualified_for_restructure,
+        bonus_loan_eligible: item.bonus_loan_eligible,
+        qualified_for_restructure: item.qualified_for_restructure || false,
         eligible_for_bonus_loan: item.eligible_for_bonus_loan || false,
-        allow_grace_period: item.allow_grace_period || false,
+        allow_3mo_grace: item.allow_3mo_grace || false,
         group_id: item.group.id,
       })
     } else {
       form.reset({
         code: "",
         name: "",
-        qualified_for_reloan: false,
+        bonus_loan_eligible: false,
         qualified_for_restructure: false,
-        eligible_for_bonus_loan: false,
-        allow_grace_period: false,
+        allow_3mo_grace: false,
         group_id: "",
       })
     }
@@ -113,10 +113,9 @@ export function ClassificationDialogForm({
     const payload: CreateClassificationPayload = {
       code: values.code,
       name: values.name,
-      qualified_for_reloan: values.qualified_for_reloan ? 1 : 0,
       qualified_for_restructure: values.qualified_for_restructure ? 1 : 0,
-      eligible_for_bonus_loan: values.qualified_for_reloan ? 1 : 0,
-      allow_grace_period: values.allow_grace_period ? 1 : 0,
+      bonus_loan_eligible: values.bonus_loan_eligible ? 1 : 0,
+      allow_3mo_grace: values.allow_3mo_grace ? 1 : 0,
       branch_id: branch_id,
       group_id: values.group_id,
     }
@@ -134,10 +133,9 @@ export function ClassificationDialogForm({
     const payload: UpdateClassificationPayload = {
       code: values.code,
       name: values.name,
-      qualified_for_reloan: values.qualified_for_reloan ? 1 : 0,
       qualified_for_restructure: values.qualified_for_restructure ? 1 : 0,
-      eligible_for_bonus_loan: values.eligible_for_bonus_loan ? 1 : 0,
-      allow_grace_period: values.allow_grace_period ? 1 : 0,
+      bonus_loan_eligible: values.bonus_loan_eligible ? 1 : 0,
+      allow_3mo_grace: values.allow_3mo_grace ? 1 : 0,
       branch_id: branch_id,
       group_id: values.group_id,
     }
@@ -247,7 +245,7 @@ export function ClassificationDialogForm({
               <FormField
                 disabled={creationHandler.isPending || editingHandler.isPending}
                 control={form.control}
-                name="qualified_for_reloan"
+                name="qualified_for_restructure"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
@@ -257,7 +255,7 @@ export function ClassificationDialogForm({
                       </p>
                     </div>
                     <FormControl>
-                      <Switch checked={!field.value} onCheckedChange={(checked) => field.onChange(!checked)} />
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
                     </FormControl>
                   </FormItem>
                 )}
@@ -266,7 +264,7 @@ export function ClassificationDialogForm({
               <FormField
                 disabled={creationHandler.isPending || editingHandler.isPending}
                 control={form.control}
-                name="eligible_for_bonus_loan"
+                name="bonus_loan_eligible"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
@@ -285,7 +283,7 @@ export function ClassificationDialogForm({
               <FormField
                 disabled={creationHandler.isPending || editingHandler.isPending}
                 control={form.control}
-                name="allow_grace_period"
+                name="allow_3mo_grace"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">

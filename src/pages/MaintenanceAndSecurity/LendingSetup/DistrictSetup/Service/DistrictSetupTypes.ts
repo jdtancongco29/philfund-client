@@ -17,6 +17,7 @@ export interface District {
   code: string;
   division_id: string;
   division_name: string;
+  division: Division;
   branch_id: string;
   name: string;
   status: boolean;

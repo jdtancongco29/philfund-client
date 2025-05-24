@@ -1,5 +1,5 @@
 "use client"
-import debounce from 'lodash.debounce';
+import debounce from "lodash.debounce"
 import type React from "react"
 
 import { useState, useEffect, useMemo } from "react"
@@ -31,7 +31,7 @@ import { DataTableFilterDialog } from "./data-table-filter-dialog"
 import { Label } from "../ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover"
 import { Calendar } from "../ui/calendar"
-import { DateRange } from "react-day-picker"
+import type { DateRange } from "react-day-picker"
 import { cn } from "@/lib/utils"
 
 export type SearchDefinition = {
@@ -41,17 +41,17 @@ export type SearchDefinition = {
 }
 
 export type DisplayCondition<T> = {
-  value: T;
-  label: string;
-  className?: string;
-};
+  value: T
+  label: string
+  className?: string
+}
 
 export type ColumnDefinition<T> = {
   id: string
   header: string
   accessorKey: keyof T
   enableSorting?: boolean
-  displayCondition?: DisplayCondition<any>[];
+  displayCondition?: DisplayCondition<any>[]
   cell?: (item: T) => React.ReactNode
 }
 
@@ -61,6 +61,15 @@ export type FilterDefinition = {
   type: "select" | "input" | "date" | "dateRange"
   options?: { label: string; value: string }[]
   placeholder?: string
+}
+
+export type ActionButton<T> = {
+  label: string
+  icon?: React.ReactNode
+  onClick: (item: T) => void
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link"
+  className?: string
+  showInHeader?: boolean
 }
 
 export type DataTableProps<T> = {
@@ -88,6 +97,7 @@ export type DataTableProps<T> = {
   totalCount: number
   perPage: number
   pageNumber: number
+  actionButtons?: ActionButton<T>[]
 }
 
 export function DataTableV2<T>({
@@ -115,6 +125,7 @@ export function DataTableV2<T>({
   onPaginationChange,
   onRowCountChange,
   onSearchChange,
+  actionButtons = [],
 }: DataTableProps<T>) {
   // State for search, sorting, pagination, and filters
   const [searchQuery, setSearchQuery] = useState("")
@@ -123,7 +134,7 @@ export function DataTableV2<T>({
   const [currentPage, setCurrentPage] = useState(pageNumber ?? 1)
   const [rowsPerPage, setRowsPerPage] = useState(perPage ?? 10)
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({})
-  const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
+  const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false)
 
   // Debounced function
   const debouncedSearch = useMemo(
@@ -131,22 +142,22 @@ export function DataTableV2<T>({
       debounce((value) => {
         // Handle the debounced value (e.g., API call)
         if (onSearchChange) {
-          onSearchChange(value);
+          onSearchChange(value)
         }
       }, 500), // 500ms debounce delay
-    [onSearchChange]
-  );
+    [onSearchChange],
+  )
 
   // Watch searchQuery and call debounced function
   useEffect(() => {
-    debouncedSearch(searchQuery);
+    debouncedSearch(searchQuery)
     // Cleanup debounce on unmount
-    return () => debouncedSearch.cancel();
-  }, [searchQuery, debouncedSearch]);
+    return () => debouncedSearch.cancel()
+  }, [searchQuery, debouncedSearch])
 
   useEffect(() => {
     if (onPaginationChange) {
-      onPaginationChange(currentPage);
+      onPaginationChange(currentPage)
     }
   }, [currentPage, onPaginationChange])
 
@@ -158,12 +169,12 @@ export function DataTableV2<T>({
   useEffect(() => {
     if (onResetTable) {
       if (currentPage != 0) {
-        setCurrentPage(currentPage - 1);
+        setCurrentPage(currentPage - 1)
       } else {
-        setCurrentPage(1);
+        setCurrentPage(1)
       }
     }
-  }, [currentPage, onResetTable]);
+  }, [currentPage, onResetTable])
 
   // Handle sorting
   const handleSort = (columnId: string) => {
@@ -255,7 +266,7 @@ export function DataTableV2<T>({
   // Apply pagination
   const totalPages = Math.ceil(totalCount / rowsPerPage)
   // const paginatedData = sortedData.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
-  const paginatedData = data;
+  const paginatedData = data
 
   // Handle filter changes
   const handleFilterChange = (filterId: string, value: any) => {
@@ -297,6 +308,20 @@ export function DataTableV2<T>({
           {subtitle && <p className="text-muted-foreground">{subtitle}</p>}
         </div>
         <div className="flex items-center gap-2">
+          {actionButtons
+            ?.filter((btn) => btn.showInHeader)
+            ?.map((button, index) => (
+              <Button
+                key={`header-action-${index}`}
+                variant={button.variant || "outline"}
+                size="sm"
+                onClick={() => button.onClick(data[0])}
+                className={button.className}
+              >
+                {button.icon && <span className="mr-2">{button.icon}</span>}
+                {button.label}
+              </Button>
+            ))}
           {enablePdfExport && (
             <Button variant="outline" size="sm" onClick={handlePdfExport}>
               <FileIcon className="h-4 w-4" />
@@ -324,26 +349,24 @@ export function DataTableV2<T>({
           <div className="flex gap-2">
             <div className="flex gap-2 flex-1">
               <div>
-                {
-                  search?.enableSearch && (
-                    <>
-                      <p className="mb-2 text-sm">{search?.title}</p>
-                      <div className="relative">
-                        <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          placeholder={search?.placeholder}
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="pl-10 w-[300px]"
-                        />
-                      </div>
-                    </>
-                  )
-                }
+                {search?.enableSearch && (
+                  <>
+                    <p className="mb-2 text-sm">{search?.title}</p>
+                    <div className="relative">
+                      <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        placeholder={search?.placeholder}
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10 w-[300px]"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
 
-              {
-                enableFilter && filters.map((filter) => (
+              {enableFilter &&
+                filters.map((filter) => (
                   <div key={filter.id} className="space-y-2">
                     <Label className="text-sm font-medium">{filter.label}</Label>
                     {filter.type === "select" && (
@@ -435,23 +458,25 @@ export function DataTableV2<T>({
                       </Popover>
                     )}
                   </div>
-                ))
-              }
+                ))}
             </div>
-            {
-              enableFilter && (
-                <div className="flex gap-2 items-end">
-                  <Button variant="outline" size="default" onClick={() => setIsFilterDialogOpen(true)} className="cursor-pointer">
-                    <FilterIcon className="h-4 w-4" />
-                    <span className="">Filter</span>
-                  </Button>
-                  <Button variant="outline" size="default" onClick={resetFilters} className="cursor-pointer">
-                    <XIcon className="h-4 w-4" />
-                    <span className="">Reset</span>
-                  </Button>
-                </div>
-              )
-            }
+            {enableFilter && (
+              <div className="flex gap-2 items-end">
+                <Button
+                  variant="outline"
+                  size="default"
+                  onClick={() => setIsFilterDialogOpen(true)}
+                  className="cursor-pointer"
+                >
+                  <FilterIcon className="h-4 w-4" />
+                  <span className="">Filter</span>
+                </Button>
+                <Button variant="outline" size="default" onClick={resetFilters} className="cursor-pointer">
+                  <XIcon className="h-4 w-4" />
+                  <span className="">Reset</span>
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -529,14 +554,16 @@ export function DataTableV2<T>({
                   </div>
                 </TableHead>
               ))}
-              {(onEdit || onDelete) && <TableHead className="w-[100px] text-right"></TableHead>}
+              {(onEdit || onDelete || actionButtons?.length > 0) && (
+                <TableHead className="w-[100px] text-right"></TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
             {onLoading ? (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length + (onEdit || onDelete ? 1 : 0)}
+                  colSpan={columns.length + (onEdit || onDelete || actionButtons?.length > 0 ? 1 : 0)}
                   className="text-center py-4"
                 >
                   Loading Data...
@@ -544,7 +571,10 @@ export function DataTableV2<T>({
               </TableRow>
             ) : paginatedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length + (onEdit || onDelete ? 1 : 0)} className="text-center py-4">
+                <TableCell
+                  colSpan={columns.length + (onEdit || onDelete || actionButtons?.length > 0 ? 1 : 0)}
+                  className="text-center py-4"
+                >
                   No data found.
                 </TableCell>
               </TableRow>
@@ -554,25 +584,37 @@ export function DataTableV2<T>({
                   {columns.map((column) => (
                     <TableCell key={`${String(item[idField])}-${column.id}`}>
                       {(() => {
-                        const value = item[column.accessorKey];
+                        const value = item[column.accessorKey]
 
                         // Find matching display condition
-                        const match = column.displayCondition?.find(
-                          (condition) => condition.value === value
-                        );
+                        const match = column.displayCondition?.find((condition) => condition.value === value)
 
-                        const label = match?.label ?? String(value ?? "");
-                        const className = match?.className;
+                        const label = match?.label ?? String(value ?? "")
+                        const className = match?.className
 
-                        const content = column.cell ? column.cell(item) : label;
+                        const content = column.cell ? column.cell(item) : label
 
-                        return className ? <span className={className}>{content}</span> : content;
+                        return className ? <span className={className}>{content}</span> : content
                       })()}
                     </TableCell>
                   ))}
-                  {(onEdit || onDelete) && (
+                  {(onEdit || onDelete || actionButtons?.length > 0) && (
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end gap-1">
+                        {actionButtons
+                          ?.filter((btn) => !btn.showInHeader)
+                          ?.map((button, index) => (
+                            <Button
+                              key={`row-action-${index}`}
+                              variant={button.variant || "ghost"}
+                              size="icon"
+                              onClick={() => button.onClick(item)}
+                              className={button.className}
+                            >
+                              {button.icon || <span className="text-xs">{button.label.charAt(0)}</span>}
+                              <span className="sr-only">{button.label}</span>
+                            </Button>
+                          ))}
                         {onEdit && (
                           <Button variant="ghost" size="icon" onClick={() => onEdit(item)}>
                             <PencilIcon className="h-4 w-4" />
@@ -580,8 +622,7 @@ export function DataTableV2<T>({
                           </Button>
                         )}
                         {onDelete && (
-                          <Button variant="ghost" size="icon" onClick={() => onDelete(item)
-                          }>
+                          <Button variant="ghost" size="icon" onClick={() => onDelete(item)}>
                             <TrashIcon className="h-4 w-4 text-destructive" />
                             <span className="sr-only">Delete</span>
                           </Button>
@@ -597,8 +638,7 @@ export function DataTableV2<T>({
       </div>
 
       {/* Pagination */}
-      {
-        !onLoading &&
+      {!onLoading && (
         <div className="flex items-center justify-end gap-6">
           <div className="flex items-center gap-2">
             <p className="text-sm text-muted-foreground">Rows per page</p>
@@ -606,7 +646,7 @@ export function DataTableV2<T>({
               value={String(rowsPerPage)}
               onValueChange={(value) => {
                 setRowsPerPage(Number(value))
-                setCurrentPage(1);
+                setCurrentPage(1)
                 if (onRowCountChange) {
                   onRowCountChange(Number(value))
                 }
@@ -672,7 +712,7 @@ export function DataTableV2<T>({
             </div>
           </div>
         </div>
-      }
+      )}
       {/* Filter Dialog */}
       <DataTableFilterDialog
         open={isFilterDialogOpen}

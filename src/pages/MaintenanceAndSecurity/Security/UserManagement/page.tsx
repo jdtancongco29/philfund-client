@@ -1,10 +1,10 @@
 import MainLayout from '@/components/layout/MainLayout'
-import UserList from './UserList'
+import { UserManagementTable } from './UserManagementTable'
 
 function UserManagementPage() {
   return (
     <MainLayout>
-      <UserList />
+      <UserManagementTable />
     </MainLayout>
   )
 }

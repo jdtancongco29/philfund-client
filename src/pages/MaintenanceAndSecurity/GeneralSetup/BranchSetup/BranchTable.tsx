@@ -1,236 +1,3 @@
-// "use client"
-
-// import { useState } from "react"
-// import {
-//   ArrowUpDown,
-//   ChevronFirst,
-//   ChevronLast,
-//   ChevronLeft,
-//   ChevronRight,
-//   FileText,
-//   Pencil,
-//   Plus,
-//   Search,
-//   Table2,
-//   Trash2,
-// } from "lucide-react"
-// import { Input } from "@/components/ui/input"
-// import { Button } from "@/components/ui/button"
-// import { Badge } from "@/components/ui/badge"
-// import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-// // import { AddBranch } from "./AddBranch"
-
-// interface Branch {
-//   code: string
-//   name: string
-//   city: string
-//   departments: string
-//   departmentCount: string
-//   status: "Active" | "Inactive"
-// }
-
-// export default function BranchTable() {
-//   const [searchQuery, setSearchQuery] = useState("")
-//   const [rowsPerPage, setRowsPerPage] = useState("10")
-//   const [addDialogOpen, setAddDialogOpen] = useState(false)
-//   // Sample data
-//   const branches: Branch[] = [
-//     {
-//       code: "MAIN",
-//       name: "Main Branch",
-//       city: "Makati City",
-//       departments: "Department 1",
-//       departmentCount: "2+",
-//       status: "Active",
-//     },
-//     {
-//       code: "NORTH",
-//       name: "Main Branch",
-//       city: "Makati City",
-//       departments: "Department 1",
-//       departmentCount: "2+",
-//       status: "Active",
-//     },
-//     {
-//       code: "SOUTH",
-//       name: "Main Branch",
-//       city: "Makati City",
-//       departments: "Department 1",
-//       departmentCount: "2+",
-//       status: "Active",
-//     },
-//     {
-//       code: "EAST",
-//       name: "Main Branch",
-//       city: "Makati City",
-//       departments: "Department 1",
-//       departmentCount: "2+",
-//       status: "Active",
-//     },
-//     {
-//       code: "WEST",
-//       name: "Main Branch",
-//       city: "Makati City",
-//       departments: "Department 1",
-//       departmentCount: "2+",
-//       status: "Inactive",
-//     },
-//     {
-//       code: "MAIN",
-//       name: "Main Branch",
-//       city: "Makati City",
-//       departments: "Department 1",
-//       departmentCount: "2+",
-//       status: "Inactive",
-//     },
-//   ]
-
-//   return (
-//     <div className="space-y-4">
-//       <div className="flex items-center justify-between">
-//         <h1 className="text-2xl font-bold">Branch List</h1>
-//         <div className="flex items-center gap-2">
-//           <Button variant="outline" size="sm">
-//             <FileText className="mr-2 h-4 w-4" />
-//             PDF
-//           </Button>
-//           <Button variant="outline" size="sm">
-//             <Table2 className="mr-2 h-4 w-4" />
-//             CSV
-//           </Button>
-//           <Button size="sm" onClick={() => setAddDialogOpen(true)} className="cursor-pointer">
-//             <Plus className="h-4 w-4" />
-//             New
-//           </Button>
-//         </div>
-//       </div>
-
-//       <div>
-//         <h3 className="mb-2 font-medium">Search</h3>
-//         <div className="relative">
-//           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-//           <Input
-//             placeholder="Search user..."
-//             className="pl-8 w-[300px]"
-//             value={searchQuery}
-//             onChange={(e) => setSearchQuery(e.target.value)}
-//           />
-//         </div>
-//       </div>
-
-//       <div className="rounded-md border">
-//         <Table>
-//           <TableHeader>
-//             <TableRow>
-//               <TableHead className="w-[100px]">
-//                 <div className="flex items-center">
-//                   Code
-//                   <ArrowUpDown className="ml-2 h-4 w-4" />
-//                 </div>
-//               </TableHead>
-//               <TableHead>
-//                 <div className="flex items-center">
-//                   Name
-//                   <ArrowUpDown className="ml-2 h-4 w-4" />
-//                 </div>
-//               </TableHead>
-//               <TableHead>
-//                 <div className="flex items-center">
-//                   City/Municipality
-//                   <ArrowUpDown className="ml-2 h-4 w-4" />
-//                 </div>
-//               </TableHead>
-//               <TableHead>
-//                 <div className="flex items-center">
-//                   Departments
-//                   <ArrowUpDown className="ml-2 h-4 w-4" />
-//                 </div>
-//               </TableHead>
-//               <TableHead>
-//                 <div className="flex items-center">
-//                   Status
-//                   <ArrowUpDown className="ml-2 h-4 w-4" />
-//                 </div>
-//               </TableHead>
-//               <TableHead className="w-[100px]"></TableHead>
-//             </TableRow>
-//           </TableHeader>
-//           <TableBody>
-//             {branches.map((branch, index) => (
-//               <TableRow key={index}>
-//                 <TableCell>{branch.code}</TableCell>
-//                 <TableCell>{branch.name}</TableCell>
-//                 <TableCell>{branch.city}</TableCell>
-//                 <TableCell>
-//                   <div className="flex items-center gap-2">
-//                     <span>{branch.departments}</span>
-//                     <Badge variant="outline">{branch.departmentCount}</Badge>
-//                   </div>
-//                 </TableCell>
-//                 <TableCell>
-//                   <Badge
-//                     variant={branch.status === "Active" ? "default" : "destructive"}
-//                     className={`rounded-full ${branch.status === "Active" ? "bg-emerald-500 hover:bg-emerald-600" : ""}`}
-//                   >
-//                     {branch.status}
-//                   </Badge>
-//                 </TableCell>
-//                 <TableCell>
-//                   <div className="flex justify-end gap-2">
-//                     <Button variant="ghost" size="icon">
-//                       <Pencil className="h-4 w-4" />
-//                     </Button>
-//                     <Button variant="ghost" size="icon">
-//                       <Trash2 className="h-4 w-4 text-destructive" />
-//                     </Button>
-//                   </div>
-//                 </TableCell>
-//               </TableRow>
-//             ))}
-//           </TableBody>
-//         </Table>
-//       </div>
-
-//       <div className="flex items-center justify-end gap-8">
-//         <div className="flex items-center gap-2">
-//           <span className="text-sm text-muted-foreground">Rows per page</span>
-//           <Select value={rowsPerPage} onValueChange={setRowsPerPage}>
-//             <SelectTrigger className="h-8 w-[70px]">
-//               <SelectValue placeholder="10" />
-//             </SelectTrigger>
-//             <SelectContent>
-//               <SelectItem value="10">10</SelectItem>
-//               <SelectItem value="20">20</SelectItem>
-//               <SelectItem value="50">50</SelectItem>
-//               <SelectItem value="100">100</SelectItem>
-//             </SelectContent>
-//           </Select>
-//         </div>
-
-//         <div className="flex items-center gap-1">
-//           <span className="text-sm text-muted-foreground">Page 1 of 10</span>
-//           <div className="flex items-center">
-//             <Button variant="outline" size="icon" className="h-8 w-8">
-//               <ChevronFirst className="h-4 w-4" />
-//             </Button>
-//             <Button variant="outline" size="icon" className="h-8 w-8">
-//               <ChevronLeft className="h-4 w-4" />
-//             </Button>
-//             <Button variant="outline" size="icon" className="h-8 w-8">
-//               <ChevronRight className="h-4 w-4" />
-//             </Button>
-//             <Button variant="outline" size="icon" className="h-8 w-8">
-//               <ChevronLast className="h-4 w-4" />
-//             </Button>
-//           </div>
-//         </div>
-//       </div>
-//       {/* <AddBranch open={addDialogOpen} onOpenChange={setAddDialogOpen} /> */}
-//     </div>
-//   )
-// }
-
 "use client"
 
 import { useEffect, useState } from "react"
@@ -258,85 +25,62 @@ interface Branch {
   status: boolean
 }
 
-
-
 export function BranchTable() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [branches, setBranches] = useState<Branch[]>([])
   const [loading, setLoading] = useState(true)
-  const [reset] = useState(false)
-  const [selectedBranch] = useState<FormValues | null>(null)
-  // const [selectedBranchId, setSelectedBranchId] = useState<string>("")
+  const [reset, setReset] = useState(false)
+  const [selectedBranch, setSelectedBranch] = useState<FormValues | null>(null)
+  const [selectedBranchId, setSelectedBranchId] = useState<string>("")
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [branchToDeleteId, setBranchToDeleteId] = useState<string>("")
   const [branchToDelete, setBranchToDelete] = useState<string>("null")
   const [onResetTable, setOnResetTable] = useState(false)
+  const [departments, setDepartments] = useState<DepartmentItems[]>([])
+
 
   const fetchBranches = async () => {
     setLoading(true);
     try {
-      // const response = await apiRequest<{ data: { branches: any[] } }>(
-      //   'get',
-      //   '/branch/',
-      //   null,
-      //   {
-      //     useAuth: true,
-      //     useBranchId: true,
-      //   }
-      // );
-      // setBranches(response.data.data.branches);
-      setBranches([
+      const response = await apiRequest<{ data: { branches: any[] } }>(
+        'get',
+        '/branch/',
+        null,
         {
-          id: "ffa12bf7-0766-4b32-8a39-e8c4d3e9e884",
-          code: "002",
-          name: "Branch 2",
-          email: "branch2@gmail.com",
-          address: "Zone 1 carmen cdo",
-          contact: "09381726121",
-          city: "Cagayan de Oro City",
-          status: true,
-          departments: [
-            {
-              id: "a5513ab9-8491-41ba-95ff-8f1b4d62070f",
-              name: "Accounting"
-            },
-            {
-              id: "fd522940-8a26-45d7-b8d6-c1dd555dbe2f",
-              name: "AGH"
-            }
-          ]
-        },
-        {
-          id: "ffa12bf7-0766-4b32-8a39-e8c4d3e9e885",
-          code: "003",
-          name: "Branch 3",
-          email: "branch3@gmail.com",
-          address: "Zone 1 carmen cdo",
-          contact: "09381726121",
-          city: "Cagayan de Oro City",
-          status: false,
-          departments: [
-            {
-              id: "a5513ab9-8491-41ba-95ff-8f1b4d62071f",
-              name: "Department 1"
-            },
-            {
-              id: "fd522940-8a26-45d7-b8d6-c1dd555dbe3f",
-              name: "Department 2"
-            },
-            {
-              id: "fd522940-8a26-45d7-b8d6-c1dd555dbe4f",
-              name: "Department 3"
-            }
-          ]
+          useAuth: true,
+          useBranchId: true,
         }
-      ])
+      );
+      setBranches(response.data.data.branches);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
+
+  const fetchDepartment = async () => {
+    try {
+      const response = await apiRequest<{ data: { departments: any[] } }>(
+        'get',
+        '/department/',
+        null,
+        {
+          useAuth: true,
+          useBranchId: true,
+        }
+      );
+
+      const departmentData = response.data.data.departments.map((dept: any) => ({
+        id: dept.id,
+        name: dept.name,
+      }));
+      setDepartments(departmentData);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const resetTable = () => {
     setOnResetTable(true);
     setTimeout(() => setOnResetTable(false), 100)
@@ -422,9 +166,9 @@ export function BranchTable() {
   };
 
   // Handle edit
-  const handleEdit = () => {
-    // setSelectedDepartment(department)
-    // setSelectedDepartmentId(department.id)
+  const handleEdit = (branch: Branch) => {
+    setSelectedBranch(branch)
+    setSelectedBranchId(branch.id)
     setDialogOpen(true)
   }
 
@@ -471,10 +215,16 @@ export function BranchTable() {
 
   // Handle new
   const handleNew = () => {
-    // setReset(false)
-    // setSelectedDepartment(null)
-    // setSelectedDepartmentId("")
+    fetchDepartment();
+    setReset(false)
+    setSelectedBranch(null)
+    setSelectedBranchId("")
     setDialogOpen(true)
+  }
+
+  function sanitizeString(str: string): string {
+    if (typeof str !== 'string') return str;
+    return str.normalize('NFC').replace(/[^\x00-\x7F]/g, '');
   }
   // CREATE or Update
   const handleSaveBranch = async (values: {
@@ -487,51 +237,45 @@ export function BranchTable() {
     departments: { id: string; name: string }[];
     status: boolean;
   }) => {
-    console.log(values);
-    // try {
-    //   const apiUrl = selectedDepartment
-    //   ? `${API_URL}/department/${selectedDepartmentId}`
-    //   : `${API_URL}/department/`;
-    //   const response = await fetch(apiUrl, {
-    //     method: selectedDepartmentId ? 'PUT' : 'POST',
-    //     headers: {
-    //       'Content-Type': 'application/json',
-    //       Accept: 'application/json',
-    //       Authorization: `Bearer ${token}`,
-    //     },
-    //     body: JSON.stringify({
-    //       code: values.code,
-    //       name: values.name,
-    //       status: values.status,
-    //     }),
-    //   });
+    try {
+      const method = selectedBranchId ? 'put' : 'post';
+      const endpoint = selectedBranchId ? `/branch/${selectedBranchId}` : '/branch';
+      const payloadData = {
+        code: sanitizeString(values.code),
+        name: sanitizeString(values.name),
+        email: sanitizeString(values.email),
+        address: sanitizeString(values.address),
+        contact: sanitizeString(values.contact),
+        city: sanitizeString(values.city),
+        departments: values.departments?.map((dept: { id: string }) => dept.id) || [],
+        status: values.status,
+      };
+      const response = await apiRequest<{ data: { name: string } }>(
+        method,
+        endpoint,
+        payloadData,
+        {
+          useAuth: true,
+          useBranchId: true,
+        }
+      );
 
-    //   if (!response.ok) {
-    //     throw new Error('Failed to add department');
-    //   }
-
-    //   const data = await response.json();
-
-    //   selectedDepartmentId ? (
-    //     toast.success(`Department Updated`, {
-    //       description: `${data.data.name} has been successfully updated.`,
-    //       icon: <CircleCheck className="h-5 w-5" />,
-    //       duration: 5000,
-    //     })
-    //   ) : (
-    //     toast.success(`Department Added`, {
-    //       description: `${data.data.name} has been successfully added.`,
-    //       icon: <CircleCheck className="h-5 w-5" />,
-    //       duration: 5000,
-    //     })
-    //   )
-    //   setReset(true);
-    //   fetchDepartments();
-    // } catch (err) {
-    //   console.error('Error adding department:', err);
-    // } finally {
-    //   setDialogOpen(false);
-    // }
+      toast.success(
+        selectedBranchId ? 'Branch Updated' : 'Branch Added',
+        {
+          description: `${response.data.data.name} has been successfully ${selectedBranchId ? 'updated' : 'added'}.`,
+          icon: <CircleCheck className="h-5 w-5" />,
+          duration: 5000,
+        }
+      );
+      setReset(true)
+      resetTable()
+      fetchBranches()
+    } catch (err) {
+      console.error('Error adding branch:', err);
+    } finally {
+      setDialogOpen(false);
+    }
   };
 
   return (
@@ -561,6 +305,7 @@ export function BranchTable() {
         onSubmit={handleSaveBranch}
         onReset={reset}
         initialValues={selectedBranch}
+        departments={departments}
       />
 
       <DeleteConfirmationDialog

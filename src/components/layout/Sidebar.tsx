@@ -123,8 +123,8 @@ export default function Sidebar() {
         >
           {sectionToRender.items.map((item) => (
             <AccordionItem key={item.value} value={item.value} className="border-none">
-              <AccordionTrigger className="p-1.5">{item.title}</AccordionTrigger>
-              <AccordionContent className="flex flex-col gap-1 pb-0">
+              <AccordionTrigger className="p-1.5 pb-2">{item.title}</AccordionTrigger>
+              <AccordionContent className="flex flex-col gap-1 pb-0 pl-3">
                 {item.links.map((link) => (
                   <NavLink
                     key={link.path}

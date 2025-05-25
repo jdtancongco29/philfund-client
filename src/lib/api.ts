@@ -6,6 +6,7 @@ interface ApiOptions {
   useAuth?: boolean; // Enables Authorization: Bearer <token>
   useBranchId?: boolean; // Enables X-Branch-Id from cookie
   customHeaders?: Record<string, string>; // Custom headers
+  responseType?: XMLHttpRequestResponseType
 }
 
 // Get token from cookies

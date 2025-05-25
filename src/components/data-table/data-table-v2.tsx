@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import { format } from "date-fns"
 import { DataTableFilterDialog } from "./data-table-filter-dialog"
 // import { DataTableFilters } from "./data-table-filters"
@@ -70,6 +71,16 @@ export type ActionButton<T> = {
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link"
   className?: string
   showInHeader?: boolean
+  requiresSelection?: boolean // New: indicates if button requires selected items
+}
+
+export type BulkActionButton<T> = {
+  label: string
+  icon?: React.ReactNode
+  onClick: (selectedItems: T[]) => void
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link"
+  className?: string
+  disabled?: boolean
 }
 
 export type DataTableProps<T> = {
@@ -87,17 +98,21 @@ export type DataTableProps<T> = {
   enablePdfExport?: boolean
   enableCsvExport?: boolean
   enableFilter?: boolean
+  enableSelection?: boolean // New: enable/disable selection functionality
   onPdfExport?: () => void
   onCsvExport?: () => void
   onPaginationChange?: (page: number) => void
   onRowCountChange?: (rows: number) => void
   onSearchChange?: (search: string) => void
+  onSelectionChange?: (selectedItems: T[]) => void // New: callback for selection changes
   onLoading?: boolean
   onResetTable?: boolean
   totalCount: number
   perPage: number
   pageNumber: number
   actionButtons?: ActionButton<T>[]
+  bulkActionButtons?: BulkActionButton<T>[] // New: bulk action buttons
+  selectedItems?: T[] // New: externally controlled selection
 }
 
 export function DataTableV2<T>({
@@ -115,6 +130,7 @@ export function DataTableV2<T>({
   enablePdfExport = true,
   enableCsvExport = true,
   enableFilter = true,
+  enableSelection = false,
   onPdfExport,
   onCsvExport,
   onLoading = false,
@@ -125,7 +141,10 @@ export function DataTableV2<T>({
   onPaginationChange,
   onRowCountChange,
   onSearchChange,
+  onSelectionChange,
   actionButtons = [],
+  bulkActionButtons = [],
+  selectedItems: externalSelectedItems,
 }: DataTableProps<T>) {
   // State for search, sorting, pagination, and filters
   const [searchQuery, setSearchQuery] = useState("")
@@ -135,6 +154,13 @@ export function DataTableV2<T>({
   const [rowsPerPage, setRowsPerPage] = useState(perPage ?? 10)
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({})
   const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false)
+
+  // Selection state
+  const [internalSelectedItems, setInternalSelectedItems] = useState<T[]>([])
+
+  // Use external selection if provided, otherwise use internal
+  const selectedItems = externalSelectedItems ?? internalSelectedItems
+  const setSelectedItems = onSelectionChange ?? setInternalSelectedItems
 
   // Debounced function
   const debouncedSearch = useMemo(
@@ -185,6 +211,30 @@ export function DataTableV2<T>({
       setSortDirection("asc")
     }
   }
+
+  // Selection handlers
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedItems([...data])
+    } else {
+      setSelectedItems([])
+    }
+  }
+
+  const handleSelectItem = (item: T, checked: boolean) => {
+    if (checked) {
+      setSelectedItems([...selectedItems, item])
+    } else {
+      setSelectedItems(selectedItems.filter((selectedItem) => selectedItem[idField] !== item[idField]))
+    }
+  }
+
+  const isItemSelected = (item: T) => {
+    return selectedItems.some((selectedItem) => selectedItem[idField] === item[idField])
+  }
+
+  const isAllSelected = data.length > 0 && selectedItems.length === data.length
+  const isIndeterminate = selectedItems.length > 0 && selectedItems.length < data.length
 
   // Apply search filter
   const filteredBySearch = data.filter((item) => {
@@ -239,33 +289,8 @@ export function DataTableV2<T>({
     })
   })
 
-  // Apply sorting
-  // const sortedData = [...filteredData].sort((a, b) => {
-  //   if (!sortColumn) return 0
-
-  //   const column = columns.find((col) => col.id === sortColumn)
-  //   if (!column) return 0
-
-  //   const aValue = a[column.accessorKey]
-  //   const bValue = b[column.accessorKey]
-
-  //   if (aValue === bValue) return 0
-
-  //   const modifier = sortDirection === "asc" ? 1 : -1
-
-  //   if (aValue === null || aValue === undefined) return 1 * modifier
-  //   if (bValue === null || bValue === undefined) return -1 * modifier
-
-  //   if (typeof aValue === "string" && typeof bValue === "string") {
-  //     return aValue.localeCompare(bValue) * modifier
-  //   }
-
-  //   return (aValue < bValue ? -1 : 1) * modifier
-  // })
-
   // Apply pagination
   const totalPages = Math.ceil(totalCount / rowsPerPage)
-  // const paginatedData = sortedData.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
   const paginatedData = data
 
   // Handle filter changes
@@ -280,6 +305,9 @@ export function DataTableV2<T>({
   const resetFilters = () => {
     setActiveFilters({})
     setSearchQuery("")
+    if (enableSelection) {
+      setSelectedItems([])
+    }
   }
 
   // Export handlers
@@ -343,6 +371,29 @@ export function DataTableV2<T>({
         </div>
       </div>
 
+      {/* Selection Summary and Bulk Actions */}
+      {enableSelection && (
+        <div className="flex items-center justify-end">
+          {selectedItems.length > 0 && bulkActionButtons.length > 0 && (
+            <div className="flex items-center gap-2">
+              {bulkActionButtons.map((button, index) => (
+                <Button
+                  key={`bulk-action-${index}`}
+                  variant={button.variant || "outline"}
+                  size="sm"
+                  onClick={() => button.onClick(selectedItems)}
+                  disabled={button.disabled || selectedItems.length === 0}
+                  className={button.className}
+                >
+                  {button.icon && <span className="mr-2">{button.icon}</span>}
+                  {button.label}
+                </Button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Search and Filters */}
       <div className="space-y-4">
         <div>
@@ -374,7 +425,7 @@ export function DataTableV2<T>({
                         value={activeFilters[filter.id] || ""}
                         onValueChange={(value) => handleFilterChange(filter.id, value)}
                       >
-                        <SelectTrigger id={filter.id}>
+                        <SelectTrigger id={filter.id} className="w-full">
                           <SelectValue placeholder={filter.placeholder} />
                         </SelectTrigger>
                         <SelectContent>
@@ -394,6 +445,7 @@ export function DataTableV2<T>({
                         value={activeFilters[filter.id] || ""}
                         onChange={(e) => handleFilterChange(filter.id, e.target.value)}
                         placeholder={filter.placeholder || `Enter ${filter.label}`}
+                        className="w-full"
                       />
                     )}
 
@@ -531,6 +583,22 @@ export function DataTableV2<T>({
         <Table>
           <TableHeader>
             <TableRow>
+              {enableSelection && (
+                <TableHead className="w-[50px]">
+                  <Checkbox
+                    checked={isAllSelected}
+                    ref={(el) => {
+                      if (el) {
+                        const checkbox = el.querySelector('input[type="checkbox"]') as HTMLInputElement
+                        if (checkbox) {
+                          checkbox.indeterminate = isIndeterminate
+                        }
+                      }
+                    }}
+                    onCheckedChange={handleSelectAll}
+                  />
+                </TableHead>
+              )}
               {columns.map((column) => (
                 <TableHead key={column.id} className={column.enableSorting === false ? "" : "cursor-pointer"}>
                   <div
@@ -563,7 +631,11 @@ export function DataTableV2<T>({
             {onLoading ? (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length + (onEdit || onDelete || actionButtons?.length > 0 ? 1 : 0)}
+                  colSpan={
+                    columns.length +
+                    (enableSelection ? 1 : 0) +
+                    (onEdit || onDelete || actionButtons?.length > 0 ? 1 : 0)
+                  }
                   className="text-center py-4"
                 >
                   Loading Data...
@@ -572,7 +644,11 @@ export function DataTableV2<T>({
             ) : paginatedData.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length + (onEdit || onDelete || actionButtons?.length > 0 ? 1 : 0)}
+                  colSpan={
+                    columns.length +
+                    (enableSelection ? 1 : 0) +
+                    (onEdit || onDelete || actionButtons?.length > 0 ? 1 : 0)
+                  }
                   className="text-center py-4"
                 >
                   No data found.
@@ -581,6 +657,14 @@ export function DataTableV2<T>({
             ) : (
               paginatedData.map((item) => (
                 <TableRow key={String(item[idField])}>
+                  {enableSelection && (
+                    <TableCell>
+                      <Checkbox
+                        checked={isItemSelected(item)}
+                        onCheckedChange={(checked) => handleSelectItem(item, checked as boolean)}
+                      />
+                    </TableCell>
+                  )}
                   {columns.map((column) => (
                     <TableCell key={`${String(item[idField])}-${column.id}`}>
                       {(() => {

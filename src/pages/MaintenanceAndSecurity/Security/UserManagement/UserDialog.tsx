@@ -214,15 +214,7 @@ export function UserDialog({ item, open, isEditing, focusPassword = false, onOpe
       disbursement_approver: false,
       branch_opener: false,
       new_client_approver: false,
-      access_schedules: [
-        { day_of_week: 1, start_time: "08:00:00", end_time: "17:00:00" },
-        { day_of_week: 2, start_time: "08:00:00", end_time: "17:00:00" },
-        { day_of_week: 3, start_time: "08:00:00", end_time: "17:00:00" },
-        { day_of_week: 4, start_time: "08:00:00", end_time: "17:00:00" },
-        { day_of_week: 5, start_time: "08:00:00", end_time: "17:00:00" },
-        { day_of_week: 6, start_time: undefined, end_time: undefined },
-        { day_of_week: 0, start_time: undefined, end_time: undefined },
-      ],
+      access_schedules: [],
     },
   })
 

@@ -1,5 +1,5 @@
 import MainLayout from "@/components/layout/MainLayout"
-import { BonusLoanTable } from "./bonus-loan-table"
+import { BonusLoanTable } from "./BonusLoanTable"
 
 function BonusLoanSetupPage() {
   return (

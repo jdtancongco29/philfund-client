@@ -17,6 +17,11 @@
   --destructive: #EF4444;
 }
 
+html, body {
+  height: 100%;
+  overflow: hidden; /* <-- can break inner scroll */
+}
+
 .logo {
   height: 6em;
   padding: 1.5em;

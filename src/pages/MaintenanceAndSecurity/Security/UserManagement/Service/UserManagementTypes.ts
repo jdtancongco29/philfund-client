@@ -51,7 +51,7 @@ export interface GetAllUserResponse {
   pagination: PaginationInfo
 }
 
-interface Branch {
+export interface Branch {
   id: string
   code: string
   name: string

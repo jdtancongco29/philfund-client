@@ -1,10 +1,10 @@
-import ComingSoon from '@/components/coming-soon'
 import MainLayout from '@/components/layout/MainLayout'
+import { ActivityLogTable } from './ActivityLogTable'
 
 function ActivityLogsPage() {
   return (
     <MainLayout>
-        <ComingSoon />
+        <ActivityLogTable />
     </MainLayout>
   )
 }

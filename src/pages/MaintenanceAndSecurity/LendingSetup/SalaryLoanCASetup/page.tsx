@@ -1,7 +1,7 @@
 import MainLayout from "@/components/layout/MainLayout"
-import { CashAdvanceTable } from "./cash-advance-table"
+import { CashAdvanceTable } from "./CashAdvanceTable"
 
-function CashAdvanceSetupPage() {
+function SalaryLoanCASetup() {
   return (
     <MainLayout>
       <CashAdvanceTable />
@@ -9,4 +9,4 @@ function CashAdvanceSetupPage() {
   )
 }
 
-export default CashAdvanceSetupPage
+export default SalaryLoanCASetup

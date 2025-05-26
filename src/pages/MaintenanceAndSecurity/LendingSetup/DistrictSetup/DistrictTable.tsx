@@ -168,6 +168,7 @@ export function DistrictTable() {
         onOpenChange={() => {
           setIsDialogOpen(false)
           setIsEditing(false)
+          setSelectedItem(null)
         }}
         onSubmit={onSubmit}
       />

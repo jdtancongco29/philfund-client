@@ -9,7 +9,6 @@ import type {
   UpdateGroupStatusPayload,
 } from "./GroupSetupTypes";
 import { toast } from "sonner";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { AxiosError } from "axios";
 
 // BorrowGroup Service

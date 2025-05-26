@@ -10,29 +10,28 @@ import { apiRequest } from "@/lib/api"
 
 interface ChartOfAccount {
   id: string
+  branch_id: string
   code: string
   name: string
-  description: string
-  major_classification: string
-  category: string
-  is_header: boolean
-  parent_id: string | null
-  is_contra: boolean
-  normal_balance: string
-  special_classification: string
-  status: boolean
 }
 
 interface COADialogProps {
   open: boolean
   onClose: () => void
   onSelect: (coa: ChartOfAccount) => void
+    branchId: string 
 }
 
-export function COADialog({ open, onClose, onSelect }: COADialogProps) {
+export function COADialog({ open, onClose, onSelect , branchId }: COADialogProps) {
   const [chartOfAccounts, setChartOfAccounts] = useState<ChartOfAccount[]>([])
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState("")
+useEffect(() => {
+    if (open && branchId) { // Only fetch if both open and branchId are available
+      fetchChartOfAccounts()
+    }
+  }, [open, branchId])
+
 
   useEffect(() => {
     if (open) {
@@ -43,16 +42,18 @@ export function COADialog({ open, onClose, onSelect }: COADialogProps) {
   const fetchChartOfAccounts = async () => {
     setLoading(true)
     try {
-      const response = await apiRequest<{ data: { chartOfAccounts: ChartOfAccount[] } }>(
+      const response = await apiRequest<{ data: { chart_of_accounts: ChartOfAccount[] } }>(
         "get",
-        "/coa",
+        "/branch/coas",
         null,
         {
           useAuth: true,
-          useBranchId: true,
+          customHeaders: {
+            'X-Branch-Id': branchId 
+          }
         }
       )
-      setChartOfAccounts(response.data.data.chartOfAccounts)
+      setChartOfAccounts(response.data.data.chart_of_accounts)
     } catch (error) {
       console.error("Error fetching chart of accounts:", error)
     } finally {
@@ -95,7 +96,7 @@ export function COADialog({ open, onClose, onSelect }: COADialogProps) {
                 }}
               >
                 <div className="font-semibold">{coa.code} - {coa.name}</div>
-                <div className="text-sm text-muted-foreground">{coa.category} | {coa.normal_balance}</div>
+                <div className="text-sm text-muted-foreground">Branch ID: {coa.branch_id}</div>
               </div>
             ))
           )}

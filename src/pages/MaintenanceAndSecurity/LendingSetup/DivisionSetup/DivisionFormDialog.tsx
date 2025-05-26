@@ -98,7 +98,8 @@ export function DivisionDialogForm({
     }
     try {
       await creationHandler.mutateAsync(payload)
-      queryClient.invalidateQueries({ queryKey: ["division-table"] })
+      await queryClient.invalidateQueries({ queryKey: ["division-table"] })
+      await queryClient.invalidateQueries({ queryKey: ["divisions-for-district"] })
       onSubmit()
       form.reset()
     } catch (errorData: unknown) {
@@ -124,7 +125,8 @@ export function DivisionDialogForm({
     }
     try {
       await editingHandler.mutateAsync(payload)
-      queryClient.invalidateQueries({ queryKey: ["division-table"] })
+      await queryClient.invalidateQueries({ queryKey: ["division-table"] })
+      await queryClient.invalidateQueries({ queryKey: ["divisions-for-district"] })
       onSubmit()
       form.reset()
     } catch (errorData: unknown) {

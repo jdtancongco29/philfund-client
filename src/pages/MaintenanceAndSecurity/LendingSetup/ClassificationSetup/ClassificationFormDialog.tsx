@@ -90,7 +90,7 @@ export function ClassificationDialogForm({
     if (item) {
       form.reset({
         code: item.code,
-        name: item.group.id,
+        name: item.name,
         bonus_loan_eligible: item.bonus_loan_eligible,
         qualified_for_restructure: item.qualified_for_restructure || false,
         eligible_for_bonus_loan: item.eligible_for_bonus_loan || false,

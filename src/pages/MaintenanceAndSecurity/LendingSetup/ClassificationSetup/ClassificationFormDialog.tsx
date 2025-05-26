@@ -162,7 +162,12 @@ export function ClassificationDialogForm({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(open) => {
+      onOpenChange(open)
+      if (!open) {
+        form.reset()
+      }
+    }}>
       <DialogContent className="sm:max-w-[500px] max-h-3/4 overflow-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">{isEditing ? "Edit" : "Add New"} Classification</DialogTitle>

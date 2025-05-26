@@ -288,6 +288,32 @@ export default function AddEditEntryDialog({
     }
   }
 
+  // Helper function to clear all branch-specific dynamic data
+  const clearBranchSpecificData = () => {
+    // Clear all items (COA selections are branch-specific)
+    setItems([])
+    
+    // Clear all user selections (users are branch-specific)
+    setPreparedBy(null)
+    setCheckedBy(null)
+    setApprovedBy(null)
+    
+    // Clear validation errors related to cleared data
+    setValidationErrors((prev) => {
+      const newErrors = { ...prev }
+      // Remove item-related errors
+      Object.keys(newErrors).forEach(key => {
+        if (key.startsWith('items') || 
+            key === 'prepared_by' || 
+            key === 'checked_by' || 
+            key === 'approved_by') {
+          delete newErrors[key]
+        }
+      })
+      return newErrors
+    })
+  }
+
   const fetchReferenceNumber = async () => {
     try {
       const response = await apiRequest("get", "/reference/number/?module_code=general_journal", null, {
@@ -324,8 +350,8 @@ export default function AddEditEntryDialog({
           if (dateStr) {
             // Convert from "2025-05-21T16:00:00.000000Z" to "2025-05-21"
             const date = new Date(dateStr)
-const formattedDate = date.toISOString().split("T")[0]
-setTransactionDate(formattedDate)
+            const formattedDate = date.toISOString().split("T")[0]
+            setTransactionDate(formattedDate)
           }
 
           setTransAmount(apiEntry.trans_amount || "")
@@ -378,20 +404,19 @@ setTransactionDate(formattedDate)
           setTransAmount(editingEntry.trans_amount || "")
 
           // Convert items to the format expected by the form
-const formattedItems =
-  editingEntry.items?.map((item) => ({
-    id: item.id,
-    coa_id: item.coa.id,
-    coa: {
-      id: item.coa.id,
-      code: item.coa.code,
-      name: item.coa.name,
-    },
-    debit: item.debit.toString(),
-    credit: item.credit.toString(),
-  })) || []
-setItems(formattedItems)
-
+          const formattedItems =
+            editingEntry.items?.map((item) => ({
+              id: item.id,
+              coa_id: item.coa.id,
+              coa: {
+                id: item.coa.id,
+                code: item.coa.code,
+                name: item.coa.name,
+              },
+              debit: item.debit.toString(),
+              credit: item.credit.toString(),
+            })) || []
+          setItems(formattedItems)
 
           // Set users (you might need to fetch user details by ID)
           if (editingEntry.prepared_by) {
@@ -485,11 +510,11 @@ setItems(formattedItems)
       newItems[selectedItemIndex] = {
         ...newItems[selectedItemIndex],
         coa_id: coa.id,
-           coa: {
-        id: coa.id,
-        code: coa.code,
-        name: coa.name,
-      },
+        coa: {
+          id: coa.id,
+          code: coa.code,
+          name: coa.name,
+        },
       }
       setItems(newItems)
       setIsCOADialogOpen(false)
@@ -501,6 +526,13 @@ setItems(formattedItems)
   }
 
   const handleSelectBranch = (branch: Branch) => {
+    const isChangingBranch = selectedBranch && selectedBranch.id !== branch.id
+    
+    // If changing branch (not initial selection), clear branch-specific data
+    if (isChangingBranch) {
+      clearBranchSpecificData()
+    }
+    
     setSelectedBranch(branch)
     setBranchId(branch.id)
     clearFieldError("branch_id")
@@ -601,7 +633,7 @@ setItems(formattedItems)
       })
       return
     }
-  const formattedTransactionDate = transactionDate?.split("T")[0] || transactionDate;
+    const formattedTransactionDate = transactionDate?.split("T")[0] || transactionDate;
     if (
       name &&
       particulars &&
@@ -669,9 +701,9 @@ setItems(formattedItems)
       }
     }
   }
-const formattedDate = transactionDate
-  ? new Date(transactionDate).toISOString().slice(0, 10)
-  : "";
+  const formattedDate = transactionDate
+    ? new Date(transactionDate).toISOString().slice(0, 10)
+    : "";
   const handleClose = () => {
     resetForm()
     onClose()
@@ -747,10 +779,10 @@ const formattedDate = transactionDate
                   Reference ID <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                value={refId}
-                readOnly
-                placeholder="Reference ID"
-                className={hasFieldError("ref_id") ? "border-red-500" : ""}
+                  value={refId}
+                  readOnly
+                  placeholder="Reference ID"
+                  className={hasFieldError("ref_id") ? "border-red-500" : ""}
                 />
                 <ErrorMessage errors={getFieldErrors("ref_id")} />
               </div>
@@ -764,7 +796,7 @@ const formattedDate = transactionDate
                   } ${hasFieldError("branch_id") ? "border-red-500" : ""}`}
                   onClick={() => !isSubmitting && setIsBranchDialogOpen(true)}
                 >
-                  {selectedBranch ? selectedBranch.name : branchId}
+                  {selectedBranch ? selectedBranch.name : branchId ? branchId : "Select Branch"}
                 </div>
                 <ErrorMessage errors={getFieldErrors("branch_id")} />
               </div>
@@ -772,16 +804,16 @@ const formattedDate = transactionDate
                 <Label>
                   Transaction Date <span className="text-red-500">*</span>
                 </Label>
-               <Input
-  type="date"
-  value={formattedDate}
-  onChange={(e) => {
-    setTransactionDate(e.target.value)
-    clearFieldError("transaction_date")
-  }}
-  disabled={isSubmitting}
-  className={hasFieldError("transaction_date") ? "border-red-500" : ""}
-/>
+                <Input
+                  type="date"
+                  value={formattedDate}
+                  onChange={(e) => {
+                    setTransactionDate(e.target.value)
+                    clearFieldError("transaction_date")
+                  }}
+                  disabled={isSubmitting}
+                  className={hasFieldError("transaction_date") ? "border-red-500" : ""}
+                />
                 <ErrorMessage errors={getFieldErrors("transaction_date")} />
               </div>
             </div>

@@ -154,9 +154,11 @@ export function BorrowerGroupTable() {
         onCancel={() => {
           setSelectedItem(null);
         }}
-        isEditing={isEditing} onOpenChange={() => {
+        isEditing={isEditing}
+        onOpenChange={() => {
           setIsDialogOpen(false);
           setIsEditing(false);
+          setSelectedItem(null);
         }}
         onSubmit={onSubmit} />
     </>

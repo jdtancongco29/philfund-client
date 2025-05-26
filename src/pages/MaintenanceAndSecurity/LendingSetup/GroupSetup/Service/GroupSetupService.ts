@@ -115,9 +115,13 @@ export const GroupSetupService = {
         }
       );
       return response.data;
-    } catch (error: any) {
-      toast.error(error.response.data.message);
-      throw new Error(error.response.data.message);
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        throw error;
+      } else {
+        toast.error("Something went wrong");
+        throw new Error("Something went wrong");
+      }
     }
   },
 

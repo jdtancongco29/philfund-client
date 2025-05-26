@@ -77,7 +77,7 @@ export function DistrictDialogForm({
       form.reset({
         code: item.code,
         name: item.name,
-        division_id: item.division_id,
+        division_id: item.division.id,
       })
     } else {
       form.reset({

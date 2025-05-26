@@ -77,7 +77,7 @@ export function BorrowerClassificationTable() {
     {
       accessorKey: "bonus_loan_eligible",
       id: "bonus_loan_eligible",
-      header: "Eligible for Bonus Loan",
+      header: "Bonus Loan Eligible",
       cell: (row) => (
         <div className="flex justify-start">
           {row.bonus_loan_eligible ? (

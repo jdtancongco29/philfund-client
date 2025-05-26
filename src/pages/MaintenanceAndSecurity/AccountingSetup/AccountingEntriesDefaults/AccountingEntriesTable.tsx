@@ -20,6 +20,11 @@ import {
 } from "lucide-react"
 import AddNewEntryDialog from "./AddNewEntryDialog"
 
+interface Item {
+    id: number;
+    name: string;
+}
+
 // Mock data for entries
 const mockEntries = Array.from({ length: 20 }).map((_, i) => ({
     id: i + 1,
@@ -85,10 +90,10 @@ export default function AccountingEntriesTable() {
     const paginatedEntries = sortedEntries.slice(startIndex, startIndex + rowsPerPage)
 
     // Handle adding a new entry
-    const handleAddEntry = (entryData: { entryName: string; debateName: string; creditName: string }) => {
+    const handleAddEntry = (data: { name: string; particulars: string; transaction_amount: number; ref_id: string; items: Item[] }) => {
         const newEntry = {
-        id: entries.length + 1,
-        name: entryData.entryName,
+            id: entries.length + 1,
+            name: data.name,
         }
         setEntries([...entries, newEntry])
         setIsAddModalOpen(false)

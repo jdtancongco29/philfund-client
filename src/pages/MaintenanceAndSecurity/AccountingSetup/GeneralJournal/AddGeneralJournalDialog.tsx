@@ -12,8 +12,9 @@ import { Label } from '@/components/ui/label';
 import { AlertCircle, CircleCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiRequest } from '@/lib/api';
-
-
+import { BranchSelectionDialog } from './BranchSelectionDialog';
+import { BranchUserDialog } from './BranchUserDialog';
+import { COADialog } from './COADialog';
 
 interface ValidationErrors {
   [key: string]: string[];
@@ -28,6 +29,12 @@ interface Item {
   credit: string;
 }
 
+interface ChartOfAccount {
+  id: string
+  branch_id: string
+  code: string
+  name: string
+}
 
 interface AddNewEntryDialogProps {
   isOpen: boolean;
@@ -145,17 +152,17 @@ export default function AddNewEntryDialog({
   // Error state
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
 
-  const [, setIsCOADialogOpen] = useState(false);
-  const [, setSelectedItemIndex] = useState<number | null>(null);
+  const [isCOADialogOpen, setIsCOADialogOpen] = useState(false);
+  const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
 
   // User selection states
-  const [, setUserDialogOpen] = useState<"prepared" | "checked" | "approved" | null>(null);
+  const [userDialogOpen, setUserDialogOpen] = useState<"prepared" | "checked" | "approved" | null>(null);
   const [preparedBy, setPreparedBy] = useState<BranchUser | null>(null);
   const [checkedBy, setCheckedBy] = useState<BranchUser | null>(null);
   const [approvedBy, setApprovedBy] = useState<BranchUser | null>(null);
 
   // Branch selection states
-  const [, setIsBranchDialogOpen] = useState(false);
+  const [isBranchDialogOpen, setIsBranchDialogOpen] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
 
   // Helper function to get field errors
@@ -245,7 +252,42 @@ export default function AddNewEntryDialog({
     }
   };
 
+  const handleSelectCOA = (coa: ChartOfAccount) => {
+    if (selectedItemIndex !== null) {
+      const newItems = [...items];
+      newItems[selectedItemIndex] = {
+        ...newItems[selectedItemIndex],
+        coa_id: coa.id,
+        coa_name: coa.name,
+      };
+      setItems(newItems);
+      setIsCOADialogOpen(false);
+      
+      // Clear COA-related errors for this item
+      clearFieldError(`items.${selectedItemIndex}.coa_id`);
+      clearFieldError(`items.${selectedItemIndex}`);
+    }
+  };
 
+  const handleSelectBranch = (branch: Branch) => {
+    setSelectedBranch(branch);
+    setBranchId(branch.id);
+    clearFieldError('branch_id');
+  };
+
+  const handleUserSelect = (user: BranchUser) => {
+    if (userDialogOpen === "prepared") {
+      setPreparedBy(user);
+      clearFieldError('prepared_by');
+    } else if (userDialogOpen === "checked") {
+      setCheckedBy(user);
+      clearFieldError('checked_by');
+    } else if (userDialogOpen === "approved") {
+      setApprovedBy(user);
+      clearFieldError('approved_by');
+    }
+    setUserDialogOpen(null);
+  };
 
   const resetForm = () => {
     setName("");
@@ -683,9 +725,25 @@ const handleSubmit = async () => {
       </Dialog>
 
       {/* COA Dialog - Replace with your actual COA dialog component */}
-
+      <COADialog
+      open={isCOADialogOpen}
+      onClose={() => setIsCOADialogOpen(false)}
+      onSelect={handleSelectCOA}
+      branchId={branchId} // Pass the branchId prop
+    />
       {/* Branch Selection Dialog - Replace with your actual branch dialog component */}
-
+      <BranchSelectionDialog
+        open={isBranchDialogOpen}
+        onClose={() => setIsBranchDialogOpen(false)}
+        onSelect={handleSelectBranch}
+      />
+      
+      {/* Branch User Dialog - Replace with your actual user dialog component */}
+      <BranchUserDialog
+        open={!!userDialogOpen}
+        onClose={() => setUserDialogOpen(null)}
+        onSelect={handleUserSelect}
+      />
       
       {/* Branch info display */}
       {selectedBranch && (

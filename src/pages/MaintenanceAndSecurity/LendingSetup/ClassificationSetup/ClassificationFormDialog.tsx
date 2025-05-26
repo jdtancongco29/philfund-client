@@ -90,7 +90,7 @@ export function ClassificationDialogForm({
     if (item) {
       form.reset({
         code: item.code,
-        name: item.name,
+        name: item.group.id,
         bonus_loan_eligible: item.bonus_loan_eligible,
         qualified_for_restructure: item.qualified_for_restructure || false,
         eligible_for_bonus_loan: item.eligible_for_bonus_loan || false,
@@ -185,14 +185,14 @@ export function ClassificationDialogForm({
                     value={field.value}
                   >
                     <FormControl>
-                      <SelectTrigger className="h-12">
+                      <SelectTrigger className="h-12 w-full">
                         <SelectValue placeholder="Select group code" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {groupsData?.data.groups.map((group) => (
                         <SelectItem key={group.id} value={group.id}>
-                          {group.code || group.name}
+                          {group.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

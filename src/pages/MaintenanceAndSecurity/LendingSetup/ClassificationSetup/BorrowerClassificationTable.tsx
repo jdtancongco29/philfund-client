@@ -44,6 +44,9 @@ export function BorrowerClassificationTable() {
       id: "group",
       header: "Group",
       accessorKey: "name",
+      cell: (item) => {
+        return item.group.name;
+      },
       enableSorting: true,
     },
     {

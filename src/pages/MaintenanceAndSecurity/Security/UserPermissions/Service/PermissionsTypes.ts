@@ -1,3 +1,5 @@
+import { Branch } from "../../UserManagement/Service/UserManagementTypes"
+
 // Common Types
 export type ApiResponse<T> = {
   status: string
@@ -5,38 +7,45 @@ export type ApiResponse<T> = {
   data: T
 }
 
-// Permission Types
-export interface ModulePermission {
-  id: string
+// Permission Types - Updated to match API response
+export interface UserPermissionResponse {
   user_id: string
-  module_id: string
-  module_name: string
-  module_description?: string
+  module: {
+    id: string
+    name: string
+  }
   can_access: boolean
   can_add: boolean
   can_edit: boolean
   can_delete: boolean
   can_export: boolean
   can_print: boolean
+  can_void: boolean
 }
 
-export interface UserPermissions {
+export interface ModulePermission {
   user_id: string
-  permissions: ModulePermission[]
+  module: {
+    id: string
+    name: string
+  }
+  can_access: boolean
+  can_add: boolean
+  can_edit: boolean
+  can_delete: boolean
+  can_export: boolean
+  can_print: boolean
+  can_void: boolean
 }
 
 export interface Module {
   id: string
   name: string
-//   description?: string
-//   status: boolean
-//   created_at?: string
-//   updated_at?: string
 }
 
 export interface GetModulesResponse {
   count: number
-  modules: Module[]
+  module: Module[]
   pagination?: {
     current_page: number
     per_page: number
@@ -45,30 +54,26 @@ export interface GetModulesResponse {
   }
 }
 
+// Updated to match API response structure
 export interface GetUserPermissionsResponse {
-  user_id: string
-  permissions: ModulePermission[]
+  data?: UserPermissionResponse[]
 }
 
-// Request Payload Types
+// Request Payload Types - Updated based on API (fixed typo: mame -> name)
 export interface UpdatePermissionPayload {
   user_id: string
   module_id: string
-  can_access: number
-  can_add: number
-  can_edit: number
-  can_delete: number
-  can_export: number
-  can_print: number
+  can_access: boolean
+  can_add: boolean
+  can_edit: boolean
+  can_delete: boolean
+  can_export: boolean
+  can_print: boolean
+  can_void: boolean
 }
 
 export interface BulkUpdatePermissionsPayload {
   permissions: UpdatePermissionPayload[]
-}
-
-interface BranchItems {
-  id: string
-  name: string
 }
 
 // User Selection Types (reusing from user management)
@@ -80,7 +85,7 @@ export interface UserForSelection {
   email: string
   mobile: string
   position: string
-  branches: BranchItems[]
+  branches: Branch[]
   status: boolean
 }
 

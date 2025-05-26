@@ -9,6 +9,8 @@ import type {
   UpdateGroupStatusPayload,
 } from "./GroupSetupTypes";
 import { toast } from "sonner";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { AxiosError } from "axios";
 
 // BorrowGroup Service
 export const GroupSetupService = {
@@ -82,9 +84,13 @@ export const GroupSetupService = {
       );
 
       return response.data;
-    } catch (error: any) {
-      toast.error(error.response.data.message);
-      throw new Error(error.response.data.message);
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        throw error;
+      } else {
+        toast.error("Something went wrong");
+        throw new Error("Something went wrong");
+      }
     }
   },
 

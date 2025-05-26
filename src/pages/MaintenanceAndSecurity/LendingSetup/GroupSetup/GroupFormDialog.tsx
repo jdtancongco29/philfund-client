@@ -12,6 +12,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import GroupSetupService from "./Service/GroupSetupService"
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
+import { AxiosError } from "axios"
 
 // Define the form schema with validation
 const formSchema = z.object({
@@ -65,8 +66,17 @@ export function GroupDialogForm({ open, isEditing, item, onOpenChange, onCancel,
       queryClient.invalidateQueries({ queryKey: ['borrower-group-table'] })
       onSubmit();
       form.reset()
-    } catch (errorData: any) {
-      console.error(errorData);
+    } catch (errorData: unknown) {
+      if (errorData instanceof AxiosError) {
+        Object.entries(errorData.response?.data.errors).forEach(([field, messages]) => {
+          const errorMsg = messages as string[];
+          form.setError(field as "code" | "name", {
+            type: 'manual',
+            message: errorMsg[0]
+          });
+        }
+        )
+      }
     }
   }
 

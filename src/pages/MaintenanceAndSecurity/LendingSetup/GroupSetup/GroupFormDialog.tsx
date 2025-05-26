@@ -165,7 +165,7 @@ export function GroupDialogForm({ open, isEditing, item, onOpenChange, onCancel,
               <Button
                 disabled={creationHandler.isPending || editingHandler.isPending}
                 type="submit" className="bg-blue-500 hover:bg-blue-600">
-                {isEditing ? "Edit" : "Add"} Group {(creationHandler.isPending || editingHandler.isPending) && <span><Loader2 className="animate-spin" /></span>}
+                {isEditing ? "Save" : "Add Group "} {(creationHandler.isPending || editingHandler.isPending) && <span><Loader2 className="animate-spin" /></span>}
               </Button>
             </div>
           </form>

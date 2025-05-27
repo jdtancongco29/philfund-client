@@ -1,4 +1,3 @@
-"use client"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
@@ -11,9 +10,10 @@ import { getBranchId } from "@/lib/api"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import DistrictSetupService from "./Service/DistrictSetupService"
 import DivisionSetupService from "../DivisionSetup/Service/DivisionSetupService"
-import { Loader2 } from "lucide-react"
-import { useEffect } from "react"
+import { Loader2, RefreshCw } from "lucide-react"
+import { useCallback, useEffect, useState } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { toast } from "sonner"
 
 // Define the form schema with validation
 const formSchema = z.object({
@@ -100,7 +100,7 @@ export function DistrictDialogForm({
       queryClient.invalidateQueries({ queryKey: ["district-table"] })
       onSubmit()
       form.reset()
-    } catch (errorData: any) {
+    } catch (errorData: unknown) {
       console.error(errorData)
     }
   }
@@ -133,6 +133,28 @@ export function DistrictDialogForm({
       }
     }
   }
+
+  const [isGeneratingCode, setIsGeneratingCode] = useState(false)
+  const generateSchoolCode = useCallback(async () => {
+    setIsGeneratingCode(true)
+    try {
+      const response = await DistrictSetupService.generateSchoolCode()
+      if (response.data) {
+        form.setValue("code", response.data.toString())
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to generate school code")
+    } finally {
+      setIsGeneratingCode(false)
+    }
+  }, [form])
+
+  useEffect(() => {
+    if (form.watch('code') == "") {
+      generateSchoolCode();
+    }
+  }, [form, generateSchoolCode, open])
 
   return (
     <Dialog open={open} onOpenChange={(open) => {
@@ -182,9 +204,8 @@ export function DistrictDialogForm({
                 </FormItem>
               )}
             />
-
             <FormField
-              disabled={creationHandler.isPending || editingHandler.isPending}
+              disabled={creationHandler.isPending || editingHandler.isPending || isEditing}
               control={form.control}
               name="code"
               render={({ field }) => (
@@ -192,9 +213,24 @@ export function DistrictDialogForm({
                   <FormLabel className="text-base font-medium">
                     District Code <span className="text-destructive">*</span>
                   </FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter district code" {...field} className="px-3 py-[9px]" />
-                  </FormControl>
+                  <div className="flex gap-2">
+                    <FormControl>
+                      <Input placeholder="Enter school code" {...field} disabled className="px-3 py-[9px]" />
+                    </FormControl>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={generateSchoolCode}
+                      disabled={isGeneratingCode || creationHandler.isPending || editingHandler.isPending || isEditing}
+                    >
+                      {isGeneratingCode ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}

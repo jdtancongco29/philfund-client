@@ -13,7 +13,7 @@ import SchoolSetupService from "./Service/SchoolSetupService"
 import DivisionSetupService from "../DivisionSetup/Service/DivisionSetupService"
 import DistrictSetupService from "../DistrictSetup/Service/DistrictSetupService"
 import { Loader2, RefreshCw } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 
@@ -120,7 +120,7 @@ export function SchoolFormDialog({ open, isEditing, item, onOpenChange, onCancel
       queryClient.invalidateQueries({ queryKey: ["school-table"] })
       onSubmit()
       form.reset()
-    } catch (errorData: any) {
+    } catch (errorData: unknown) {
       console.error(errorData)
     }
   }
@@ -156,7 +156,7 @@ export function SchoolFormDialog({ open, isEditing, item, onOpenChange, onCancel
   }
 
   // Generate school code
-  const generateSchoolCode = async () => {
+  const generateSchoolCode = useCallback(async () => {
     setIsGeneratingCode(true)
     try {
       const response = await SchoolSetupService.generateSchoolCode()
@@ -170,7 +170,13 @@ export function SchoolFormDialog({ open, isEditing, item, onOpenChange, onCancel
     } finally {
       setIsGeneratingCode(false)
     }
-  }
+  }, [form])
+
+  useEffect(() => {
+    if (form.watch('code') == "") {
+      generateSchoolCode();
+    }
+  }, [form, generateSchoolCode, open])
 
   // Filter districts by selected division
   const filteredDistricts = districtsData?.data.districts.filter(
@@ -269,7 +275,7 @@ export function SchoolFormDialog({ open, isEditing, item, onOpenChange, onCancel
                   </FormLabel>
                   <div className="flex gap-2">
                     <FormControl>
-                      <Input placeholder="Enter school code" {...field} className="px-3 py-[9px]" />
+                      <Input placeholder="Enter school code" {...field} disabled className="px-3 py-[9px]" />
                     </FormControl>
                     <Button
                       type="button"

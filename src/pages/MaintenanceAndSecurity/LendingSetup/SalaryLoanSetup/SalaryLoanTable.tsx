@@ -179,6 +179,7 @@ export function SalaryLoanTable() {
         isEditing={isEditing}
         onOpenChange={() => {
           setIsDialogOpen(false)
+          setSelectedItem(null)
           setIsEditing(false)
         }}
         onSubmit={onSubmit}

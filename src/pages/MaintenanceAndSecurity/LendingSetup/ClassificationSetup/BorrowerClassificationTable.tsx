@@ -27,7 +27,7 @@ export function BorrowerClassificationTable() {
   } = useQuery({
     queryKey: ["borrower-classification-table", currentPage, rowsPerPage, searchQuery],
     queryFn: () => ClassificationSetupService.getAllClassifications(currentPage, rowsPerPage, searchQuery),
-    staleTime: Infinity,
+    staleTime: 1000 * 60 * 5,
   })
 
   const deletionHandler = useMutation({

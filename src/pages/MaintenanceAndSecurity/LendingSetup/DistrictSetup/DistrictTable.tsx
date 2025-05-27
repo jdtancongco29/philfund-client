@@ -27,7 +27,7 @@ export function DistrictTable() {
   } = useQuery({
     queryKey: ["district-table", currentPage, rowsPerPage, searchQuery],
     queryFn: () => DistrictSetupService.getAllDistricts(currentPage, rowsPerPage, searchQuery),
-    staleTime: Infinity,
+    staleTime: () => 1000 * 60 * 5,
   })
 
   const deletionHandler = useMutation({

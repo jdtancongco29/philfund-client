@@ -27,7 +27,7 @@ export function DivisionTable() {
   } = useQuery({
     queryKey: ["division-table", currentPage, rowsPerPage, searchQuery],
     queryFn: () => DivisionSetupService.getAllDivisions(currentPage, rowsPerPage, searchQuery),
-    staleTime: Infinity,
+    staleTime: 1000 * 60 * 5,
   })
 
   const deletionHandler = useMutation({

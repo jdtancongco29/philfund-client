@@ -30,9 +30,9 @@ export interface BonusLoan {
   max_amt: string;
   max_rate: string | null;
   status: boolean;
-  coa_loan_recievable: ChartOfAccount;
-  coa_loan_interest_recievable: ChartOfAccount;
-  coa_interest_recievable: ChartOfAccount;
+  coa_loan_receivable: ChartOfAccount;
+  coa_loan_interest_receivable: ChartOfAccount;
+  coa_interest_receivable: ChartOfAccount;
   coa_interest_income: ChartOfAccount;
   coa_garnished_expense: ChartOfAccount;
   coa_unearned_interest: ChartOfAccount;
@@ -42,7 +42,7 @@ export interface BonusLoan {
   classifications: Classification[];
 }
 
-export interface BonusLoanDetail extends BonusLoan {}
+export type BonusLoanDetail = BonusLoan;
 
 export interface PaginationInfo {
   current_page: number;
@@ -75,7 +75,7 @@ export interface CreateBonusLoanPayload {
   max_rate: number | null;
   eligible_class: string[];
   coa_loan_receivable: string;
-  coa_loan_interest_receivable: string;
+  coa_interest_receivable: string;
   coa_interest_income: string;
   coa_garnished_expense: string;
   coa_unearned_interest: string;
@@ -84,7 +84,7 @@ export interface CreateBonusLoanPayload {
   coa_bad_dept_expense: string;
 }
 
-export interface UpdateBonusLoanPayload extends CreateBonusLoanPayload {}
+export type UpdateBonusLoanPayload = CreateBonusLoanPayload;
 
 export interface UpdateBonusLoanStatusPayload {
   status: number;

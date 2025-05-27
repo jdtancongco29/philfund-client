@@ -1,4 +1,4 @@
-import { apiRequest } from "@/lib/api"
+import { apiRequest } from "@/lib/api";
 import type {
   ApiResponse,
   CashAdvanceSetup,
@@ -8,7 +8,9 @@ import type {
   GetAllCOAResponse,
   UpdateCashAdvanceSetupPayload,
   UpdateCashAdvanceSetupStatusPayload,
-} from "./CashAdvanceSetupTypes"
+} from "./CashAdvanceSetupTypes";
+import { toast } from "sonner";
+import { AxiosError } from "axios";
 
 // Cash Advance Setup Service
 export const CashAdvanceSetupService = {
@@ -18,46 +20,73 @@ export const CashAdvanceSetupService = {
   getAllCashAdvanceSetups: async (
     page?: number,
     limit?: number,
-    search?: string | null,
+    search?: string | null
   ): Promise<ApiResponse<GetAllCashAdvanceSetupsResponse>> => {
-    const params = new URLSearchParams()
-    if (page) params.append("page", page.toString())
-    if (limit) params.append("per_page", limit.toString())
-    if (search) params.append("search", search)
+    const params = new URLSearchParams();
+    if (page) params.append("page", page.toString());
+    if (limit) params.append("per_page", limit.toString());
+    if (search) params.append("search", search);
 
-    const endpoint = `/cash-advance-setup${params.toString() ? `?${params.toString()}` : ""}`
-    const response = await apiRequest<ApiResponse<GetAllCashAdvanceSetupsResponse>>("get", endpoint, null, {
+    const endpoint = `/cash-advance-setup${
+      params.toString() ? `?${params.toString()}` : ""
+    }`;
+    const response = await apiRequest<
+      ApiResponse<GetAllCashAdvanceSetupsResponse>
+    >("get", endpoint, null, {
       useAuth: true,
       useBranchId: true,
-    })
+    });
 
-    return response.data
+    return response.data;
   },
 
   /**
    * Get a specific cash advance setup by ID
    */
-  getCashAdvanceSetupById: async (id: string): Promise<ApiResponse<CashAdvanceSetupDetail>> => {
-    const endpoint = `/cash-advance-setup/${id}`
-    const response = await apiRequest<ApiResponse<CashAdvanceSetupDetail>>("get", endpoint, null, {
-      useAuth: true,
-      useBranchId: true,
-    })
+  getCashAdvanceSetupById: async (
+    id: string
+  ): Promise<ApiResponse<CashAdvanceSetupDetail>> => {
+    const endpoint = `/cash-advance-setup/${id}`;
+    const response = await apiRequest<ApiResponse<CashAdvanceSetupDetail>>(
+      "get",
+      endpoint,
+      null,
+      {
+        useAuth: true,
+        useBranchId: true,
+      }
+    );
 
-    return response.data
+    return response.data;
   },
 
   /**
    * Create a new cash advance setup
    */
-  createCashAdvanceSetup: async (payload: CreateCashAdvanceSetupPayload): Promise<ApiResponse<CashAdvanceSetup>> => {
-    const endpoint = "/cash-advance-setup"
-    const response = await apiRequest<ApiResponse<CashAdvanceSetup>>("post", endpoint, payload, {
-      useAuth: true,
-      useBranchId: true,
-    })
-
-    return response.data
+  createCashAdvanceSetup: async (
+    payload: CreateCashAdvanceSetupPayload
+  ): Promise<ApiResponse<CashAdvanceSetup>> => {
+    try {
+      const endpoint = "/cash-advance-setup";
+      const response = await apiRequest<ApiResponse<CashAdvanceSetup>>(
+        "post",
+        endpoint,
+        payload,
+        {
+          useAuth: true,
+          useBranchId: true,
+        }
+      );
+      return response.data;
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        toast.error(error?.response?.data.message);
+        throw error;
+      } else {
+        toast.error("Something went wrong");
+        throw new Error("Something went wrong");
+      }
+    }
   },
 
   /**
@@ -65,26 +94,36 @@ export const CashAdvanceSetupService = {
    */
   updateCashAdvanceSetup: async (
     id: string,
-    payload: UpdateCashAdvanceSetupPayload,
+    payload: UpdateCashAdvanceSetupPayload
   ): Promise<ApiResponse<CashAdvanceSetup>> => {
-    const endpoint = `/cash-advance-setup/${id}`
-    const response = await apiRequest<ApiResponse<CashAdvanceSetup>>("put", endpoint, payload, {
-      useAuth: true,
-      useBranchId: true,
-    })
-    return response.data
+    const endpoint = `/cash-advance-setup/${id}`;
+    const response = await apiRequest<ApiResponse<CashAdvanceSetup>>(
+      "put",
+      endpoint,
+      payload,
+      {
+        useAuth: true,
+        useBranchId: true,
+      }
+    );
+    return response.data;
   },
 
   /**
    * Delete a cash advance setup
    */
   deleteCashAdvanceSetup: async (id: string): Promise<ApiResponse<null>> => {
-    const endpoint = `/cash-advance-setup/${id}`
-    const response = await apiRequest<ApiResponse<null>>("delete", endpoint, null, {
-      useAuth: true,
-      useBranchId: true,
-    })
-    return response.data
+    const endpoint = `/cash-advance-setup/${id}`;
+    const response = await apiRequest<ApiResponse<null>>(
+      "delete",
+      endpoint,
+      null,
+      {
+        useAuth: true,
+        useBranchId: true,
+      }
+    );
+    return response.data;
   },
 
   /**
@@ -92,29 +131,49 @@ export const CashAdvanceSetupService = {
    */
   updateCashAdvanceSetupStatus: async (
     id: string,
-    payload: UpdateCashAdvanceSetupStatusPayload,
+    payload: UpdateCashAdvanceSetupStatusPayload
   ): Promise<ApiResponse<null>> => {
-    const endpoint = `/cash-advance-setup/status/${id}`
-    const response = await apiRequest<ApiResponse<null>>("put", endpoint, payload, {
-      useAuth: true,
-      useBranchId: true,
-    })
+    try {
+      const endpoint = `/cash-advance-setup/status/${id}`;
+      const response = await apiRequest<ApiResponse<null>>(
+        "put",
+        endpoint,
+        payload,
+        {
+          useAuth: true,
+          useBranchId: true,
+        }
+      );
 
-    return response.data
+      return response.data;
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        toast.error(error?.response?.data.message);
+        throw error;
+      } else {
+        toast.error("Something went wrong");
+        throw new Error("Something went wrong");
+      }
+    }
   },
 
   /**
    * Get all Chart of Accounts
    */
   getAllCOA: async (): Promise<ApiResponse<GetAllCOAResponse>> => {
-    const endpoint = "/coa"
-    const response = await apiRequest<ApiResponse<GetAllCOAResponse>>("get", endpoint, null, {
-      useAuth: true,
-      useBranchId: true,
-    })
+    const endpoint = "/coa";
+    const response = await apiRequest<ApiResponse<GetAllCOAResponse>>(
+      "get",
+      endpoint,
+      null,
+      {
+        useAuth: true,
+        useBranchId: true,
+      }
+    );
 
-    return response.data
+    return response.data;
   },
-}
+};
 
-export default CashAdvanceSetupService
+export default CashAdvanceSetupService;

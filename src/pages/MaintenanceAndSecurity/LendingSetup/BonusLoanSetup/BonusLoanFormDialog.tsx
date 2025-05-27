@@ -45,7 +45,7 @@ const formSchema = z
       .refine((val) => val === "" || !isNaN(Number(val)), "Must be a valid number"),
 
     // Chart of Accounts - all required
-    coa_loan_interest_receivable: z.string().min(1, "Loan Interest Receivable account is required"),
+    coa_interest_receivable: z.string().min(1, "Loan Interest Receivable account is required"),
     coa_loan_receivable: z.string().min(1, "Loan Receivable account is required"),
     coa_interest_income: z.string().min(1, "Interest Income account is required"),
     coa_garnished_expense: z.string().min(1, "Garnished Expense account is required"),
@@ -61,7 +61,7 @@ const formSchema = z
     (data) => {
       // Validate that all COA values are unique
       const coaValues = [
-        data.coa_loan_interest_receivable,
+        data.coa_interest_receivable,
         data.coa_loan_receivable,
         data.coa_interest_income,
         data.coa_garnished_expense,
@@ -149,7 +149,7 @@ export function BonusLoanFormDialog({
       cut_off_date: "",
       max_amt: "",
       max_rate: "",
-      coa_loan_interest_receivable: "",
+      coa_interest_receivable: "",
       coa_loan_receivable: "",
       coa_interest_income: "",
       coa_garnished_expense: "",
@@ -163,7 +163,7 @@ export function BonusLoanFormDialog({
 
   // Watch all COA values to filter out duplicates
   const watchedCoaValues = form.watch([
-    "coa_loan_interest_receivable",
+    "coa_interest_receivable",
     "coa_loan_receivable",
     "coa_interest_income",
     "coa_garnished_expense",
@@ -196,8 +196,8 @@ export function BonusLoanFormDialog({
         cut_off_date: detail.cut_off_date,
         max_amt: detail.max_amt,
         max_rate: detail.max_rate || "",
-        coa_loan_interest_receivable: detail.coa_interest_recievable?.id || "",
-        coa_loan_receivable: detail.coa_loan_recievable?.id || "",
+        coa_interest_receivable: detail.coa_interest_receivable?.id || "",
+        coa_loan_receivable: detail.coa_loan_receivable?.id || "",
         coa_interest_income: detail.coa_interest_income?.id || "",
         coa_garnished_expense: detail.coa_garnished_expense?.id || "",
         coa_unearned_interest: detail.coa_unearned_interest?.id || "",
@@ -216,7 +216,7 @@ export function BonusLoanFormDialog({
         cut_off_date: "",
         max_amt: "",
         max_rate: "",
-        coa_loan_interest_receivable: "",
+        coa_interest_receivable: "",
         coa_loan_receivable: "",
         coa_interest_income: "",
         coa_garnished_expense: "",
@@ -241,7 +241,7 @@ export function BonusLoanFormDialog({
       max_rate: values.max_rate ? Number.parseFloat(values.max_rate) : null,
       eligible_class: values.eligible_class,
       coa_loan_receivable: values.coa_loan_receivable,
-      coa_loan_interest_receivable: values.coa_loan_interest_receivable,
+      coa_interest_receivable: values.coa_interest_receivable,
       coa_interest_income: values.coa_interest_income,
       coa_garnished_expense: values.coa_garnished_expense,
       coa_unearned_interest: values.coa_unearned_interest,
@@ -280,7 +280,7 @@ export function BonusLoanFormDialog({
       max_rate: values.max_rate ? Number.parseFloat(values.max_rate) : null,
       eligible_class: values.eligible_class,
       coa_loan_receivable: values.coa_loan_receivable,
-      coa_loan_interest_receivable: values.coa_loan_interest_receivable,
+      coa_interest_receivable: values.coa_interest_receivable,
       coa_interest_income: values.coa_interest_income,
       coa_garnished_expense: values.coa_garnished_expense,
       coa_unearned_interest: values.coa_unearned_interest,
@@ -547,9 +547,9 @@ export function BonusLoanFormDialog({
                           </TableHeader>
                           <TableBody>
                             {classificationsData?.data.classifications.map((classification) => (
-                              <TableRow key={classification.id}>
+                              <TableRow key={classification.id} className="">
                                 <TableCell>{classification.name}</TableCell>
-                                <TableCell className="text-right">
+                                <TableCell className="flex justify-end mr-2">
                                   <FormField
                                     disabled={isFormDisabled}
                                     control={form.control}
@@ -592,7 +592,7 @@ export function BonusLoanFormDialog({
                     <FormField
                       disabled={isFormDisabled}
                       control={form.control}
-                      name="coa_loan_interest_receivable"
+                      name="coa_interest_receivable"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="block mb-2">

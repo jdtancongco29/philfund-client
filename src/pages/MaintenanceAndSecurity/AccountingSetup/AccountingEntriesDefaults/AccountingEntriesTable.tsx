@@ -1,240 +1,606 @@
 "use client"
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useEffect, useState, useCallback } from "react"
+import { apiRequest } from "@/lib/api"
 import {
-    ChevronDown,
-    ChevronFirst,
-    ChevronLast,
-    ChevronLeft,
-    ChevronRight,
-    ChevronUp,
-    ChevronsUpDown,
-    Pencil,
-    Plus,
-    Search,
-    Trash2,
-} from "lucide-react"
-import AddNewEntryDialog from "./AddNewEntryDialog"
+  DataTable,
+  type ColumnDefinition,
+  type FilterDefinition,
+  type SearchDefinition,
+} from "@/components/data-table/data-table"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
 
-interface Item {
-    id: number;
-    name: string;
+import { CircleCheck } from "lucide-react"
+import { toast } from "sonner"
+import AddEditEntryDialog from "./AddNewEntryDialog"
+// Import the updated dialog component
+
+interface AccountEntry {
+  id?: string
+  name: string
+  particulars?: string
+  transaction_amount: string
+  status: boolean
+  details?: Array<{
+    coa: {
+      id: string
+      code: string
+      name: string
+    }
+    debit: string
+    credit: string
+  }>
 }
 
-// Mock data for entries
-const mockEntries = Array.from({ length: 20 }).map((_, i) => ({
-    id: i + 1,
-    name: `Entry Name ${i + 1}`,
-}))
+interface DataPayload {
+  count: number
+  default_accounts: AccountEntry[]
+  pagination: Pagination
+}
 
-export default function AccountingEntriesTable() {
-    type SortDirection = "asc" | "desc" | null
-    type SortColumn = "name" | null
+interface ApiResponse {
+  status: string
+  message: string
+  data: DataPayload
+}
 
-    const [sortColumn, setSortColumn] = useState<SortColumn>("name")
-    const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
-    const [searchQuery, setSearchQuery] = useState("")
-    const [currentPage, setCurrentPage] = useState(1)
-    const [rowsPerPage, setRowsPerPage] = useState(10)
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-    const [entries, setEntries] = useState(mockEntries)
+interface Pagination {
+  current_page: number
+  per_page: number
+  total_pages: number
+  total_items: number
+}
 
-    // Handle sorting
-    const handleSort = (column: SortColumn) => {
-        if (sortColumn === column) {
-        // Toggle direction if same column
-        if (sortDirection === "asc") {
-            setSortDirection("desc")
-        } else if (sortDirection === "desc") {
-            setSortDirection("asc")
-        }
-        } else {
-        // Set new column and default to ascending
-        setSortColumn(column)
-        setSortDirection("asc")
-        }
+export default function AccountEntriesTable() {
+  const [loading, setLoading] = useState(true)
+  const [onResetTable, setOnResetTable] = useState(false)
+  const [data, setData] = useState<AccountEntry[]>([])
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [editingEntry, setEditingEntry] = useState<AccountEntry | null>(null)
+  const [isExporting, setIsExporting] = useState(false)
+
+  // Delete dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [entryToDelete, setEntryToDelete] = useState<AccountEntry | null>(null)
+
+  const fetchData = async () => {
+    setLoading(true)
+    try {
+      const response = await apiRequest<ApiResponse>("get", "/default-entry", null, {
+        useAuth: true,
+        useBranchId: true,
+      })
+      setData(response.data.data.default_accounts)
+      setOnResetTable(true)
+    } catch (err) {
+      console.error(err)
+      toast.error("Error", {
+        description: "Failed to load account entries. Please try again.",
+        duration: 3000,
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  const handleNew = () => {
+    setEditingEntry(null)
+    setIsDialogOpen(true)
+  }
+
+  const handleEdit = async (entry: AccountEntry) => {
+    try {
+      // Fetch full entry details including account details
+      const response = await apiRequest<{ data: AccountEntry }>("get", `/default-entry/${entry.id}`, null, {
+        useAuth: true,
+        useBranchId: true,
+      })
+      setEditingEntry(response.data.data)
+      setIsDialogOpen(true)
+    } catch (error) {
+      console.error("Failed to fetch entry details:", error)
+      toast.error("Error", {
+        description: "Failed to load entry details. Please try again.",
+        duration: 3000,
+      })
+      // If individual fetch fails, use the existing entry data
+      setEditingEntry(entry)
+      setIsDialogOpen(true)
+    }
+  }
+
+  // Open delete confirmation dialog
+  const requestDelete = (entry: AccountEntry) => {
+    setEntryToDelete(entry)
+    setDeleteDialogOpen(true)
+  }
+
+  // Confirm delete handler, calls API and refreshes data
+  const confirmDelete = async () => {
+    if (!entryToDelete) return
+    try {
+      await apiRequest("delete", `/default-entry/${entryToDelete.id}`, null, {
+        useAuth: true,
+        useBranchId: true,
+      })
+      setDeleteDialogOpen(false)
+      setEntryToDelete(null)
+      fetchData()
+      toast.success("Account Entry Deleted", {
+        description: `Account Entry has been successfully deleted.`,
+        icon: <CircleCheck className="h-5 w-5" />,
+        duration: 5000,
+      })
+    } catch (error) {
+      console.error("Failed to delete entry:", error)
+      toast.error("Delete Failed", {
+        description: "Failed to delete the account entry. Please try again.",
+        duration: 5000,
+      })
+    }
+  }
+
+  // Cancel delete dialog
+  const cancelDelete = () => {
+    setDeleteDialogOpen(false)
+    setEntryToDelete(null)
+  }
+
+  const handleSave = (savedEntry: AccountEntry) => {
+    if (editingEntry && savedEntry.id) {
+      // Update existing entry
+      setData((prevData) => prevData.map((item) => (item.id === savedEntry.id ? savedEntry : item)))
+    } else {
+      // Add new entry
+      setData((prevData) => [savedEntry, ...prevData])
+    }
+    fetchData() // Refresh the table to get the latest data
+  }
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false)
+    setEditingEntry(null)
+  }
+
+  const columns: ColumnDefinition<AccountEntry>[] = [
+    {
+      id: "name",
+      header: "Name",
+      accessorKey: "name",
+      enableSorting: true,
+    },
+    {
+      id: "particulars",
+      header: "Particulars",
+      accessorKey: "particulars",
+      enableSorting: true,
+    },
+    {
+      id: "transaction_amount",
+      header: "Transaction Amount",
+      accessorKey: "transaction_amount",
+      enableSorting: true,
+      cell: (item) =>
+        `₱${Number.parseFloat(item.transaction_amount).toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}`,
+    },
+    {
+      id: "accounts_count",
+      header: "Accounts",
+      accessorKey: "details",
+      enableSorting: false,
+      cell: (item) => `${item.details?.length || 0} account(s)`,
+    },
+    {
+      id: "status",
+      header: "Status",
+      accessorKey: "status",
+      enableSorting: true,
+      displayCondition: [
+        {
+          value: true,
+          label: "Active",
+          className:
+            "inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20",
+        },
+        {
+          value: false,
+          label: "Inactive",
+          className:
+            "inline-flex items-center rounded-full bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20",
+        },
+      ],
+    },
+  ]
+
+  const filters: FilterDefinition[] = [
+    {
+      id: "status",
+      label: "Status",
+      options: [
+        { label: "Active", value: "true" },
+        { label: "Inactive", value: "false" },
+      ],
+      type: "input",
+    },
+  ]
+
+  const search: SearchDefinition = {
+    title: "Search",
+    placeholder: "Search by name or particulars",
+    enableSearch: true,
+  }
+
+  const downloadFile = useCallback((blob: Blob, filename: string) => {
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  }, [])
+
+  const getAuthHeaders = useCallback(() => {
+    const authToken = localStorage.getItem("authToken")
+    const branchId = localStorage.getItem("branchId")
+
+    if (!authToken) {
+      throw new Error("Authentication token not found")
     }
 
-    // Get sort icon based on current sort state
-    const getSortIcon = (column: SortColumn) => {
-        if (sortColumn !== column) {
-        return <ChevronsUpDown className="inline h-4 w-4 ml-1" />
+    return {
+      Authorization: `Bearer ${authToken}`,
+      "X-Branch-ID": branchId || "",
+      "Content-Type": "application/json",
+    }
+  }, [])
+
+  const safeCsvValue = useCallback((value: any): string => {
+    if (value === null || value === undefined) return '""'
+    const stringValue = String(value).replace(/"/g, '""')
+    return `"${stringValue}"`
+  }, [])
+
+  const generateCsvFromData = useCallback(() => {
+    try {
+      const headers = ["Particulars", "Name", "Debit", "Credit"]
+
+      const csvRows = [headers.join(",")]
+
+      // Process each entry with proper error handling
+      data.forEach((entry) => {
+        try {
+          const debitAmount = Number.parseFloat(entry.transaction_amount || "0").toFixed(2)
+          const creditAmount = Number.parseFloat(entry.transaction_amount || "0").toFixed(2)
+
+          const row = [safeCsvValue(entry.particulars || ""), safeCsvValue(entry.name || ""), debitAmount, creditAmount]
+          csvRows.push(row.join(","))
+        } catch (entryError) {
+          console.warn("Error processing entry for CSV:", entryError, entry)
+          // Add a basic row even if there's an error
+          csvRows.push(
+            [safeCsvValue(entry.particulars || "Error"), safeCsvValue(entry.name || "Unknown"), "0.00", "0.00"].join(
+              ",",
+            ),
+          )
+        }
+      })
+
+      return csvRows.join("\n")
+    } catch (error) {
+      console.error("Error generating CSV data:", error)
+      // Return minimal CSV with headers only
+      return 'Particulars,Name,Debit,Credit\n"Error generating data","",0.00,0.00'
+    }
+  }, [data, safeCsvValue])
+
+  const handleCsvExport = useCallback(async () => {
+    setIsExporting(true)
+    try {
+      // First try the API endpoint
+      const headers = getAuthHeaders()
+      const response = await fetch("/api/default-entry/export-csv", {
+        method: "GET",
+        headers,
+      })
+
+      if (response.ok) {
+        const blob = await response.blob()
+        const currentDate = new Date().toISOString().split("T")[0]
+        downloadFile(blob, `account-entries-${currentDate}.csv`)
+
+        toast.success("CSV Export Successful", {
+          description: "Account Entries have been exported to CSV successfully.",
+          icon: <CircleCheck className="h-5 w-5" />,
+          duration: 5000,
+        })
+        return // Success, exit early
+      } else {
+        throw new Error(`API endpoint returned status: ${response.status}`)
+      }
+    } catch (apiError) {
+      console.warn("API CSV export failed, using fallback:", apiError)
+
+      // Fallback: Generate CSV from current data
+      try {
+        console.log("Attempting CSV fallback with data:", data.length, "entries")
+
+        if (!data || data.length === 0) {
+          toast.error("No Data to Export", {
+            description: "There are no entries to export. Please refresh and try again.",
+            duration: 5000,
+          })
+          return
         }
 
-        return sortDirection === "asc" ? (
-        <ChevronUp className="inline h-4 w-4 ml-1" />
-        ) : (
-        <ChevronDown className="inline h-4 w-4 ml-1" />
-        )
+        const csvContent = generateCsvFromData()
+        console.log("Generated CSV content length:", csvContent.length)
+
+        if (!csvContent || csvContent.length < 50) {
+          // Basic sanity check
+          throw new Error("Generated CSV content appears to be empty or invalid")
+        }
+
+        // Create blob with explicit UTF-8 BOM for Excel compatibility
+        const BOM = "\uFEFF"
+        const blob = new Blob([BOM + csvContent], {
+          type: "text/csv;charset=utf-8;",
+        })
+
+        const currentDate = new Date().toISOString().split("T")[0]
+        downloadFile(blob, `account-entries-${currentDate}.csv`)
+
+        toast.success("CSV Export Successful", {
+          description: `Account Entries exported successfully (${data.length} entries).`,
+          icon: <CircleCheck className="h-5 w-5" />,
+          duration: 5000,
+        })
+      } catch (fallbackError) {
+        console.error("Fallback CSV generation failed:", fallbackError)
+        console.error("Data structure:", data)
+
+        toast.error("CSV Export Failed", {
+          description: "Failed to export Account Entries to CSV. Please check the data and try again.",
+          duration: 5000,
+        })
+      }
+    } finally {
+      setIsExporting(false)
+    }
+  }, [getAuthHeaders, downloadFile, generateCsvFromData, data])
+
+  const generatePdfFromData = useCallback(async () => {
+    const printWindow = window.open("", "_blank")
+    if (!printWindow) {
+      throw new Error("Could not open print window")
     }
 
-    // Filter entries based on search query
-    const filteredEntries = entries.filter((entry) => entry.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    const currentDate = new Date().toLocaleDateString()
+    const totalDebit = data.reduce((sum, entry) => sum + Number.parseFloat(entry.transaction_amount || "0"), 0)
+    const totalCredit = totalDebit // Assuming balanced entries
 
-    // Sort entries
-    const sortedEntries = [...filteredEntries].sort((a, b) => {
-        if (sortColumn === "name") {
-        const compareResult = a.name.localeCompare(b.name)
-        return sortDirection === "asc" ? compareResult : -compareResult
-        }
-        return 0
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Account Entries Report</title>
+          <style>
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 20px; 
+              color: #333;
+              line-height: 1.4;
+            }
+            h1 { 
+              color: #333; 
+              text-align: center; 
+              border-bottom: 3px solid #007bff;
+              padding-bottom: 10px;
+              margin-bottom: 5px;
+            }
+            .header { 
+              text-align: center; 
+              margin-bottom: 30px; 
+              background: #f8f9fa;
+              padding: 15px;
+              border-radius: 5px;
+            }
+            table { 
+              width: 100%; 
+              border-collapse: collapse; 
+              margin-top: 20px;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            th, td { 
+              border: 1px solid #ddd; 
+              padding: 12px 8px; 
+              text-align: left; 
+              font-size: 12px;
+            }
+            th { 
+              background-color: #007bff; 
+              color: white;
+              font-weight: bold; 
+              text-align: center;
+            }
+            .amount { text-align: right; font-family: monospace; }
+            .total-row { 
+              background-color: #f8f9fa; 
+              font-weight: bold; 
+              border-top: 2px solid #007bff;
+            }
+            .footer {
+              margin-top: 30px;
+              text-align: center;
+              font-size: 10px;
+              color: #666;
+            }
+            @media print {
+              body { margin: 0; }
+              .header { page-break-inside: avoid; }
+              @page { margin: 1cm; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Default Account Entries Report</h1>
+            <p><strong>Generated on:</strong> ${currentDate}</p>
+            <p><strong>Total Entries:</strong> ${data.length}</p>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Particulars</th>
+                <th>Name</th>
+                <th>Debit</th>
+                <th>Credit</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data
+                .map(
+                  (entry) => `
+                <tr>
+                  <td>${entry.particulars || "-"}</td>
+                  <td>${entry.name}</td>
+                  <td class="amount">${Number.parseFloat(entry.transaction_amount || "0").toFixed(2)}</td>
+                  <td class="amount">${Number.parseFloat(entry.transaction_amount || "0").toFixed(2)}</td>
+                </tr>
+              `,
+                )
+                .join("")}
+              <tr class="total-row">
+                <td colspan="2"><strong>TOTAL</strong></td>
+                <td class="amount"><strong>${totalDebit.toFixed(2)}</strong></td>
+                <td class="amount"><strong>${totalCredit.toFixed(2)}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="footer">
+            <p>This report was generated automatically from the Account Entries system.</p>
+          </div>
+        </body>
+      </html>
+    `
+
+    printWindow.document.write(htmlContent)
+    printWindow.document.close()
+
+    printWindow.onload = () => {
+      setTimeout(() => {
+        printWindow.print()
+        printWindow.close()
+      }, 250)
+    }
+
+    toast.success("PDF Export Initiated", {
+      description: "PDF print dialog has been opened.",
+      icon: <CircleCheck className="h-5 w-5" />,
+      duration: 3000,
     })
+  }, [data])
 
-    // Calculate pagination
-    const totalPages = Math.ceil(sortedEntries.length / rowsPerPage)
-    const startIndex = (currentPage - 1) * rowsPerPage
-    const paginatedEntries = sortedEntries.slice(startIndex, startIndex + rowsPerPage)
+  const handlePdfExport = useCallback(async () => {
+    setIsExporting(true)
+    try {
+      const headers = getAuthHeaders()
+      const response = await fetch("/api/default-entry/export-pdf", {
+        method: "GET",
+        headers,
+      })
 
-    // Handle adding a new entry
-    const handleAddEntry = (data: { name: string; particulars: string; transaction_amount: number; ref_id: string; items: Item[] }) => {
-        const newEntry = {
-            id: entries.length + 1,
-            name: data.name,
-        }
-        setEntries([...entries, newEntry])
-        setIsAddModalOpen(false)
+      if (response.ok) {
+        const blob = await response.blob()
+        const currentDate = new Date().toISOString().split("T")[0]
+        downloadFile(blob, `account-entries-${currentDate}.pdf`)
+
+        toast.success("PDF Export Successful", {
+          description: "Account Entries have been exported to PDF successfully.",
+          icon: <CircleCheck className="h-5 w-5" />,
+          duration: 5000,
+        })
+      } else {
+        throw new Error(`API endpoint returned status: ${response.status}`)
+      }
+    } catch (error) {
+      console.warn("API PDF export failed, using fallback:", error)
+
+      try {
+        await generatePdfFromData()
+      } catch (fallbackError) {
+        console.error("Fallback PDF generation failed:", fallbackError)
+        toast.error("PDF Export Failed", {
+          description: "Failed to export Account Entries to PDF. Please try again.",
+          duration: 5000,
+        })
+      }
+    } finally {
+      setIsExporting(false)
     }
+  }, [getAuthHeaders, downloadFile, generatePdfFromData])
 
-    // Handle deleting an entry
-    const handleDeleteEntry = (id: number) => {
-            setEntries(entries.filter((entry) => entry.id !== id))
-    }
+  return (
+    <>
+      <DataTable
+        title="Default Account Entries"
+        subtitle="Manage default account entries"
+        data={data}
+        columns={columns}
+        filters={filters}
+        search={search}
+        onEdit={handleEdit}
+        onDelete={requestDelete}
+        onNew={handleNew}
+        idField="id"
+        enableNew={true}
+        enablePdfExport={true}
+        enableCsvExport={true}
+        enableFilter={true}
+        onPdfExport={handlePdfExport}
+        onCsvExport={handleCsvExport}
+        onLoading={loading || isExporting}
+        onResetTable={onResetTable}
+      />
 
-    return (
-        <div className="space-y-4">
-            <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold">Accounting Entries Default</h1>
-                <Button size="lg" onClick={() => setIsAddModalOpen(true)} className="cursor-pointer">
-                    <Plus className="h-4 w-4" />
-                    New
-                </Button>
-            </div>
+      {/* Add/Edit Entry Dialog */}
+      <AddEditEntryDialog
+        isOpen={isDialogOpen}
+        onClose={handleCloseDialog}
+        onSave={handleSave}
+        editingEntry={editingEntry}
+      />
 
-            <div className="space-y-4">
-                <div>
-                    <h2 className="text-sm font-medium mb-2">Search</h2>
-                    <div className="relative">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                        placeholder="Search user..."
-                        className="pl-8 w-[300px]"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                    </div>
-                </div>
-
-                <div className="border rounded-md">
-                    <Table>
-                        <TableHeader>
-                        <TableRow>
-                            <TableHead className="cursor-pointer" onClick={() => handleSort("name")}>
-                            Entry Name {getSortIcon("name")}
-                            </TableHead>
-                            <TableHead className="w-[100px]"></TableHead>
-                        </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                        {paginatedEntries.length > 0 ? (
-                            paginatedEntries.map((entry) => (
-                            <TableRow key={entry.id}>
-                                <TableCell>{entry.name}</TableCell>
-                                <TableCell className="text-right">
-                                <div className="flex justify-end gap-2">
-                                    <Button variant="ghost" size="icon">
-                                    <Pencil className="h-4 w-4" />
-                                    </Button>
-                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteEntry(entry.id)}>
-                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                    </Button>
-                                </div>
-                                </TableCell>
-                            </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                            <TableCell colSpan={2} className="text-center py-4">
-                                No entries found
-                            </TableCell>
-                            </TableRow>
-                        )}
-                        </TableBody>
-                    </Table>
-                </div>
-
-                <div className="flex items-center justify-end gap-6">
-                    <div className="flex items-center space-x-2">
-                        <span className="text-sm text-muted-foreground">Rows per page</span>
-                        <Select
-                        value={rowsPerPage.toString()}
-                        onValueChange={(value) => {
-                            setRowsPerPage(Number(value))
-                            setCurrentPage(1)
-                        }}
-                        >
-                        <SelectTrigger className="h-8 w-[70px]">
-                            <SelectValue placeholder={rowsPerPage.toString()} />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="5">5</SelectItem>
-                            <SelectItem value="10">10</SelectItem>
-                            <SelectItem value="20">20</SelectItem>
-                            <SelectItem value="50">50</SelectItem>
-                        </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                        <span className="text-sm text-muted-foreground">
-                        Page {currentPage} of {totalPages}
-                        </span>
-                        <div className="flex items-center space-x-1">
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setCurrentPage(1)}
-                            disabled={currentPage === 1}
-                        >
-                            <ChevronFirst className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                            disabled={currentPage === 1}
-                        >
-                            <ChevronLeft className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                            disabled={currentPage === totalPages}
-                        >
-                            <ChevronRight className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setCurrentPage(totalPages)}
-                            disabled={currentPage === totalPages}
-                        >
-                            <ChevronLast className="h-4 w-4" />
-                        </Button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <AddNewEntryDialog isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onAdd={handleAddEntry} />
-        </div>
-    )
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirm Delete</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to delete the entry "{entryToDelete?.name}"? This action cannot be undone.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={cancelDelete}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
 }

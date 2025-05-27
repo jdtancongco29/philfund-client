@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AlertCircle, CircleCheck } from "lucide-react"
 import { toast } from "sonner"
-import { apiRequest } from "@/lib/api"
+import { apiRequest, getBranchId } from "@/lib/api"
 import { BranchSelectionDialog } from "./BranchSelectionDialog"
 import { BranchUserDialog } from "./BranchUserDialog"
 import { COADialog } from "./COADialog"
@@ -578,9 +578,7 @@ export default function AddEditEntryDialog({
 
       const response = await apiRequest(method, url, payload, {
         useAuth: true,
-        customHeaders: {
-          "X-Branch-Id": branchId,
-        },
+       useBranchId: true,
       })
       return response.data
     } catch (error: any) {
@@ -617,7 +615,7 @@ export default function AddEditEntryDialog({
   }
 
   const totalCredit = calculateTotalCredit(items)
-
+        const cookieBranchId = getBranchId();
   const handleSubmit = async () => {
     // Clear previous validation errors
     setValidationErrors({})
@@ -639,7 +637,6 @@ export default function AddEditEntryDialog({
       particulars &&
       refNum &&
       refId &&
-      branchId &&
       transactionDate &&
       checkedBy &&
       approvedBy &&
@@ -647,12 +644,13 @@ export default function AddEditEntryDialog({
       items.length
     ) {
       try {
+
         const payload = {
           name,
           particulars,
           ref_num: Number(refNum),
           ref_id: refId,
-          branch_id: branchId,
+          branch_id: cookieBranchId || branchId,
           transaction_date: formattedTransactionDate,
           checked_by: checkedBy.id,
           approved_by: approvedBy.id,
@@ -791,12 +789,9 @@ export default function AddEditEntryDialog({
                   Branch <span className="text-red-500">*</span>
                 </Label>
                 <div
-                  className={`w-full border rounded px-3 py-2 bg-white cursor-pointer ${
-                    isSubmitting ? "opacity-50 cursor-not-allowed" : ""
-                  } ${hasFieldError("branch_id") ? "border-red-500" : ""}`}
-                  onClick={() => !isSubmitting && setIsBranchDialogOpen(true)}
+                  className="w-full border rounded px-3 py-2 bg-white"
                 >
-                  {selectedBranch ? selectedBranch.name : branchId ? branchId : "Select Branch"}
+                  {selectedBranch ? selectedBranch.name : branchId ? branchId : cookieBranchId}
                 </div>
                 <ErrorMessage errors={getFieldErrors("branch_id")} />
               </div>
@@ -811,7 +806,7 @@ export default function AddEditEntryDialog({
                     setTransactionDate(e.target.value)
                     clearFieldError("transaction_date")
                   }}
-                  disabled={isSubmitting}
+                  
                   className={hasFieldError("transaction_date") ? "border-red-500" : ""}
                 />
                 <ErrorMessage errors={getFieldErrors("transaction_date")} />
@@ -850,7 +845,7 @@ export default function AddEditEntryDialog({
                           }
                         }}
                       >
-                        {item.coa?.name || <span className="text-gray-400">Select COA</span>}
+                        {item.coa ? `${item.coa.code} - ${item.coa.name}` : <span className="text-gray-400">Select COA</span>}
                       </div>
                       <ErrorMessage errors={getFieldErrors(`items.${index}.coa_id`)} />
                     </div>
@@ -957,7 +952,6 @@ export default function AddEditEntryDialog({
                 !particulars ||
                 !refNum ||
                 !refId ||
-                !branchId ||
                 !transactionDate ||
                 !checkedBy ||
                 !approvedBy ||

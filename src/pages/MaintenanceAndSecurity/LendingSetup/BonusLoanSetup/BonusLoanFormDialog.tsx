@@ -228,7 +228,13 @@ export function BonusLoanFormDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(open) => {
+      onOpenChange(open)
+      if (!open) {
+        form.reset()
+        setActiveTab("basic-info")
+      }
+    }}>
       <DialogContent className="min-w-5xl h-5/6 flex flex-col overflow-x-hidden overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">{isEditing ? "Edit" : "Add New"} Bonus Loan</DialogTitle>

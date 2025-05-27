@@ -213,6 +213,7 @@ export function BonusLoanTable() {
         onOpenChange={() => {
           setIsDialogOpen(false)
           setIsEditing(false)
+          setSelectedItem(null)
         }}
         onSubmit={onSubmit}
       />

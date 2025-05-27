@@ -22,6 +22,7 @@ import { BonusLoanSetupService } from "../BonusLoanSetup/Service/BonusLoanSetupS
 import { SalaryLoanSetupService } from "../SalaryLoanSetup/Service/SalaryLoanSetupService"
 import { Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
+import { AxiosError } from "axios"
 
 // Define the form schema with comprehensive validation
 const formSchema = z
@@ -195,13 +196,13 @@ export function CashAdvanceFormDialog({
   const isFormDisabled = creationHandler.isPending || editingHandler.isPending || (isEditing && isLoadingDetail)
 
   useEffect(() => {
-    if (isEditing && cashAdvanceDetail?.data) {
+    if (isEditing && cashAdvanceDetail?.data && bonusLoansData != null) {
       const detail = cashAdvanceDetail.data
       form.reset({
         code: detail.code,
         name: detail.name,
         type: detail.type,
-        loan_code: detail.loan?.id || "",
+        loan_code: detail.loan!.id,
         interest_rate: Number.parseFloat(detail.interest_rate),
         surcharge_rate: Number.parseFloat(detail.surcharge_rate),
         max_amt: detail.max_amt ? Number.parseFloat(detail.max_amt) : null,
@@ -216,10 +217,30 @@ export function CashAdvanceFormDialog({
         coa_bad_dept_expense: detail.coa_bad_dept_expense?.id || "",
         coa_garnished: detail.coa_garnished?.id || "",
       })
-    } else if (!isEditing) {
-      form.reset()
+    } else {
+      form.reset(
+        {
+          code: "",
+          name: "",
+          type: "salary loan",
+          loan_code: "",
+          interest_rate: 0,
+          surcharge_rate: 0,
+          max_amt: null,
+          max_rate: null,
+          eligible_class: [],
+          coa_loan_receivable: "",
+          coa_interest_receivable: "",
+          coa_unearned_interest: "",
+          coa_interest_income: "",
+          coa_other_income_penalty: "",
+          coa_allowance_doubtful: "",
+          coa_bad_dept_expense: "",
+          coa_garnished: "",
+        }
+      )
     }
-  }, [isEditing, cashAdvanceDetail, form])
+  }, [isEditing, cashAdvanceDetail, form, bonusLoansData, salaryLoansData])
 
   const create = async (_branch_id: string, values: FormValues) => {
     const payload: CreateCashAdvanceSetupPayload = {
@@ -236,9 +257,38 @@ export function CashAdvanceFormDialog({
       await creationHandler.mutateAsync(payload)
       queryClient.invalidateQueries({ queryKey: ["cash-advance-table"] })
       onSubmit()
-      form.reset()
-    } catch (errorData: any) {
-      console.error(errorData)
+      form.reset(
+        {
+          code: "",
+          name: "",
+          type: "bonus loan",
+          loan_code: "",
+          interest_rate: 0,
+          surcharge_rate: 0,
+          max_amt: null,
+          max_rate: null,
+          eligible_class: [],
+          coa_loan_receivable: "",
+          coa_interest_receivable: "",
+          coa_unearned_interest: "",
+          coa_interest_income: "",
+          coa_other_income_penalty: "",
+          coa_allowance_doubtful: "",
+          coa_bad_dept_expense: "",
+          coa_garnished: "",
+        }
+      )
+    } catch (errorData: unknown) {
+      if (errorData instanceof AxiosError) {
+        Object.entries(errorData.response?.data.errors).forEach(([field, messages]) => {
+          const errorMsg = messages as string[];
+          form.setError(field as any, {
+            type: 'manual',
+            message: errorMsg[0]
+          });
+        }
+        )
+      }
     }
   }
 
@@ -257,14 +307,43 @@ export function CashAdvanceFormDialog({
       await editingHandler.mutateAsync(payload)
       queryClient.invalidateQueries({ queryKey: ["cash-advance-table"] })
       onSubmit()
-      form.reset()
-    } catch (_error) {
-      console.log(_error)
+      form.reset(
+        {
+          code: "",
+          name: "",
+          type: "bonus loan",
+          loan_code: "",
+          interest_rate: 0,
+          surcharge_rate: 0,
+          max_amt: null,
+          max_rate: null,
+          eligible_class: [],
+          coa_loan_receivable: "",
+          coa_interest_receivable: "",
+          coa_unearned_interest: "",
+          coa_interest_income: "",
+          coa_other_income_penalty: "",
+          coa_allowance_doubtful: "",
+          coa_bad_dept_expense: "",
+          coa_garnished: "",
+        }
+      )
+    } catch (errorData: unknown) {
+      if (errorData instanceof AxiosError) {
+        Object.entries(errorData.response?.data.errors).forEach(([field, messages]) => {
+          const errorMsg = messages as string[];
+          form.setError(field as any, {
+            type: 'manual',
+            message: errorMsg[0]
+          });
+        }
+        )
+      }
     }
   }
 
   // Handle form submission
-  const onFormSubmit = (values: FormValues) => {
+  const onFormSubmit = async (values: FormValues) => {
     if (activeTab === "basic-info") {
       setActiveTab("chart-of-accounts")
       return
@@ -273,11 +352,12 @@ export function CashAdvanceFormDialog({
     const branch_id = getBranchId()
     if (branch_id) {
       if (isEditing) {
-        update(branch_id, values)
+        await update(branch_id, values)
       } else {
-        create(branch_id, values)
+        await create(branch_id, values)
       }
     }
+    setActiveTab("basic-info")
   }
 
   // Get available loans based on type
@@ -388,7 +468,7 @@ export function CashAdvanceFormDialog({
                           </FormLabel>
                           <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
                             <FormControl>
-                              <SelectTrigger className="h-11 w-full">
+                              <SelectTrigger className="h-11 w-full" disabled>
                                 <SelectValue placeholder="Select loan type..." />
                               </SelectTrigger>
                             </FormControl>
@@ -544,14 +624,14 @@ export function CashAdvanceFormDialog({
                                 <TableHeader>
                                   <TableRow className="bg-gray-50">
                                     <TableHead className="font-medium">Classification</TableHead>
-                                    <TableHead className="text-center font-medium">Can Avail of CA</TableHead>
+                                    <TableHead className="text-end font-medium">Can Avail of CA</TableHead>
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                   {classificationsData?.data.classifications.map((classification) => (
                                     <TableRow key={classification.id}>
                                       <TableCell className="font-medium">{classification.name}</TableCell>
-                                      <TableCell className="text-center">
+                                      <TableCell className="flex w-full justify-end">
                                         <FormField
                                           control={form.control}
                                           name="eligible_class"
@@ -568,7 +648,7 @@ export function CashAdvanceFormDialog({
                                                       field.onChange(current.filter((id) => id !== classification.id))
                                                     }
                                                   }}
-                                                  className="w-5 h-5"
+                                                  className="w-5 h-5 mr-2"
                                                 />
                                               </FormControl>
                                             </FormItem>

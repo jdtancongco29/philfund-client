@@ -38,7 +38,6 @@ export function DepartmentsTable() {
           useBranchId: true,
         }
       );
-
       setDepartments(response.data.data.departments);
       setOnResetTable(true)
     } catch (err) {
@@ -174,8 +173,6 @@ export function DepartmentsTable() {
           useBranchId: true,
         }
       );
-
-      console.log(response);
 
       toast.success(
         selectedDepartmentId ? 'Department Updated' : 'Department Added',

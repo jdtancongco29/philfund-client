@@ -97,11 +97,44 @@ export function BranchDialog({ open, onOpenChange, onSubmit, onReset, initialVal
     }
   }, [initialValues, form])
 
+  // Reset form when dialog closes
+  React.useEffect(() => {
+    if (!open) {
+      form.reset(
+        initialValues || {
+          code: "",
+          name: "",
+          address: "",
+          contact: "",
+          email: "",
+          city: "",
+          departments: [],
+          status: true,
+        }
+      )
+    }
+  }, [open, form, initialValues])
+
+  // Clear form when switching to 'Add New Branch' mode
+  React.useEffect(() => {
+    if (open && !initialValues) {
+      form.reset({
+        code: "",
+        name: "",
+        address: "",
+        contact: "",
+        email: "",
+        city: "",
+        departments: [],
+        status: true,
+      })
+    }
+  }, [initialValues, open, form])
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-hidden flex flex-col " aria-describedby={undefined}>
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">Add New Branch</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">{initialValues ? "Edit Branch" : "Add New Branch"}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-2 overflow-y-auto">
@@ -272,7 +305,7 @@ export function BranchDialog({ open, onOpenChange, onSubmit, onReset, initialVal
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit" className="bg-blue-500 hover:bg-blue-600">Save Branch</Button>
+              <Button type="submit" className="bg-blue-500 hover:bg-blue-600">{initialValues ? "Save Changes" : "Save Branch"}</Button>
             </DialogFooter>
           </form>
         </Form>

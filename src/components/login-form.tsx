@@ -75,11 +75,11 @@ export default function LoginForm() {
   );
 
   return (
-    <div className="max-w-sm mx-auto px-4">
+    <div className="max-w-[427px] mx-auto px-4">
       <img src="/logo.png" alt="Logo" className="mx-auto mb-6" />
       <h1 className="text-2xl font-semibold text-center text-[#09090B]">Login</h1>
       <p className="text-center text-base text-[#71717A] mb-6">
-        Enter your email below to login to your account
+        Enter your username below to login to your account
       </p>
 
       <form className="space-y-5" onSubmit={handleSubmit}>

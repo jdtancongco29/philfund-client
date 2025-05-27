@@ -10,6 +10,7 @@ import type {
   UpdateSalaryLoanStatusPayload,
 } from "./SalaryLoanSetupTypes";
 import { toast } from "sonner";
+import { AxiosError } from "axios";
 
 // Salary Loan Service
 export const SalaryLoanSetupService = {
@@ -85,9 +86,14 @@ export const SalaryLoanSetupService = {
       );
 
       return response.data;
-    } catch (error: any) {
-      toast.error(error.response.data.message);
-      throw new Error(error.response.data.message);
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        toast.error(error?.response?.data.message);
+        throw error;
+      } else {
+        toast.error("Something went wrong");
+        throw new Error("Something went wrong");
+      }
     }
   },
 
@@ -112,9 +118,14 @@ export const SalaryLoanSetupService = {
         }
       );
       return response.data;
-    } catch (error: any) {
-      toast.error(error.response.data.message);
-      throw new Error(error.response.data.message);
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        toast.error(error?.response?.data.message);
+        throw error;
+      } else {
+        toast.error("Something went wrong");
+        throw new Error("Something went wrong");
+      }
     }
   },
 

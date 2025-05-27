@@ -243,8 +243,8 @@ export default function ReferenceManagement() {
         onNew={handleNew}
         idField="id"
         enableNew
-        enablePdfExport
-        enableCsvExport
+        enablePdfExport={false}
+        enableCsvExport={false}
         enableFilter={false}
         onLoading={loading}
         onResetTable={onResetTable}

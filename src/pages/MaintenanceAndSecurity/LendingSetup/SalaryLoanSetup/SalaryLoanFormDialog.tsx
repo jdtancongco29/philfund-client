@@ -1,5 +1,3 @@
-"use client"
-
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
@@ -18,104 +16,161 @@ import SalaryLoanSetupService from "./Service/SalaryLoanSetupService"
 import GroupSetupService from "../GroupSetup/Service/GroupSetupService"
 import { Loader2 } from "lucide-react"
 
-// Update the form schema to properly validate numeric fields
-const formSchema = z.object({
-  // Basic Info
-  code: z.string().min(1, "Salary loan code is required"),
-  name: z.string().min(1, "Loan name is required"),
-  interest_rate: z
-    .string()
-    .min(1, "Interest rate is required")
-    .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
-  surcharge_rate: z
-    .string()
-    .min(1, "Surcharge rate is required")
-    .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
-  min_amount: z
-    .string()
-    .min(1, "Minimum amount is required")
-    .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
-  max_amount: z
-    .string()
-    .min(1, "Maximum amount is required")
-    .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
+// Update the form schema with proper validation
+const formSchema = z
+  .object({
+    // Basic Info - all required
+    code: z.string().min(1, "Salary loan code is required"),
+    name: z.string().min(1, "Loan name is required"),
+    interest_rate: z
+      .string()
+      .min(1, "Interest rate is required")
+      .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
+    surcharge_rate: z
+      .string()
+      .min(1, "Surcharge rate is required")
+      .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
+    min_amount: z
+      .string()
+      .min(1, "Minimum amount is required")
+      .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
+    max_amount: z
+      .string()
+      .min(1, "Maximum amount is required")
+      .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
 
-  // Client-Visible Fees
-  vis_service: z
-    .string()
-    .optional()
-    .refine((val) => val === "" || !isNaN(Number(val)), "Must be a valid number"),
-  vis_insurance: z
-    .string()
-    .optional()
-    .refine((val) => val === "" || !isNaN(Number(val)), "Must be a valid number"),
-  vis_notarial: z
-    .string()
-    .optional()
-    .refine((val) => val === "" || !isNaN(Number(val)), "Must be a valid number"),
-  vis_gross_reciept: z
-    .string()
-    .min(1, "GRT is required")
-    .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
-  vis_computer: z
-    .string()
-    .optional()
-    .refine((val) => val === "" || !isNaN(Number(val)), "Must be a valid number"),
-  vis_other_charges: z
-    .string()
-    .optional()
-    .refine((val) => val === "" || !isNaN(Number(val)), "Must be a valid number"),
+    // Client-Visible Fees - all required
+    vis_service: z
+      .string()
+      .min(1, "Service charge is required")
+      .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
+    vis_insurance: z
+      .string()
+      .min(1, "Insurance is required")
+      .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
+    vis_notarial: z
+      .string()
+      .min(1, "Notarial fee is required")
+      .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
+    vis_gross_reciept: z
+      .string()
+      .min(1, "GRT is required")
+      .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
+    vis_computer: z
+      .string()
+      .min(1, "Computer charges is required")
+      .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
+    vis_other_charges: z
+      .string()
+      .min(1, "Other charges is required")
+      .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
 
-  // PGA Fees & Surcharge
-  pga_service_charge: z
-    .string()
-    .optional()
-    .refine((val) => val === "" || !isNaN(Number(val)), "Must be a valid number"),
-  pga_insurance: z
-    .string()
-    .optional()
-    .refine((val) => val === "" || !isNaN(Number(val)), "Must be a valid number"),
-  pga_notarial: z
-    .string()
-    .optional()
-    .refine((val) => val === "" || !isNaN(Number(val)), "Must be a valid number"),
-  pga_gross_reciept: z
-    .string()
-    .optional()
-    .refine((val) => val === "" || !isNaN(Number(val)), "Must be a valid number"),
+    // PGA Fees & Surcharge - all required
+    pga_service_charge: z
+      .string()
+      .min(1, "PGA service charge is required")
+      .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
+    pga_insurance: z
+      .string()
+      .min(1, "PGA insurance is required")
+      .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
+    pga_notarial: z
+      .string()
+      .min(1, "PGA notarial fee is required")
+      .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
+    pga_gross_reciept: z
+      .string()
+      .min(1, "PGA gross receipt tax is required")
+      .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
 
-  // Branch other charges
-  def_interest: z
-    .string()
-    .optional()
-    .refine((val) => val === "" || !isNaN(Number(val)), "Must be a valid number"),
-  def_charge: z
-    .string()
-    .optional()
-    .refine((val) => val === "" || !isNaN(Number(val)), "Must be a valid number"),
-  def_computer: z
-    .string()
-    .optional()
-    .refine((val) => val === "" || !isNaN(Number(val)), "Must be a valid number"),
+    // Branch other charges - all required
+    def_interest: z
+      .string()
+      .min(1, "Interest income is required")
+      .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
+    def_charge: z
+      .string()
+      .min(1, "Service charge income is required")
+      .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
+    def_computer: z
+      .string()
+      .min(1, "Computer charges is required")
+      .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
 
-  // Chart of Accounts
-  coa_sl_receivable: z.string().min(1, "SL Receivable account is required"),
-  coa_sl_interest_income: z.string().min(1, "Interest Income account is required"),
-  coa_service_charge: z.string().optional(),
-  coa_notarial: z.string().optional(),
-  coa_gross_receipt: z.string().optional(),
-  coa_computer: z.string().optional(),
-  coa_pga_accounts_payable: z.string().optional(),
-  coa_sl_interest_receivable: z.string().optional(),
-  coa_sl_unearned_interest_income: z.string().optional(),
-  coa_sl_other_income_penalty: z.string().optional(),
-  coa_sl_allowance_doubtful_account: z.string().optional(),
-  coa_sl_bad_dept_expense: z.string().optional(),
-  coa_sl_garnished: z.string().optional(),
+    // Chart of Accounts - all required
+    coa_sl_receivable: z.string().min(1, "SL Receivable account is required"),
+    coa_sl_interest_income: z.string().min(1, "Interest Income account is required"),
+    coa_service_charge: z.string().min(1, "Service charge account is required"),
+    coa_notarial: z.string().min(1, "Notarial account is required"),
+    coa_gross_receipt: z.string().min(1, "Gross receipt account is required"),
+    coa_computer: z.string().min(1, "Computer charges account is required"),
+    coa_pga_accounts_payable: z.string().min(1, "A/P PGA account is required"),
+    coa_sl_interest_receivable: z.string().min(1, "Interest receivable account is required"),
+    coa_sl_unearned_interest_income: z.string().min(1, "Unearned interest income account is required"),
+    coa_sl_other_income_penalty: z.string().min(1, "Other income penalty account is required"),
+    coa_sl_allowance_doubtful_account: z.string().min(1, "Allowance for doubtful account is required"),
+    coa_sl_bad_dept_expense: z.string().min(1, "Bad debt expense account is required"),
+    coa_sl_garnished: z.string().min(1, "Garnished expense account is required"),
 
-  // Groups
-  eligible_groups: z.array(z.string()).optional(),
-})
+    // Groups - at least one required
+    eligible_groups: z.array(z.string()).min(1, "At least one group must be selected"),
+  })
+  .refine(
+    (data) => {
+      // Validate that client visible fees total equals PGA fees + branch other charges
+      const clientVisibleTotal =
+        Number(data.vis_service || 0) +
+        Number(data.vis_insurance || 0) +
+        Number(data.vis_notarial || 0) +
+        Number(data.vis_gross_reciept || 0) +
+        Number(data.vis_computer || 0) +
+        Number(data.vis_other_charges || 0)
+
+      const pgaFeesTotal =
+        Number(data.pga_service_charge || 0) +
+        Number(data.pga_insurance || 0) +
+        Number(data.pga_notarial || 0) +
+        Number(data.pga_gross_reciept || 0)
+
+      const branchChargesTotal =
+        Number(data.def_interest || 0) + Number(data.def_charge || 0) + Number(data.def_computer || 0)
+
+      const expectedTotal = pgaFeesTotal + branchChargesTotal
+
+      return Math.abs(clientVisibleTotal - expectedTotal) < 0.01 // Allow for small floating point differences
+    },
+    {
+      message: "Client visible fees total must equal PGA fees & surcharge + branch other charges",
+      path: ["vis_other_charges"], // Show error on the last client visible fee field
+    },
+  )
+  .refine(
+    (data) => {
+      // Validate that all COA values are unique
+      const coaValues = [
+        data.coa_sl_receivable,
+        data.coa_sl_interest_income,
+        data.coa_service_charge,
+        data.coa_notarial,
+        data.coa_gross_receipt,
+        data.coa_computer,
+        data.coa_pga_accounts_payable,
+        data.coa_sl_interest_receivable,
+        data.coa_sl_unearned_interest_income,
+        data.coa_sl_other_income_penalty,
+        data.coa_sl_allowance_doubtful_account,
+        data.coa_sl_bad_dept_expense,
+        data.coa_sl_garnished,
+      ].filter(Boolean) // Remove empty values
+
+      const uniqueValues = new Set(coaValues)
+      return uniqueValues.size === coaValues.length
+    },
+    {
+      message: "Each chart of account must be unique. No duplicates allowed.",
+      path: ["coa_sl_receivable"], // Show error on the first COA field
+    },
+  )
 
 // Define the form values type
 type FormValues = z.infer<typeof formSchema>
@@ -152,18 +207,28 @@ export function SalaryLoanFormDialog({
     },
   })
 
+  // Fetch detailed salary loan data when editing
+  const { data: salaryLoanDetail, isLoading: isLoadingDetail } = useQuery({
+    queryKey: ["salary-loan-detail", item?.id],
+    queryFn: () => SalaryLoanSetupService.getSalaryLoanById(item!.id),
+    enabled: isEditing && !!item?.id,
+    staleTime: 0, // Always fetch fresh data
+  })
+
   // Fetch groups for the checkbox list
   const { data: groupsData } = useQuery({
     queryKey: ["groups-for-salary-loan"],
     queryFn: () => GroupSetupService.getAllGroups(),
     staleTime: Number.POSITIVE_INFINITY,
+    enabled: item != null
   })
 
   // Fetch COA for the dropdowns
   const { data: coaData } = useQuery({
-    queryKey: ["coa-for-salary-loan"],
+    queryKey: ["coa-for-salary-loan", item],
     queryFn: () => SalaryLoanSetupService.getAllCOA(),
     staleTime: Number.POSITIVE_INFINITY,
+    enabled: item != null
   })
 
   // Initialize the form
@@ -186,9 +251,9 @@ export function SalaryLoanFormDialog({
       pga_insurance: "",
       pga_notarial: "",
       pga_gross_reciept: "",
-      def_interest: "",
-      def_charge: "",
-      def_computer: "",
+      def_interest: "3.00",
+      def_charge: "1.50",
+      def_computer: "0.10",
       coa_sl_receivable: "",
       coa_sl_interest_income: "",
       coa_service_charge: "",
@@ -206,47 +271,76 @@ export function SalaryLoanFormDialog({
     },
   })
 
+  // Watch all COA values to filter out duplicates
+  const watchedCoaValues = form.watch([
+    "coa_sl_receivable",
+    "coa_sl_interest_income",
+    "coa_service_charge",
+    "coa_notarial",
+    "coa_gross_receipt",
+    "coa_computer",
+    "coa_pga_accounts_payable",
+    "coa_sl_interest_receivable",
+    "coa_sl_unearned_interest_income",
+    "coa_sl_other_income_penalty",
+    "coa_sl_allowance_doubtful_account",
+    "coa_sl_bad_dept_expense",
+    "coa_sl_garnished",
+  ])
+
+  // Get available COA options for each field (excluding already selected values)
+  const getAvailableCoaOptions = (currentFieldValue: string) => {
+    if (!coaData?.data.chartOfAccounts) return []
+
+    const usedValues = watchedCoaValues.filter((value) => value && value !== currentFieldValue)
+    return coaData.data.chartOfAccounts.filter((account) => !usedValues.includes(account.id))
+  }
+
   useEffect(() => {
-    if (item) {
+    if (isEditing && salaryLoanDetail?.data) {
+      const detail = salaryLoanDetail.data
       form.reset({
-        // code: item.code,
-        // name: item.name,
-        // interest_rate: item.interest_rate,
-        // surcharge_rate: item.surcharge_rate,
-        // min_amount: item.min_amount,
-        // max_amount: item.max_amount,
-        // vis_service: item.vis_service,
-        // vis_insurance: item.vis_insurance,
-        // vis_notarial: item.vis_notarial,
-        // vis_gross_reciept: item.vis_gross_reciept,
-        // vis_computer: item.vis_computer,
-        // vis_other_charges: item.vis_other_charges,
-        // pga_service_charge: item.pga_service_charge,
-        // pga_insurance: item.pga_insurance,
-        // pga_notarial: item.pga_notarial,
-        // pga_gross_reciept: item.pga_gross_reciept,
-        // def_interest: item.def_interest || "",
-        // def_charge: item.def_charge || "",
-        // def_computer: item.def_computer || "",
-        // coa_sl_receivable: item.coa_sl_receivable.id,
-        // coa_sl_interest_income: item.coa_sl_interest_income.id,
-        // coa_service_charge: item.coa_service_charge.id,
-        // coa_notarial: item.coa_notarial.id,
-        // coa_gross_receipt: item.coa_gross_receipt.id,
-        // coa_computer: item.coa_computer.id,
-        // coa_pga_accounts_payable: item.coa_pga_accounts_payable.id,
-        // coa_sl_interest_receivable: item.coa_sl_interest_receivable.id,
-        // coa_sl_unearned_interest_income: item.coa_sl_unearned_interest_income.id,
-        // coa_sl_other_income_penalty: item.coa_sl_other_income_penalty.id,
-        // coa_sl_allowance_doubtful_account: item.coa_sl_allowance_doubtful_account.id,
-        // coa_sl_bad_dept_expense: item.coa_sl_bad_dept_expense.id,
-        // coa_sl_garnished: item.coa_sl_garnished.id,
-        // eligible_groups: item.groups.map((group) => group.id),
+        code: detail.code,
+        name: detail.name,
+        interest_rate: detail.interest_rate,
+        surcharge_rate: detail.surcharge_rate,
+        min_amount: detail.min_amount,
+        max_amount: detail.max_amount,
+        vis_service: detail.vis_service,
+        vis_insurance: detail.vis_insurance,
+        vis_notarial: detail.vis_notarial,
+        vis_gross_reciept: detail.vis_gross_reciept,
+        vis_computer: detail.vis_computer,
+        vis_other_charges: detail.vis_other_charges,
+        pga_service_charge: detail.pga_service_charge,
+        pga_insurance: detail.pga_insurance,
+        pga_notarial: detail.pga_notarial,
+        pga_gross_reciept: detail.pga_gross_reciept,
+        def_interest: detail.def_interest || "3.00",
+        def_charge: detail.def_charge || "1.50",
+        def_computer: detail.def_computer || "0.10",
+        coa_sl_receivable: detail.coa_sl_receivable?.id || "",
+        coa_sl_interest_income: detail.coa_sl_interest_income?.id || "",
+        coa_service_charge: detail.coa_service_charge?.id || "",
+        coa_notarial: detail.coa_notarial?.id || "",
+        coa_gross_receipt: detail.coa_gross_receipt?.id || "",
+        coa_computer: detail.coa_computer?.id || "",
+        coa_pga_accounts_payable: detail.coa_pga_accounts_payable?.id || "",
+        coa_sl_interest_receivable: detail.coa_sl_interest_receivable?.id || "",
+        coa_sl_unearned_interest_income: detail.coa_sl_unearned_interest_income?.id || "",
+        coa_sl_other_income_penalty: detail.coa_sl_other_income_penalty?.id || "",
+        coa_sl_allowance_doubtful_account: detail.coa_sl_allowance_doubtful_account?.id || "",
+        coa_sl_bad_dept_expense: detail.coa_sl_bad_dept_expense?.id || "",
+        coa_sl_garnished: detail.coa_sl_garnished?.id || "",
+        eligible_groups: detail.groups?.map((group) => group.id) || [],
       })
-    } else {
+    } else if (!isEditing) {
       form.reset()
     }
-  }, [item, form])
+  }, [isEditing, salaryLoanDetail, form])
+
+  // Check if form should be disabled (loading or pending operations)
+  const isFormDisabled = creationHandler.isPending || editingHandler.isPending || (isEditing && isLoadingDetail)
 
   // Update the create function to ensure proper number conversion
   const create = async (values: FormValues) => {
@@ -257,33 +351,33 @@ export function SalaryLoanFormDialog({
       surcharge_rate: Number.parseFloat(values.surcharge_rate),
       min_amount: Number.parseFloat(values.min_amount),
       max_amount: Number.parseFloat(values.max_amount),
-      vis_service: values.vis_service ? Number.parseFloat(values.vis_service) : 0,
-      vis_insurance: values.vis_insurance ? Number.parseFloat(values.vis_insurance) : 0,
-      vis_notarial: values.vis_notarial ? Number.parseFloat(values.vis_notarial) : 0,
+      vis_service: Number.parseFloat(values.vis_service),
+      vis_insurance: Number.parseFloat(values.vis_insurance),
+      vis_notarial: Number.parseFloat(values.vis_notarial),
       vis_gross_reciept: Number.parseFloat(values.vis_gross_reciept),
-      vis_computer: values.vis_computer ? Number.parseFloat(values.vis_computer) : 0,
-      vis_other_charges: values.vis_other_charges ? Number.parseFloat(values.vis_other_charges) : 0,
-      pga_service_charge: values.pga_service_charge ? Number.parseFloat(values.pga_service_charge) : 0,
-      pga_insurance: values.pga_insurance ? Number.parseFloat(values.pga_insurance) : 0,
-      pga_notarial: values.pga_notarial ? Number.parseFloat(values.pga_notarial) : 0,
-      pga_gross_reciept: values.pga_gross_reciept ? Number.parseFloat(values.pga_gross_reciept) : 0,
-      def_interest: values.def_interest ? Number.parseFloat(values.def_interest) : 0,
-      def_charge: values.def_charge ? Number.parseFloat(values.def_charge) : 0,
-      def_computer: values.def_computer ? Number.parseFloat(values.def_computer) : 0,
+      vis_computer: Number.parseFloat(values.vis_computer),
+      vis_other_charges: Number.parseFloat(values.vis_other_charges),
+      pga_service_charge: Number.parseFloat(values.pga_service_charge),
+      pga_insurance: Number.parseFloat(values.pga_insurance),
+      pga_notarial: Number.parseFloat(values.pga_notarial),
+      pga_gross_reciept: Number.parseFloat(values.pga_gross_reciept),
+      def_interest: Number.parseFloat(values.def_interest),
+      def_charge: Number.parseFloat(values.def_charge),
+      def_computer: Number.parseFloat(values.def_computer),
       coa_sl_receivable: values.coa_sl_receivable,
       coa_sl_interest_income: values.coa_sl_interest_income,
-      coa_service_charge: values.coa_service_charge || "",
-      coa_notarial: values.coa_notarial || "",
-      coa_gross_receipt: values.coa_gross_receipt || "",
-      coa_computer: values.coa_computer || "",
-      coa_pga_accounts_payable: values.coa_pga_accounts_payable || "",
-      coa_sl_interest_receivable: values.coa_sl_interest_receivable || "",
-      coa_sl_unearned_interest_income: values.coa_sl_unearned_interest_income || "",
-      coa_sl_other_income_penalty: values.coa_sl_other_income_penalty || "",
-      coa_sl_allowance_doubtful_account: values.coa_sl_allowance_doubtful_account || "",
-      coa_sl_bad_dept_expense: values.coa_sl_bad_dept_expense || "",
-      coa_sl_garnished: values.coa_sl_garnished || "",
-      eligible_groups: values.eligible_groups || [],
+      coa_service_charge: values.coa_service_charge,
+      coa_notarial: values.coa_notarial,
+      coa_gross_receipt: values.coa_gross_receipt,
+      coa_computer: values.coa_computer,
+      coa_pga_accounts_payable: values.coa_pga_accounts_payable,
+      coa_sl_interest_receivable: values.coa_sl_interest_receivable,
+      coa_sl_unearned_interest_income: values.coa_sl_unearned_interest_income,
+      coa_sl_other_income_penalty: values.coa_sl_other_income_penalty,
+      coa_sl_allowance_doubtful_account: values.coa_sl_allowance_doubtful_account,
+      coa_sl_bad_dept_expense: values.coa_sl_bad_dept_expense,
+      coa_sl_garnished: values.coa_sl_garnished,
+      eligible_groups: values.eligible_groups,
     }
     try {
       await creationHandler.mutateAsync(payload)
@@ -304,33 +398,33 @@ export function SalaryLoanFormDialog({
       surcharge_rate: Number.parseFloat(values.surcharge_rate),
       min_amount: Number.parseFloat(values.min_amount),
       max_amount: Number.parseFloat(values.max_amount),
-      vis_service: values.vis_service ? Number.parseFloat(values.vis_service) : 0,
-      vis_insurance: values.vis_insurance ? Number.parseFloat(values.vis_insurance) : 0,
-      vis_notarial: values.vis_notarial ? Number.parseFloat(values.vis_notarial) : 0,
+      vis_service: Number.parseFloat(values.vis_service),
+      vis_insurance: Number.parseFloat(values.vis_insurance),
+      vis_notarial: Number.parseFloat(values.vis_notarial),
       vis_gross_reciept: Number.parseFloat(values.vis_gross_reciept),
-      vis_computer: values.vis_computer ? Number.parseFloat(values.vis_computer) : 0,
-      vis_other_charges: 0,
-      pga_service_charge: values.pga_service_charge ? Number.parseFloat(values.pga_service_charge) : 0,
-      pga_insurance: values.pga_insurance ? Number.parseFloat(values.pga_insurance) : 0,
-      pga_notarial: values.pga_notarial ? Number.parseFloat(values.pga_notarial) : 0,
-      pga_gross_reciept: values.pga_gross_reciept ? Number.parseFloat(values.pga_gross_reciept) : 0,
-      def_interest: values.def_interest ? Number.parseFloat(values.def_interest) : 0,
-      def_charge: values.def_charge ? Number.parseFloat(values.def_charge) : 0,
-      def_computer: values.def_computer ? Number.parseFloat(values.def_computer) : 0,
+      vis_computer: Number.parseFloat(values.vis_computer),
+      vis_other_charges: Number.parseFloat(values.vis_other_charges),
+      pga_service_charge: Number.parseFloat(values.pga_service_charge),
+      pga_insurance: Number.parseFloat(values.pga_insurance),
+      pga_notarial: Number.parseFloat(values.pga_notarial),
+      pga_gross_reciept: Number.parseFloat(values.pga_gross_reciept),
+      def_interest: Number.parseFloat(values.def_interest),
+      def_charge: Number.parseFloat(values.def_charge),
+      def_computer: Number.parseFloat(values.def_computer),
       coa_sl_receivable: values.coa_sl_receivable,
       coa_sl_interest_income: values.coa_sl_interest_income,
-      coa_service_charge: values.coa_service_charge || "",
-      coa_notarial: values.coa_notarial || "",
-      coa_gross_receipt: values.coa_gross_receipt || "",
-      coa_computer: values.coa_computer || "",
-      coa_pga_accounts_payable: values.coa_pga_accounts_payable || "",
-      coa_sl_interest_receivable: values.coa_sl_interest_receivable || "",
-      coa_sl_unearned_interest_income: values.coa_sl_unearned_interest_income || "",
-      coa_sl_other_income_penalty: values.coa_sl_other_income_penalty || "",
-      coa_sl_allowance_doubtful_account: values.coa_sl_allowance_doubtful_account || "",
-      coa_sl_bad_dept_expense: values.coa_sl_bad_dept_expense || "",
-      coa_sl_garnished: values.coa_sl_garnished || "",
-      eligible_groups: values.eligible_groups || [],
+      coa_service_charge: values.coa_service_charge,
+      coa_notarial: values.coa_notarial,
+      coa_gross_receipt: values.coa_gross_receipt,
+      coa_computer: values.coa_computer,
+      coa_pga_accounts_payable: values.coa_pga_accounts_payable,
+      coa_sl_interest_receivable: values.coa_sl_interest_receivable,
+      coa_sl_unearned_interest_income: values.coa_sl_unearned_interest_income,
+      coa_sl_other_income_penalty: values.coa_sl_other_income_penalty,
+      coa_sl_allowance_doubtful_account: values.coa_sl_allowance_doubtful_account,
+      coa_sl_bad_dept_expense: values.coa_sl_bad_dept_expense,
+      coa_sl_garnished: values.coa_sl_garnished,
+      eligible_groups: values.eligible_groups,
     }
     try {
       await editingHandler.mutateAsync(payload)
@@ -357,16 +451,28 @@ export function SalaryLoanFormDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(open) => {
-      onOpenChange(open)
-      if (!open) {
-        form.reset()
-      }
-    }}>
+    <Dialog
+      open={open}
+      onOpenChange={(open) => {
+        onOpenChange(open)
+        if (!open) {
+          form.reset()
+        }
+      }}
+    >
       <DialogContent className="min-w-5xl h-5/6 flex flex-col overflow-x-hidden overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">{isEditing ? "Edit" : "Add New"} Salary Loan</DialogTitle>
         </DialogHeader>
+
+        {/* Show loading indicator when fetching detailed data for editing */}
+        {isEditing && isLoadingDetail && (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="ml-2">Loading salary loan details...</span>
+          </div>
+        )}
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-6">
             <Tabs defaultValue="basic-info" value={activeTab} onValueChange={setActiveTab}>
@@ -389,7 +495,7 @@ export function SalaryLoanFormDialog({
                 {/* Basic Info Section */}
                 <div className="grid grid-cols-2 gap-6 w-full">
                   <FormField
-                    disabled={creationHandler.isPending || editingHandler.isPending}
+                    disabled={isFormDisabled}
                     control={form.control}
                     name="code"
                     render={({ field }) => (
@@ -407,7 +513,7 @@ export function SalaryLoanFormDialog({
                   />
 
                   <FormField
-                    disabled={creationHandler.isPending || editingHandler.isPending}
+                    disabled={isFormDisabled}
                     control={form.control}
                     name="name"
                     render={({ field }) => (
@@ -425,7 +531,7 @@ export function SalaryLoanFormDialog({
                   />
 
                   <FormField
-                    disabled={creationHandler.isPending || editingHandler.isPending}
+                    disabled={isFormDisabled}
                     control={form.control}
                     name="interest_rate"
                     render={({ field }) => (
@@ -443,7 +549,7 @@ export function SalaryLoanFormDialog({
                   />
 
                   <FormField
-                    disabled={creationHandler.isPending || editingHandler.isPending}
+                    disabled={isFormDisabled}
                     control={form.control}
                     name="surcharge_rate"
                     render={({ field }) => (
@@ -461,7 +567,7 @@ export function SalaryLoanFormDialog({
                   />
 
                   <FormField
-                    disabled={creationHandler.isPending || editingHandler.isPending}
+                    disabled={isFormDisabled}
                     control={form.control}
                     name="min_amount"
                     render={({ field }) => (
@@ -479,7 +585,7 @@ export function SalaryLoanFormDialog({
                   />
 
                   <FormField
-                    disabled={creationHandler.isPending || editingHandler.isPending}
+                    disabled={isFormDisabled}
                     control={form.control}
                     name="max_amount"
                     render={({ field }) => (
@@ -502,12 +608,14 @@ export function SalaryLoanFormDialog({
                   <h3 className="text-lg font-medium mb-4">Client-Visible Fees</h3>
                   <div className="grid grid-cols-3 gap-6">
                     <FormField
-                      disabled={creationHandler.isPending || editingHandler.isPending}
+                      disabled={isFormDisabled}
                       control={form.control}
                       name="vis_service"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-base font-medium">Service Charge (%)</FormLabel>
+                          <FormLabel className="text-base font-medium">
+                            Service Charge (%) <span className="text-red-500">*</span>
+                          </FormLabel>
                           <FormControl>
                             <Input type="number" step="0.01" placeholder="0.00" {...field} />
                           </FormControl>
@@ -518,12 +626,14 @@ export function SalaryLoanFormDialog({
                     />
 
                     <FormField
-                      disabled={creationHandler.isPending || editingHandler.isPending}
+                      disabled={isFormDisabled}
                       control={form.control}
                       name="vis_insurance"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-base font-medium">Insurance (%)</FormLabel>
+                          <FormLabel className="text-base font-medium">
+                            Insurance (%) <span className="text-red-500">*</span>
+                          </FormLabel>
                           <FormControl>
                             <Input type="number" step="0.01" placeholder="0.00" {...field} />
                           </FormControl>
@@ -534,12 +644,14 @@ export function SalaryLoanFormDialog({
                     />
 
                     <FormField
-                      disabled={creationHandler.isPending || editingHandler.isPending}
+                      disabled={isFormDisabled}
                       control={form.control}
                       name="vis_notarial"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-base font-medium">Notarial Fee (%)</FormLabel>
+                          <FormLabel className="text-base font-medium">
+                            Notarial Fee (%) <span className="text-red-500">*</span>
+                          </FormLabel>
                           <FormControl>
                             <Input type="number" step="0.01" placeholder="0.00" {...field} />
                           </FormControl>
@@ -550,7 +662,7 @@ export function SalaryLoanFormDialog({
                     />
 
                     <FormField
-                      disabled={creationHandler.isPending || editingHandler.isPending}
+                      disabled={isFormDisabled}
                       control={form.control}
                       name="vis_gross_reciept"
                       render={({ field }) => (
@@ -568,12 +680,14 @@ export function SalaryLoanFormDialog({
                     />
 
                     <FormField
-                      disabled={creationHandler.isPending || editingHandler.isPending}
+                      disabled={isFormDisabled}
                       control={form.control}
                       name="vis_computer"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-base font-medium">Computer Charges (%)</FormLabel>
+                          <FormLabel className="text-base font-medium">
+                            Computer Charges (%) <span className="text-red-500">*</span>
+                          </FormLabel>
                           <FormControl>
                             <Input type="number" step="0.01" placeholder="0.00" {...field} />
                           </FormControl>
@@ -584,12 +698,14 @@ export function SalaryLoanFormDialog({
                     />
 
                     <FormField
-                      disabled={creationHandler.isPending || editingHandler.isPending}
+                      disabled={isFormDisabled}
                       control={form.control}
                       name="vis_other_charges"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-base font-medium">Other Charges</FormLabel>
+                          <FormLabel className="text-base font-medium">
+                            Other Charges <span className="text-red-500">*</span>
+                          </FormLabel>
                           <FormControl>
                             <Input type="number" step="0.01" placeholder="0.00" {...field} />
                           </FormControl>
@@ -605,12 +721,14 @@ export function SalaryLoanFormDialog({
                   <h3 className="text-lg font-medium mb-4">PGA Fees & Surcharge</h3>
                   <div className="grid grid-cols-2 gap-6">
                     <FormField
-                      disabled={creationHandler.isPending || editingHandler.isPending}
+                      disabled={isFormDisabled}
                       control={form.control}
                       name="pga_service_charge"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-base font-medium">PGA Service Charge (%)</FormLabel>
+                          <FormLabel className="text-base font-medium">
+                            PGA Service Charge (%) <span className="text-red-500">*</span>
+                          </FormLabel>
                           <FormControl>
                             <Input type="number" step="0.01" placeholder="0.00" {...field} />
                           </FormControl>
@@ -621,12 +739,14 @@ export function SalaryLoanFormDialog({
                     />
 
                     <FormField
-                      disabled={creationHandler.isPending || editingHandler.isPending}
+                      disabled={isFormDisabled}
                       control={form.control}
                       name="pga_insurance"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-base font-medium">PGA Insurance (%)</FormLabel>
+                          <FormLabel className="text-base font-medium">
+                            PGA Insurance (%) <span className="text-red-500">*</span>
+                          </FormLabel>
                           <FormControl>
                             <Input type="number" step="0.01" placeholder="0.00" {...field} />
                           </FormControl>
@@ -637,12 +757,14 @@ export function SalaryLoanFormDialog({
                     />
 
                     <FormField
-                      disabled={creationHandler.isPending || editingHandler.isPending}
+                      disabled={isFormDisabled}
                       control={form.control}
                       name="pga_notarial"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-base font-medium">PGA Notarial Fee (%)</FormLabel>
+                          <FormLabel className="text-base font-medium">
+                            PGA Notarial Fee (%) <span className="text-red-500">*</span>
+                          </FormLabel>
                           <FormControl>
                             <Input type="number" step="0.01" placeholder="0.00" {...field} />
                           </FormControl>
@@ -653,12 +775,14 @@ export function SalaryLoanFormDialog({
                     />
 
                     <FormField
-                      disabled={creationHandler.isPending || editingHandler.isPending}
+                      disabled={isFormDisabled}
                       control={form.control}
                       name="pga_gross_reciept"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-base font-medium">PGA Gross Receipt Tax (%)</FormLabel>
+                          <FormLabel className="text-base font-medium">
+                            PGA Gross Receipt Tax (%) <span className="text-red-500">*</span>
+                          </FormLabel>
                           <FormControl>
                             <Input type="number" step="0.01" placeholder="0.00" {...field} />
                           </FormControl>
@@ -674,12 +798,14 @@ export function SalaryLoanFormDialog({
                   <h3 className="text-lg font-medium mb-4">Branch Other Charges</h3>
                   <div className="grid grid-cols-3 gap-6">
                     <FormField
-                      disabled={creationHandler.isPending || editingHandler.isPending}
+                      disabled
                       control={form.control}
                       name="def_interest"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-base font-medium">Interest Income (3%)</FormLabel>
+                          <FormLabel className="text-base font-medium">
+                            Interest Income (%) <span className="text-red-500">*</span>
+                          </FormLabel>
                           <FormControl>
                             <Input type="number" step="0.01" placeholder="0.00" {...field} />
                           </FormControl>
@@ -687,14 +813,15 @@ export function SalaryLoanFormDialog({
                         </FormItem>
                       )}
                     />
-
                     <FormField
-                      disabled={creationHandler.isPending || editingHandler.isPending}
+                      disabled
                       control={form.control}
                       name="def_charge"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-base font-medium">Service Charge Income (1.5%)</FormLabel>
+                          <FormLabel className="text-base font-medium">
+                            Service Charge Income (%) <span className="text-red-500">*</span>
+                          </FormLabel>
                           <FormControl>
                             <Input type="number" step="0.01" placeholder="0.00" {...field} />
                           </FormControl>
@@ -702,14 +829,15 @@ export function SalaryLoanFormDialog({
                         </FormItem>
                       )}
                     />
-
                     <FormField
-                      disabled={creationHandler.isPending || editingHandler.isPending}
+                      disabled
                       control={form.control}
                       name="def_computer"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-base font-medium">Computer Charges (0.1%)</FormLabel>
+                          <FormLabel className="text-base font-medium">
+                            Computer Charges (%) <span className="text-red-500">*</span>
+                          </FormLabel>
                           <FormControl>
                             <Input type="number" step="0.01" placeholder="0.00" {...field} />
                           </FormControl>
@@ -722,46 +850,58 @@ export function SalaryLoanFormDialog({
 
                 {/* List of Groups Section */}
                 <div className="w-full">
-                  <h3 className="text-lg font-medium mb-4">List of Groups</h3>
-                  <Table className="w-full">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[200px]">Group</TableHead>
-                        <TableHead className="text-right">Can Avail of SL</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody className="w-full">
-                      {groupsData?.data.groups.map((group) => (
-                        <TableRow className="justify-between w-full" key={group.id}>
-                          <TableCell className="w-full">{group.name}</TableCell>
-                          <TableCell className="flex justify-end mr-2">
-                            <FormField
-                              disabled={creationHandler.isPending || editingHandler.isPending}
-                              control={form.control}
-                              name="eligible_groups"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormControl>
-                                    <Checkbox
-                                      checked={field.value?.includes(group.id)}
-                                      onCheckedChange={(checked) => {
-                                        const currentValue = field.value || []
-                                        if (checked) {
-                                          field.onChange([...currentValue, group.id])
-                                        } else {
-                                          field.onChange(currentValue.filter((id) => id !== group.id))
-                                        }
-                                      }}
-                                    />
-                                  </FormControl>
-                                </FormItem>
-                              )}
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  <h3 className="text-lg font-medium mb-4">
+                    List of Groups <span className="text-red-500">*</span>
+                  </h3>
+                  <FormField
+                    disabled={isFormDisabled}
+                    control={form.control}
+                    name="eligible_groups"
+                    render={() => (
+                      <FormItem>
+                        <Table className="w-full">
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-[200px]">Group</TableHead>
+                              <TableHead className="text-right">Can Avail of SL</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody className="w-full">
+                            {groupsData?.data.groups.map((group) => (
+                              <TableRow className="justify-between w-full" key={group.id}>
+                                <TableCell className="w-full">{group.name}</TableCell>
+                                <TableCell className="flex justify-end mr-2">
+                                  <FormField
+                                    disabled={isFormDisabled}
+                                    control={form.control}
+                                    name="eligible_groups"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormControl>
+                                          <Checkbox
+                                            checked={field.value?.includes(group.id)}
+                                            onCheckedChange={(checked) => {
+                                              const currentValue = field.value || []
+                                              if (checked) {
+                                                field.onChange([...currentValue, group.id])
+                                              } else {
+                                                field.onChange(currentValue.filter((id) => id !== group.id))
+                                              }
+                                            }}
+                                          />
+                                        </FormControl>
+                                      </FormItem>
+                                    )}
+                                  />
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
               </TabsContent>
 
@@ -771,12 +911,14 @@ export function SalaryLoanFormDialog({
 
                   <div className="space-y-4">
                     <FormField
-                      disabled={creationHandler.isPending || editingHandler.isPending}
+                      disabled={isFormDisabled}
                       control={form.control}
                       name="coa_service_charge"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="block mb-2">Service Charge Account</FormLabel>
+                          <FormLabel className="block mb-2">
+                            Service Charge Account <span className="text-red-500">*</span>
+                          </FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                             <FormControl>
                               <SelectTrigger className="w-full">
@@ -784,7 +926,7 @@ export function SalaryLoanFormDialog({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {coaData?.data.chartOfAccounts.map((account) => (
+                              {getAvailableCoaOptions(field.value).map((account) => (
                                 <SelectItem key={account.id} value={account.id}>
                                   {account.code} - {account.name}
                                 </SelectItem>
@@ -797,12 +939,14 @@ export function SalaryLoanFormDialog({
                     />
 
                     <FormField
-                      disabled={creationHandler.isPending || editingHandler.isPending}
+                      disabled={isFormDisabled}
                       control={form.control}
                       name="coa_notarial"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="block mb-2">Notarial Account</FormLabel>
+                          <FormLabel className="block mb-2">
+                            Notarial Account <span className="text-red-500">*</span>
+                          </FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                             <FormControl>
                               <SelectTrigger className="w-full">
@@ -810,7 +954,7 @@ export function SalaryLoanFormDialog({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {coaData?.data.chartOfAccounts.map((account) => (
+                              {getAvailableCoaOptions(field.value).map((account) => (
                                 <SelectItem key={account.id} value={account.id}>
                                   {account.code} - {account.name}
                                 </SelectItem>
@@ -823,12 +967,14 @@ export function SalaryLoanFormDialog({
                     />
 
                     <FormField
-                      disabled={creationHandler.isPending || editingHandler.isPending}
+                      disabled={isFormDisabled}
                       control={form.control}
                       name="coa_gross_receipt"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="block mb-2">Gross Receipt Account</FormLabel>
+                          <FormLabel className="block mb-2">
+                            Gross Receipt Account <span className="text-red-500">*</span>
+                          </FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                             <FormControl>
                               <SelectTrigger className="w-full">
@@ -836,7 +982,7 @@ export function SalaryLoanFormDialog({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {coaData?.data.chartOfAccounts.map((account) => (
+                              {getAvailableCoaOptions(field.value).map((account) => (
                                 <SelectItem key={account.id} value={account.id}>
                                   {account.code} - {account.name}
                                 </SelectItem>
@@ -849,12 +995,14 @@ export function SalaryLoanFormDialog({
                     />
 
                     <FormField
-                      disabled={creationHandler.isPending || editingHandler.isPending}
+                      disabled={isFormDisabled}
                       control={form.control}
                       name="coa_computer"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="block mb-2">Computer Charges Account</FormLabel>
+                          <FormLabel className="block mb-2">
+                            Computer Charges Account <span className="text-red-500">*</span>
+                          </FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                             <FormControl>
                               <SelectTrigger className="w-full">
@@ -862,7 +1010,7 @@ export function SalaryLoanFormDialog({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {coaData?.data.chartOfAccounts.map((account) => (
+                              {getAvailableCoaOptions(field.value).map((account) => (
                                 <SelectItem key={account.id} value={account.id}>
                                   {account.code} - {account.name}
                                 </SelectItem>
@@ -875,12 +1023,14 @@ export function SalaryLoanFormDialog({
                     />
 
                     <FormField
-                      disabled={creationHandler.isPending || editingHandler.isPending}
+                      disabled={isFormDisabled}
                       control={form.control}
                       name="coa_pga_accounts_payable"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="block mb-2">A/P PGA Account</FormLabel>
+                          <FormLabel className="block mb-2">
+                            A/P PGA Account <span className="text-red-500">*</span>
+                          </FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                             <FormControl>
                               <SelectTrigger className="w-full">
@@ -888,7 +1038,7 @@ export function SalaryLoanFormDialog({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {coaData?.data.chartOfAccounts.map((account) => (
+                              {getAvailableCoaOptions(field.value).map((account) => (
                                 <SelectItem key={account.id} value={account.id}>
                                   {account.code} - {account.name}
                                 </SelectItem>
@@ -907,7 +1057,7 @@ export function SalaryLoanFormDialog({
 
                   <div className="space-y-4">
                     <FormField
-                      disabled={creationHandler.isPending || editingHandler.isPending}
+                      disabled={isFormDisabled}
                       control={form.control}
                       name="coa_sl_receivable"
                       render={({ field }) => (
@@ -922,7 +1072,7 @@ export function SalaryLoanFormDialog({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {coaData?.data.chartOfAccounts.map((account) => (
+                              {getAvailableCoaOptions(field.value).map((account) => (
                                 <SelectItem key={account.id} value={account.id}>
                                   {account.code} - {account.name}
                                 </SelectItem>
@@ -935,7 +1085,7 @@ export function SalaryLoanFormDialog({
                     />
 
                     <FormField
-                      disabled={creationHandler.isPending || editingHandler.isPending}
+                      disabled={isFormDisabled}
                       control={form.control}
                       name="coa_sl_interest_income"
                       render={({ field }) => (
@@ -950,7 +1100,7 @@ export function SalaryLoanFormDialog({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {coaData?.data.chartOfAccounts.map((account) => (
+                              {getAvailableCoaOptions(field.value).map((account) => (
                                 <SelectItem key={account.id} value={account.id}>
                                   {account.code} - {account.name}
                                 </SelectItem>
@@ -963,12 +1113,14 @@ export function SalaryLoanFormDialog({
                     />
 
                     <FormField
-                      disabled={creationHandler.isPending || editingHandler.isPending}
+                      disabled={isFormDisabled}
                       control={form.control}
                       name="coa_sl_interest_receivable"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="block mb-2">Interest Receivable Account</FormLabel>
+                          <FormLabel className="block mb-2">
+                            Interest Receivable Account <span className="text-red-500">*</span>
+                          </FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                             <FormControl>
                               <SelectTrigger className="w-full">
@@ -976,7 +1128,7 @@ export function SalaryLoanFormDialog({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {coaData?.data.chartOfAccounts.map((account) => (
+                              {getAvailableCoaOptions(field.value).map((account) => (
                                 <SelectItem key={account.id} value={account.id}>
                                   {account.code} - {account.name}
                                 </SelectItem>
@@ -989,12 +1141,14 @@ export function SalaryLoanFormDialog({
                     />
 
                     <FormField
-                      disabled={creationHandler.isPending || editingHandler.isPending}
+                      disabled={isFormDisabled}
                       control={form.control}
                       name="coa_sl_unearned_interest_income"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="block mb-2">Unearned Interest Income Account</FormLabel>
+                          <FormLabel className="block mb-2">
+                            Unearned Interest Income Account <span className="text-red-500">*</span>
+                          </FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                             <FormControl>
                               <SelectTrigger className="w-full">
@@ -1002,7 +1156,7 @@ export function SalaryLoanFormDialog({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {coaData?.data.chartOfAccounts.map((account) => (
+                              {getAvailableCoaOptions(field.value).map((account) => (
                                 <SelectItem key={account.id} value={account.id}>
                                   {account.code} - {account.name}
                                 </SelectItem>
@@ -1015,12 +1169,14 @@ export function SalaryLoanFormDialog({
                     />
 
                     <FormField
-                      disabled={creationHandler.isPending || editingHandler.isPending}
+                      disabled={isFormDisabled}
                       control={form.control}
                       name="coa_sl_other_income_penalty"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="block mb-2">Other Income Penalty Account</FormLabel>
+                          <FormLabel className="block mb-2">
+                            Other Income Penalty Account <span className="text-red-500">*</span>
+                          </FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                             <FormControl>
                               <SelectTrigger className="w-full">
@@ -1028,7 +1184,7 @@ export function SalaryLoanFormDialog({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {coaData?.data.chartOfAccounts.map((account) => (
+                              {getAvailableCoaOptions(field.value).map((account) => (
                                 <SelectItem key={account.id} value={account.id}>
                                   {account.code} - {account.name}
                                 </SelectItem>
@@ -1041,12 +1197,14 @@ export function SalaryLoanFormDialog({
                     />
 
                     <FormField
-                      disabled={creationHandler.isPending || editingHandler.isPending}
+                      disabled={isFormDisabled}
                       control={form.control}
                       name="coa_sl_allowance_doubtful_account"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="block mb-2">Allowance for Doubtful Account</FormLabel>
+                          <FormLabel className="block mb-2">
+                            Allowance for Doubtful Account <span className="text-red-500">*</span>
+                          </FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                             <FormControl>
                               <SelectTrigger className="w-full">
@@ -1054,7 +1212,7 @@ export function SalaryLoanFormDialog({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {coaData?.data.chartOfAccounts.map((account) => (
+                              {getAvailableCoaOptions(field.value).map((account) => (
                                 <SelectItem key={account.id} value={account.id}>
                                   {account.code} - {account.name}
                                 </SelectItem>
@@ -1067,12 +1225,14 @@ export function SalaryLoanFormDialog({
                     />
 
                     <FormField
-                      disabled={creationHandler.isPending || editingHandler.isPending}
+                      disabled={isFormDisabled}
                       control={form.control}
                       name="coa_sl_bad_dept_expense"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="block mb-2">Bad Debt Expense Account</FormLabel>
+                          <FormLabel className="block mb-2">
+                            Bad Debt Expense Account <span className="text-red-500">*</span>
+                          </FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                             <FormControl>
                               <SelectTrigger className="w-full">
@@ -1080,7 +1240,7 @@ export function SalaryLoanFormDialog({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {coaData?.data.chartOfAccounts.map((account) => (
+                              {getAvailableCoaOptions(field.value).map((account) => (
                                 <SelectItem key={account.id} value={account.id}>
                                   {account.code} - {account.name}
                                 </SelectItem>
@@ -1093,12 +1253,14 @@ export function SalaryLoanFormDialog({
                     />
 
                     <FormField
-                      disabled={creationHandler.isPending || editingHandler.isPending}
+                      disabled={isFormDisabled}
                       control={form.control}
                       name="coa_sl_garnished"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="block mb-2">Garnished Expense Account</FormLabel>
+                          <FormLabel className="block mb-2">
+                            Garnished Expense Account <span className="text-red-500">*</span>
+                          </FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                             <FormControl>
                               <SelectTrigger className="w-full">
@@ -1106,7 +1268,7 @@ export function SalaryLoanFormDialog({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {coaData?.data.chartOfAccounts.map((account) => (
+                              {getAvailableCoaOptions(field.value).map((account) => (
                                 <SelectItem key={account.id} value={account.id}>
                                   {account.code} - {account.name}
                                 </SelectItem>
@@ -1124,7 +1286,7 @@ export function SalaryLoanFormDialog({
 
             <div className="flex justify-end gap-2">
               <Button
-                disabled={creationHandler.isPending || editingHandler.isPending}
+                disabled={isFormDisabled}
                 type="button"
                 variant="outline"
                 onClick={() => {
@@ -1135,11 +1297,11 @@ export function SalaryLoanFormDialog({
               >
                 Cancel
               </Button>
-              <Button disabled={creationHandler.isPending || editingHandler.isPending} type="submit">
+              <Button disabled={isFormDisabled} type="submit">
                 {activeTab === "basic-info" ? "Continue" : isEditing ? "Update" : "Save"} Loan Product{" "}
-                {(creationHandler.isPending || editingHandler.isPending) && (
+                {isFormDisabled && (
                   <span>
-                    <Loader2 className="animate-spin" />
+                    <Loader2 className="animate-spin ml-2" />
                   </span>
                 )}
               </Button>

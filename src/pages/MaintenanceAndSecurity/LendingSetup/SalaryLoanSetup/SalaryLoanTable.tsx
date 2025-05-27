@@ -181,6 +181,7 @@ export function SalaryLoanTable() {
           setIsDialogOpen(false)
           setSelectedItem(null)
           setIsEditing(false)
+          queryClient.removeQueries({ queryKey: ["salary-loan-detail"] })
         }}
         onSubmit={onSubmit}
       />

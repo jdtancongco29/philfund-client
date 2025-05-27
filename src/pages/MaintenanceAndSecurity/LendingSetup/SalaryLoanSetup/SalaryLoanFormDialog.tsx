@@ -15,6 +15,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import SalaryLoanSetupService from "./Service/SalaryLoanSetupService"
 import GroupSetupService from "../GroupSetup/Service/GroupSetupService"
 import { Loader2 } from "lucide-react"
+import { AxiosError } from "axios"
 
 // Update the form schema with proper validation
 const formSchema = z
@@ -417,9 +418,19 @@ export function SalaryLoanFormDialog({
       await creationHandler.mutateAsync(payload)
       queryClient.invalidateQueries({ queryKey: ["salary-loan-table"] })
       onSubmit()
+      setActiveTab("basic-info")
       form.reset()
     } catch (errorData: unknown) {
-      console.error(errorData)
+      if (errorData instanceof AxiosError) {
+        Object.entries(errorData.response?.data.errors).forEach(([field, messages]) => {
+          const errorMsg = messages as string[];
+          form.setError(field as any, {
+            type: 'manual',
+            message: errorMsg[0]
+          });
+        }
+        )
+      }
     }
   }
 
@@ -464,9 +475,19 @@ export function SalaryLoanFormDialog({
       await editingHandler.mutateAsync(payload)
       queryClient.invalidateQueries({ queryKey: ["salary-loan-table"] })
       onSubmit()
+      setActiveTab("basic-info")
       form.reset()
-    } catch (_error) {
-      console.log(_error)
+    } catch (errorData: unknown) {
+      if (errorData instanceof AxiosError) {
+        Object.entries(errorData.response?.data.errors).forEach(([field, messages]) => {
+          const errorMsg = messages as string[];
+          form.setError(field as any, {
+            type: 'manual',
+            message: errorMsg[0]
+          });
+        }
+        )
+      }
     }
   }
 

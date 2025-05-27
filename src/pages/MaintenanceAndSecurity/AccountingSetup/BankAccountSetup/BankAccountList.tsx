@@ -152,8 +152,8 @@ export default function BankAccountsTable() {
       resetTable();
       fetchData();
     } catch (err) {
-      console.error("Error deleting Reference:", err);
-      toast.error("Failed to delete Reference.");
+      console.error("Error deleting Bank:", err);
+      toast.error("Failed to delete Bank.");
     } finally {
       setDeleteDialogOpen(false);
     }
@@ -188,7 +188,7 @@ export default function BankAccountsTable() {
         }
       );
 
-      toast.success(selectedItemId ? "Reference Updated" : "Reference Added", {
+      toast.success(selectedItemId ? "Bank Account Updated" : "Bank Account Added", {
         description: `${response.data.data.name} has been successfully ${
           selectedItemId ? "updated" : "added"
         }.`,

@@ -13,13 +13,9 @@ import { AlertCircle, CircleCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiRequest } from '@/lib/api';
 
-
-
 interface ValidationErrors {
   [key: string]: string[];
 }
-
-
 
 interface Item {
   coa_id: string;
@@ -28,33 +24,43 @@ interface Item {
   credit: string;
 }
 
-
-interface AddNewEntryDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onAdd: (data: any) => void;
-}
-
-interface Branch {
+interface ChartOfAccount {
   id: string;
   code: string;
   name: string;
-  email: string;
-  address: string;
-  contact: string;
-  city: string;
+  description: string;
+  major_classification: string;
+  category: string;
+  is_header: boolean;
+  parent_id: string | null;
+  is_contra: boolean;
+  normal_balance: string;
+  special_classification: string;
   status: boolean;
-  departments: Department[];
 }
 
-interface Department {
-  id: string;
+interface AccountEntry {
+  id?: string;
   name: string;
+  particulars?: string;
+  transaction_amount: string;
+  status: boolean;
+  details?: Array<{
+    coa: {
+      id: string;
+      code: string;
+      name: string;
+    };
+    debit: string;
+    credit: string;
+  }>;
 }
 
-interface BranchUser {
-  id: string;
-  name: string;
+interface AddEditEntryDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (data: any) => void;
+  editingEntry?: AccountEntry | null;
 }
 
 // Utility functions for balance calculations
@@ -127,36 +133,29 @@ const BalanceValidationMessage = ({ items }: { items: Item[] }) => {
   );
 };
 
-export default function AddNewEntryDialog({
+export default function AddEditEntryDialog({
   isOpen,
   onClose,
-  onAdd,
-}: AddNewEntryDialogProps) {
+  onSave,
+  editingEntry = null,
+}: AddEditEntryDialogProps) {
   const [name, setName] = useState("");
   const [particulars, setParticulars] = useState("");
-  const [refNum, setRefNum] = useState("");
-  const [refId, setRefId] = useState("");
-  const [branchId, setBranchId] = useState("");
-  const [transactionDate, setTransactionDate] = useState("");
-  const [, setTransAmount] = useState("");
+  const [transactionAmount, setTransactionAmount] = useState("");
   const [items, setItems] = useState<Item[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Error state
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
 
-  const [, setIsCOADialogOpen] = useState(false);
-  const [, setSelectedItemIndex] = useState<number | null>(null);
+  // COA Dialog states
+  const [isCOADialogOpen, setIsCOADialogOpen] = useState(false);
+  const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
+  const [chartOfAccounts, setChartOfAccounts] = useState<ChartOfAccount[]>([]);
+  const [coaLoading, setCoaLoading] = useState(false);
+  const [coaSearch, setCoaSearch] = useState("");
 
-  // User selection states
-  const [, setUserDialogOpen] = useState<"prepared" | "checked" | "approved" | null>(null);
-  const [preparedBy, setPreparedBy] = useState<BranchUser | null>(null);
-  const [checkedBy, setCheckedBy] = useState<BranchUser | null>(null);
-  const [approvedBy, setApprovedBy] = useState<BranchUser | null>(null);
-
-  // Branch selection states
-  const [, setIsBranchDialogOpen] = useState(false);
-  const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
+  const isEditMode = Boolean(editingEntry?.id);
 
   // Helper function to get field errors
   const getFieldErrors = (fieldName: string): string[] => {
@@ -179,29 +178,90 @@ export default function AddNewEntryDialog({
     }
   };
 
-  const fetchReferenceNumber = async () => {
+  // Populate form with editing entry data
+  useEffect(() => {
+    if (isOpen) {
+      // Clear errors when dialog opens
+      setValidationErrors({});
+      
+      if (editingEntry) {
+        setName(editingEntry.name || "");
+        setParticulars(editingEntry.particulars || "");
+        setTransactionAmount(editingEntry.transaction_amount || "");
+        
+        // Convert details to items format
+        if (editingEntry.details && editingEntry.details.length > 0) {
+          const convertedItems: Item[] = editingEntry.details.map(detail => ({
+            coa_id: detail.coa.id,
+            coa_name: `${detail.coa.code} - ${detail.coa.name}`,
+            debit: detail.debit,
+            credit: detail.credit,
+          }));
+          setItems(convertedItems);
+        } else {
+          setItems([]);
+        }
+      } else {
+        // Reset form for new entry
+        resetForm();
+      }
+    }
+  }, [isOpen, editingEntry]);
+
+  useEffect(() => {
+    if (isCOADialogOpen) {
+      fetchChartOfAccounts();
+    }
+  }, [isCOADialogOpen]);
+
+  const fetchChartOfAccounts = async () => {
+    setCoaLoading(true);
     try {
-      const response = await apiRequest(
+      const response = await apiRequest<{ data: { chartOfAccounts: ChartOfAccount[] } }>(
         "get",
-        "/reference/number/?module_code=general_journal",
+        "/coa",
         null,
-        { useAuth: true, useBranchId: true }
+        {
+          useAuth: true,
+          useBranchId: true,
+        }
       );
-      const { ref_id, ref_num } = response.data.data;
-      setRefId(ref_id);
-      setRefNum(ref_num.toString());
+      setChartOfAccounts(response.data.data.chartOfAccounts);
     } catch (error) {
-      console.error("Failed to fetch reference number:", error);
+      console.error("Error fetching chart of accounts:", error);
+      toast.error("Error", {
+        description: "Failed to load Chart of Accounts. Please try again.",
+        duration: 3000,
+      });
+    } finally {
+      setCoaLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchReferenceNumber();
-      // Clear errors when dialog opens
-      setValidationErrors({});
+  const handleCOASelect = (coa: ChartOfAccount) => {
+    if (selectedItemIndex !== null) {
+      const newItems = [...items];
+      newItems[selectedItemIndex] = {
+        ...newItems[selectedItemIndex],
+        coa_id: coa.id,
+        coa_name: `${coa.code} - ${coa.name}`,
+      };
+      setItems(newItems);
+      
+      // Clear COA-related errors for this item
+      clearFieldError(`items.${selectedItemIndex}.coa_id`);
+      
+      console.log('COA selected:', coa, 'for item index:', selectedItemIndex);
     }
-  }, [isOpen]);
+    setIsCOADialogOpen(false);
+    setSelectedItemIndex(null);
+    setCoaSearch("");
+  };
+
+  const filteredAccounts = chartOfAccounts.filter((account) =>
+    account.name.toLowerCase().includes(coaSearch.toLowerCase()) ||
+    account.code.toLowerCase().includes(coaSearch.toLowerCase())
+  );
 
   const addItem = () => {
     setItems([...items, { coa_id: "", debit: "", credit: "" }]);
@@ -225,6 +285,9 @@ export default function AddNewEntryDialog({
     
     // Clear balance errors when removing items
     clearFieldError('items');
+    
+    // Update transaction amount when items change
+    updateTransactionAmount();
   };
 
   const updateItem = (index: number, field: keyof Item, value: string) => {
@@ -242,39 +305,39 @@ export default function AddNewEntryDialog({
     // Clear balance-related errors when amounts change
     if (field === 'debit' || field === 'credit') {
       clearFieldError('items');
+      // Update transaction amount when amounts change
+      setTimeout(() => updateTransactionAmount(), 0);
     }
   };
 
-
+  // Update transaction amount based on total credit
+ const updateTransactionAmount = () => {
+  const totalDebit = calculateTotalDebit(items);
+  setTransactionAmount(totalDebit.toFixed(2));
+};
 
   const resetForm = () => {
     setName("");
     setParticulars("");
-    setRefNum("");
-    setRefId("");
-    setBranchId("");
-    setTransactionDate("");
-    setTransAmount("");
+    setTransactionAmount("");
     setItems([]);
-    setPreparedBy(null);
-    setCheckedBy(null);
-    setApprovedBy(null);
-    setSelectedBranch(null);
     setValidationErrors({});
+    setCoaSearch("");
   };
 
-  const createGeneralJournalEntry = async (payload: any) => {
+  const createOrUpdateEntry = async (payload: any) => {
     try {
       setIsSubmitting(true);
+      const method = isEditMode ? "put" : "post";
+      const url = isEditMode ? `/default-entry/${editingEntry?.id}` : "/default-entry";
+      
       const response = await apiRequest(
-        "post",
-        "/general-journal",
+        method,
+        url,
         payload,
-        { 
+        {
           useAuth: true,
-          customHeaders: {
-            'X-Branch-Id': branchId
-          }
+          useBranchId: true,
         }
       );
       return response.data;
@@ -298,22 +361,21 @@ export default function AddNewEntryDialog({
         }
       } else {
         // Handle other types of errors
-        toast.error("Error creating General Journal", {
+        const action = isEditMode ? "updating" : "creating";
+        toast.error(`Error ${action} Default Entry`, {
           description: "An unexpected error occurred. Please try again.",
           duration: 5000,
         });
       }
       
-      console.error("Failed to create general journal entry:", error);
+      console.error(`Failed to ${isEditMode ? 'update' : 'create'} default entry:`, error);
       throw error;
     } finally {
       setIsSubmitting(false);
     }
   };
-  const totalCredit = calculateTotalCredit(items);
-// In your AddNewEntryDialog component, modify the handleSubmit function:
 
-const handleSubmit = async () => {
+  const handleSubmit = async () => {
     // Clear previous validation errors
     setValidationErrors({});
     
@@ -329,30 +391,12 @@ const handleSubmit = async () => {
       return;
     }
     
-    if (
-      name &&
-      particulars &&
-      refNum &&
-      refId &&
-      branchId &&
-      transactionDate &&
-      checkedBy &&
-      approvedBy &&
-      preparedBy &&
-      items.length
-    ) {
+    if (name && particulars && transactionAmount && items.length) {
       try {
         const payload = {
           name,
           particulars,
-          ref_num: Number(refNum),
-          ref_id: refId,
-          branch_id: branchId,
-          transaction_date: transactionDate,
-          checked_by: checkedBy.id,
-          approved_by: approvedBy.id,
-          prepared_by: preparedBy.id,
-          trans_amount: totalCredit,
+          transaction_amount: parseFloat(transactionAmount) || 0,
           items: items.map((item) => ({
             coa_id: item.coa_id,
             debit: parseFloat(item.debit) || 0,
@@ -360,34 +404,32 @@ const handleSubmit = async () => {
           })),
         };
 
-        const result = await createGeneralJournalEntry(payload);
+        const result = await createOrUpdateEntry(payload);
         
-        // Pass the result to parent component (which will handle the toast)
-        onAdd({
+        // Pass the result to parent component
+        onSave({
           ...result,
+          id: isEditMode ? editingEntry?.id : result.id,
           name,
           particulars,
-          ref_num: Number(refNum),
-          trans_amount: totalCredit,
-          transaction_date: transactionDate,
-          branch_name: selectedBranch?.name
+          transaction_amount: parseFloat(transactionAmount) || 0,
         });
         
         resetForm();
         onClose();
         
-        // REMOVE the toast from here since parent will handle it
-        toast.success("General Journal Created", {
-          description: `General Journal has been successfully created.`,
+        const action = isEditMode ? "Updated" : "Created";
+        toast.success(`Default Entry ${action}`, {
+          description: `Default entry has been successfully ${action.toLowerCase()}.`,
           icon: <CircleCheck className="h-5 w-5" />,
           duration: 5000,
         });
         
-        console.log("General journal entry created successfully:", result);
+        console.log(`Default entry ${action.toLowerCase()} successfully:`, result);
         
       } catch (error) {
-        // Error handling is done in createGeneralJournalEntry
-        console.error("Error creating general journal entry:", error);
+        // Error handling is done in createOrUpdateEntry
+        console.error(`Error ${isEditMode ? 'updating' : 'creating'} default entry:`, error);
       }
     }
   };
@@ -397,15 +439,13 @@ const handleSubmit = async () => {
     onClose();
   };
 
-
-
   return (
     <>
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="sm:max-w-[700px] overflow-y-auto max-h-[80vh]">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold">
-              Add General Journal
+              {isEditMode ? "Edit Default Entry" : "Add Default Entry"}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -442,65 +482,20 @@ const handleSubmit = async () => {
                 />
                 <ErrorMessage errors={getFieldErrors('particulars')} />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 col-span-2">
                 <Label>
-                  Reference Number <span className="text-red-500">*</span>
+                  Transaction Amount <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  type="number"
-                  value={refNum}
-                  readOnly
-                  placeholder="Reference Number"
-                  disabled={isSubmitting}
-                  className={hasFieldError('ref_num') ? 'border-red-500' : ''}
-                />
-                <ErrorMessage errors={getFieldErrors('ref_num')} />
-              </div>
-              <div className="space-y-2">
-                <Label>
-                  Reference ID <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  value={refId}
-                  onChange={(e) => {
-                    setRefId(e.target.value);
-                    clearFieldError('ref_id');
-                  }}
-                  placeholder="Reference ID"
-                  disabled={isSubmitting}
-                  className={hasFieldError('ref_id') ? 'border-red-500' : ''}
-                />
-                <ErrorMessage errors={getFieldErrors('ref_id')} />
-              </div>
-              <div className="space-y-2">
-                <Label>
-                  Branch <span className="text-red-500">*</span>
-                </Label>
-                <div
-                  className={`w-full border rounded px-3 py-2 bg-white cursor-pointer ${
-                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-                  } ${hasFieldError('branch_id') ? 'border-red-500' : ''}`}
-                  onClick={() => !isSubmitting && setIsBranchDialogOpen(true)}
-                >
-                  {selectedBranch ? selectedBranch.name : <span className="text-gray-400">Select Branch</span>}
-                </div>
-                <ErrorMessage errors={getFieldErrors('branch_id')} />
-              </div>
-              <div className="space-y-2">
-                <Label>
-                  Transaction Date <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  type="date"
-                  value={transactionDate}
-                  onChange={(e) => {
-                    setTransactionDate(e.target.value);
-                    clearFieldError('transaction_date');
-                  }}
-                  disabled={isSubmitting}
-                  className={hasFieldError('transaction_date') ? 'border-red-500' : ''}
-                />
-                <ErrorMessage errors={getFieldErrors('transaction_date')} />
+              <Input
+                    type="number"
+                    step="0.01"
+                    value={transactionAmount}
+                    readOnly
+                    placeholder="0.00"
+                    className="bg-gray-100 cursor-not-allowed !text-black"
+                  />
+
+                <ErrorMessage errors={getFieldErrors('transaction_amount')} />
               </div>
             </div>
 
@@ -538,6 +533,7 @@ const handleSubmit = async () => {
                         } ${hasFieldError(`items.${index}.coa_id`) ? 'border-red-500' : ''}`}
                         onClick={() => {
                           if (!isSubmitting) {
+                            console.log('COA field clicked for item index:', index);
                             setSelectedItemIndex(index);
                             setIsCOADialogOpen(true);
                           }
@@ -587,68 +583,6 @@ const handleSubmit = async () => {
                 </div>
               ))}
             </div>
-            
-            <div className="mt-4 grid grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label>Prepared By</Label>
-                <Input
-                  value={preparedBy?.name ?? ""}
-                  readOnly
-                  placeholder="Select user"
-                  onClick={() => !isSubmitting && setUserDialogOpen("prepared")}
-                  className={`cursor-pointer ${
-                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-                  } ${hasFieldError('prepared_by') ? 'border-red-500' : ''}`}
-                />
-                <ErrorMessage errors={getFieldErrors('prepared_by')} />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Checked By</Label>
-                <Input
-                  value={checkedBy?.name ?? ""}
-                  readOnly
-                  placeholder="Select user"
-                  onClick={() => !isSubmitting && setUserDialogOpen("checked")}
-                  className={`cursor-pointer ${
-                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-                  } ${hasFieldError('checked_by') ? 'border-red-500' : ''}`}
-                />
-                <ErrorMessage errors={getFieldErrors('checked_by')} />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Approved By</Label>
-                <Input
-                  value={approvedBy?.name ?? ""}
-                  readOnly
-                  placeholder="Select user"
-                  onClick={() => !isSubmitting && setUserDialogOpen("approved")}
-                  className={`cursor-pointer ${
-                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-                  } ${hasFieldError('approved_by') ? 'border-red-500' : ''}`}
-                />
-                <ErrorMessage errors={getFieldErrors('approved_by')} />
-              </div>
-
-                <div className="space-y-2">
-                <Label>
-                  Transaction Amount
-                </Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={totalCredit.toFixed(2)}
-                  onChange={(e) => {
-                  setTransAmount(e.target.value);
-                  clearFieldError('trans_amount');
-                  }}
-                  placeholder="0.00"
-                  className={hasFieldError('trans_amount') ? 'border-red-500' : ''}
-                />
-                <ErrorMessage errors={getFieldErrors('trans_amount')} />
-                </div>
-            </div>
           </div>
           
           <DialogFooter className="flex justify-end space-x-2">
@@ -665,34 +599,71 @@ const handleSubmit = async () => {
                 isSubmitting ||
                 !name ||
                 !particulars ||
-                !refNum ||
-                !refId ||
-                !branchId ||
-                !transactionDate ||
-                !checkedBy ||
-                !approvedBy ||
-                !preparedBy ||
+                !transactionAmount ||
                 items.length === 0 ||
                 !isBalanced(items) // Add balance check to disable button
               }
             >
-              {isSubmitting ? "Creating..." : "Add Entry"}
+              {isSubmitting ? (isEditMode ? "Updating..." : "Creating...") : (isEditMode ? "Update Entry" : "Add Entry")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* COA Dialog - Replace with your actual COA dialog component */}
+      {/* COA Selection Dialog */}
+      <Dialog open={isCOADialogOpen} onOpenChange={(isOpen) => {
+        if (!isOpen) {
+          setIsCOADialogOpen(false);
+          setSelectedItemIndex(null);
+          setCoaSearch("");
+        }
+      }}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle>Select Chart of Account</DialogTitle>
+          </DialogHeader>
 
-      {/* Branch Selection Dialog - Replace with your actual branch dialog component */}
+          <Input
+            placeholder="Search by name or code..."
+            value={coaSearch}
+            onChange={(e) => setCoaSearch(e.target.value)}
+            className="mb-3"
+          />
 
-      
-      {/* Branch info display */}
-      {selectedBranch && (
-        <div className="text-sm text-muted-foreground mt-2">
-          {selectedBranch.code} • {selectedBranch.city}
-        </div>
-      )}
+          <div className="h-[300px] overflow-auto space-y-2">
+            {coaLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-muted-foreground">Loading chart of accounts...</p>
+              </div>
+            ) : filteredAccounts.length === 0 ? (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-muted-foreground">No matching accounts found.</p>
+              </div>
+            ) : (
+              filteredAccounts.map((coa) => (
+                <div
+                  key={coa.id}
+                  className="p-3 border rounded hover:bg-gray-100 cursor-pointer transition-colors"
+                  onClick={() => {
+                    console.log('COA item clicked:', coa);
+                    handleCOASelect(coa);
+                  }}
+                >
+                  <div className="font-semibold">{coa.code} - {coa.name}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {coa.category} | {coa.normal_balance}
+                  </div>
+                  {coa.description && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {coa.description}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

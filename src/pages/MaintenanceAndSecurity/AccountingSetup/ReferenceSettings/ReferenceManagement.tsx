@@ -11,7 +11,7 @@ import {
 } from "@/components/data-table/data-table";
 import { apiRequest } from "@/lib/api";
 import { EditReferenceDialog, FormValues } from "./EditReferenceDialog";
-import { DdeleteReferenceDialog } from "./DdeleteReferenceDialog";
+import { DdeleteReferenceDialog } from "./DeleteReferenceDialog";
 
 interface Module {
   id: string;

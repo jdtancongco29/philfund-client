@@ -42,8 +42,9 @@ export function DistrictTable() {
   const columns: ColumnDefinition<District>[] = [
     {
       id: "division",
-      header: "Division Code",
+      header: "Division Name",
       accessorKey: "code",
+      cell: (item) => item.division.name,
       enableSorting: true,
     },
     {

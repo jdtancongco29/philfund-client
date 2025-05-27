@@ -109,6 +109,7 @@ export function SalaryLoanTable() {
   // Handle new
   const handleNew = () => {
     setIsDialogOpen(true)
+    setIsEditing(false)
   }
 
   const onSubmit = () => {
@@ -175,13 +176,13 @@ export function SalaryLoanTable() {
         open={isDialogOpen}
         onCancel={() => {
           setSelectedItem(null)
+          setIsEditing(false)
         }}
         isEditing={isEditing}
         onOpenChange={() => {
           setIsDialogOpen(false)
           setSelectedItem(null)
           setIsEditing(false)
-          queryClient.removeQueries({ queryKey: ["salary-loan-detail"] })
         }}
         onSubmit={onSubmit}
       />

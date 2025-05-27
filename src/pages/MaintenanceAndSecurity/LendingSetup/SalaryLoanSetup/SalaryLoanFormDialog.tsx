@@ -209,7 +209,7 @@ export function SalaryLoanFormDialog({
 
   // Fetch detailed salary loan data when editing
   const { data: salaryLoanDetail, isLoading: isLoadingDetail } = useQuery({
-    queryKey: ["salary-loan-detail", item?.id],
+    queryKey: [`salary-loan-detail-${item?.id}`, item?.id],
     queryFn: () => SalaryLoanSetupService.getSalaryLoanById(item!.id),
     enabled: isEditing && !!item?.id,
     staleTime: 0, // Always fetch fresh data
@@ -334,10 +334,44 @@ export function SalaryLoanFormDialog({
         coa_sl_garnished: detail.coa_sl_garnished?.id || "",
         eligible_groups: detail.groups?.map((group) => group.id) || [],
       })
-    } else if (!isEditing) {
-      form.reset()
+    } else {
+      form.reset({
+        code: "",
+        name: "",
+        interest_rate: "",
+        surcharge_rate: "",
+        min_amount: "",
+        max_amount: "",
+        vis_service: "",
+        vis_insurance: "",
+        vis_notarial: "",
+        vis_gross_reciept: "",
+        vis_computer: "",
+        vis_other_charges: "",
+        pga_service_charge: "",
+        pga_insurance: "",
+        pga_notarial: "",
+        pga_gross_reciept: "",
+        def_interest: "3.00",
+        def_charge: "1.50",
+        def_computer: "0.10",
+        coa_sl_receivable: "",
+        coa_sl_interest_income: "",
+        coa_service_charge: "",
+        coa_notarial: "",
+        coa_gross_receipt: "",
+        coa_computer: "",
+        coa_pga_accounts_payable: "",
+        coa_sl_interest_receivable: "",
+        coa_sl_unearned_interest_income: "",
+        coa_sl_other_income_penalty: "",
+        coa_sl_allowance_doubtful_account: "",
+        coa_sl_bad_dept_expense: "",
+        coa_sl_garnished: "",
+        eligible_groups: [],
+      })
     }
-  }, [isEditing, salaryLoanDetail, form])
+  }, [isEditing, salaryLoanDetail, form, open])
 
   // Check if form should be disabled (loading or pending operations)
   const isFormDisabled = creationHandler.isPending || editingHandler.isPending || (isEditing && isLoadingDetail)
@@ -361,9 +395,9 @@ export function SalaryLoanFormDialog({
       pga_insurance: Number.parseFloat(values.pga_insurance),
       pga_notarial: Number.parseFloat(values.pga_notarial),
       pga_gross_reciept: Number.parseFloat(values.pga_gross_reciept),
-      def_interest: Number.parseFloat(values.def_interest),
-      def_charge: Number.parseFloat(values.def_charge),
-      def_computer: Number.parseFloat(values.def_computer),
+      def_interest: 3.0,
+      def_charge: 1.5,
+      def_computer: 0.1,
       coa_sl_receivable: values.coa_sl_receivable,
       coa_sl_interest_income: values.coa_sl_interest_income,
       coa_service_charge: values.coa_service_charge,
@@ -408,9 +442,9 @@ export function SalaryLoanFormDialog({
       pga_insurance: Number.parseFloat(values.pga_insurance),
       pga_notarial: Number.parseFloat(values.pga_notarial),
       pga_gross_reciept: Number.parseFloat(values.pga_gross_reciept),
-      def_interest: Number.parseFloat(values.def_interest),
-      def_charge: Number.parseFloat(values.def_charge),
-      def_computer: Number.parseFloat(values.def_computer),
+      def_interest: 3.0,
+      def_charge: 1.5,
+      def_computer: 0.1,
       coa_sl_receivable: values.coa_sl_receivable,
       coa_sl_interest_income: values.coa_sl_interest_income,
       coa_service_charge: values.coa_service_charge,
@@ -457,6 +491,7 @@ export function SalaryLoanFormDialog({
         onOpenChange(open)
         if (!open) {
           form.reset()
+          setActiveTab("basic-info")
         }
       }}
     >
@@ -807,7 +842,7 @@ export function SalaryLoanFormDialog({
                             Interest Income (%) <span className="text-red-500">*</span>
                           </FormLabel>
                           <FormControl>
-                            <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                            <Input type="number" step="0.01" placeholder="0.00" {...field} value={3.0} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -823,7 +858,7 @@ export function SalaryLoanFormDialog({
                             Service Charge Income (%) <span className="text-red-500">*</span>
                           </FormLabel>
                           <FormControl>
-                            <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                            <Input type="number" step="0.01" placeholder="0.00" {...field} value={1.50} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -839,7 +874,7 @@ export function SalaryLoanFormDialog({
                             Computer Charges (%) <span className="text-red-500">*</span>
                           </FormLabel>
                           <FormControl>
-                            <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                            <Input type="number" step="0.01" placeholder="0.00" {...field} value={0.10} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

@@ -154,7 +154,7 @@ export function SalaryLoanTable() {
         enableNew={true}
         enablePdfExport={true}
         enableCsvExport={true}
-        enableFilter={true}
+        enableFilter={false}
         onResetTable={resetTable}
         onSearchChange={onSearchChange}
       />

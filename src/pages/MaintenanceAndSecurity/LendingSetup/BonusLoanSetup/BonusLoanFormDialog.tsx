@@ -17,6 +17,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import BonusLoanSetupService from "./Service/BonusLoanSetupService"
 import ClassificationSetupService from "../ClassificationSetup/Service/ClassificationSetupService"
 import { Loader2 } from "lucide-react"
+import { AxiosError } from "axios"
 
 // Define the form schema with comprehensive validation
 const formSchema = z
@@ -254,7 +255,16 @@ export function BonusLoanFormDialog({
       onSubmit()
       form.reset()
     } catch (errorData: unknown) {
-      console.error(errorData)
+      if (errorData instanceof AxiosError) {
+        Object.entries(errorData.response?.data.errors).forEach(([field, messages]) => {
+          const errorMsg = messages as string[];
+          form.setError(field as any, {
+            type: 'manual',
+            message: errorMsg[0]
+          });
+        }
+        )
+      }
     }
   }
 
@@ -283,8 +293,17 @@ export function BonusLoanFormDialog({
       queryClient.invalidateQueries({ queryKey: ["bonus-loan-table"] })
       onSubmit()
       form.reset()
-    } catch (_error) {
-      console.log(_error)
+    } catch (errorData: unknown) {
+      if (errorData instanceof AxiosError) {
+        Object.entries(errorData.response?.data.errors).forEach(([field, messages]) => {
+          const errorMsg = messages as string[];
+          form.setError(field as any, {
+            type: 'manual',
+            message: errorMsg[0]
+          });
+        }
+        )
+      }
     }
   }
 

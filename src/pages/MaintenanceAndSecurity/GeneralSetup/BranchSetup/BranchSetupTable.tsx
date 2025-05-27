@@ -1,0 +1,343 @@
+"use client"
+
+import { useState } from "react"
+import type { SearchDefinition, ColumnDefinition, FilterDefinition } from "@/components/data-table/data-table"
+import type { BranchSetup } from "./Service/BranchSetupTypes"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import BranchSetupService from "./Service/BranchSetupService"
+import { DataTableV2 } from "@/components/data-table/data-table-v2"
+import { BranchDialog } from "./BranchDialog"
+import { PencilIcon, TrashIcon } from "lucide-react"
+import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog"
+import { toast } from "sonner"
+
+// Helper function to format branches data to CSV with exact format
+const formatBranchesToCsv = (data: any): string => {
+  // Headers as specified
+  const headers = ["Code", "Name", "Address", "Contact", "Email", "City"]
+  const csvRows = [headers.join(",")]
+
+  // Handle different response formats
+  let branches: BranchSetup[] = []
+
+  if (typeof data === "string") {
+    // If API returns CSV string directly, return it
+    return data
+  } else if (Array.isArray(data)) {
+    // If data is array of branches
+    branches = data
+  } else if (data?.branches) {
+    // If data has branches property
+    branches = data.branches
+  } else if (data?.data?.branches) {
+    // If nested in data object
+    branches = data.data.branches
+  }
+
+  // Format each branch according to your specification
+  branches.forEach((branch: BranchSetup) => {
+    const row = [
+      branch.code || "",
+      `"${(branch.name || "").replace(/"/g, '""')}"`, // Escape quotes and wrap in quotes
+      `"${(branch.address || "").replace(/"/g, '""')}"`,
+      branch.contact || "",
+      branch.email || "",
+      `"${(branch.city || "").replace(/"/g, '""')}"`,
+    ]
+    csvRows.push(row.join(","))
+  })
+
+  return csvRows.join("\n")
+}
+
+export function BranchSetupTable() {
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<BranchSetup | null>(null)
+  const [openDeleteModal, setOpenDeleteModal] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [rowsPerPage, setRowsPerPage] = useState(10)
+  const [searchQuery, setSearchQuery] = useState<string | null>(null)
+  const [resetTable, setResetTable] = useState(false)
+
+  const queryClient = useQueryClient()
+
+  const {
+    isPending,
+    error,
+    data: branches,
+  } = useQuery({
+    queryKey: ["branch-setup-table", currentPage, rowsPerPage, searchQuery],
+    queryFn: () => BranchSetupService.getAllBranches(currentPage, rowsPerPage, searchQuery),
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+
+  const deletionHandler = useMutation({
+    mutationFn: (uuid: string) => {
+      return BranchSetupService.deleteBranch(uuid)
+    },
+    onSuccess: () => {
+      toast.success("Branch deleted successfully")
+      queryClient.invalidateQueries({ queryKey: ["branch-setup-table"] })
+      setOpenDeleteModal(false)
+      setSelectedItem(null)
+      if (branches?.data.branches.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1)
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to delete branch")
+    },
+  })
+
+  // Export mutations
+  const exportPdfMutation = useMutation({
+    mutationFn: BranchSetupService.exportPdf,
+    onSuccess: (blob) => {
+      const url = window.URL.createObjectURL(blob)
+      // Open PDF in new tab for preview
+      const newTab = window.open(url, "_blank")
+      if (newTab) {
+        newTab.focus()
+      } else {
+        // Fallback if popup is blocked
+        const link = document.createElement("a")
+        link.href = url
+        link.download = `branches-${new Date().toISOString().split("T")[0]}.pdf`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      }
+      toast.success("PDF opened in new tab")
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to export PDF")
+    },
+  })
+
+  const exportCsvMutation = useMutation({
+    mutationFn: BranchSetupService.exportCsv,
+    onSuccess: (csvData) => {
+      // Create CSV content with proper formatting
+      const csvContent = formatBranchesToCsv(csvData)
+
+      // Create blob and download
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = `branches-${new Date().toISOString().split("T")[0]}.csv`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      toast.success("CSV generated successfully")
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to export CSV")
+    },
+  })
+
+  if (error) return "An error has occurred: " + error.message
+
+  // Define columns
+  const columns: ColumnDefinition<BranchSetup>[] = [
+    {
+      id: "code",
+      header: "Branch Code",
+      accessorKey: "code",
+      enableSorting: true,
+    },
+    {
+      id: "name",
+      header: "Branch Name",
+      accessorKey: "name",
+      enableSorting: true,
+    },
+    {
+      id: "city",
+      header: "City/Municipality",
+      accessorKey: "city",
+      enableSorting: true,
+    },
+    {
+      id: "departments",
+      header: "Departments",
+      accessorKey: "departments",
+      enableSorting: true,
+      cell: (row) => {
+        const departmentsRaw: { id: string; name: string }[] = row.departments ?? []
+
+        if (departmentsRaw.length === 0) return null
+
+        const firstDepartment = departmentsRaw[0].name
+        const remainingDepartments = departmentsRaw.slice(1)
+        const remainingDepartmentCount = remainingDepartments.length
+        const remainingDepartmentNames = remainingDepartments.map((d) => d.name).join(", ")
+
+        return (
+          <div className="flex items-center gap-2">
+            <span className="border border-[#D0D5DD] rounded-full px-4 py-1 text-sm text-black">{firstDepartment}</span>
+            {remainingDepartmentCount > 0 && (
+              <span
+                className="border border-[#D0D5DD] rounded-full px-3 py-1 text-sm text-black cursor-help"
+                title={remainingDepartmentNames}
+              >
+                +{remainingDepartmentCount}
+              </span>
+            )}
+          </div>
+        )
+      },
+    },
+    {
+      id: "status",
+      header: "Status",
+      accessorKey: "status",
+      enableSorting: true,
+      cell: (row) => {
+        const status: boolean = row.status ?? false
+        return (
+          <div className="flex items-center gap-2">
+            <span
+              className={`border rounded-full px-4 py-1 text-sm text-white ${status ? "bg-emerald-600" : "bg-red-600"}`}
+            >
+              {status ? "Active" : "Inactive"}
+            </span>
+          </div>
+        )
+      },
+    },
+  ]
+
+  // Define filters
+  const filters: FilterDefinition[] = []
+
+  const search: SearchDefinition = {
+    title: "Search",
+    placeholder: "Search branches",
+    enableSearch: true,
+  }
+
+  // Handle edit
+  const handleEdit = (item: BranchSetup) => {
+    setSelectedItem(item)
+    setIsEditing(true)
+    setIsDialogOpen(true)
+  }
+
+  // Handle delete
+  const handleDelete = async () => {
+    if (selectedItem) {
+      deletionHandler.mutate(selectedItem.id)
+      setResetTable(true)
+    }
+  }
+
+  // Handle new
+  const handleNew = () => {
+    setSelectedItem(null)
+    setIsEditing(false)
+    setIsDialogOpen(true)
+  }
+
+  // Handle exports
+  const handlePdfExport = () => {
+    exportPdfMutation.mutate()
+  }
+
+  const handleCsvExport = () => {
+    exportCsvMutation.mutate()
+  }
+
+  const onPaginationChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  const onRowCountChange = (row: number) => {
+    setRowsPerPage(row)
+    setCurrentPage(1) // Reset to first page when changing row count
+  }
+
+  const onSearchChange = (search: string) => {
+    setSearchQuery(search || null)
+    setCurrentPage(1) // Reset to first page when searching
+  }
+
+  // Define action buttons
+  const actionButtons = [
+    {
+      label: "Edit",
+      icon: <PencilIcon className="h-4 w-4" />,
+      onClick: handleEdit,
+    },
+    {
+      label: "Delete",
+      icon: <TrashIcon className="h-4 w-4 text-destructive" />,
+      onClick: (branch: BranchSetup) => {
+        setSelectedItem(branch)
+        setOpenDeleteModal(true)
+      },
+    },
+  ]
+
+  return (
+    <>
+      <DataTableV2
+        totalCount={branches?.data.pagination.total_items ?? 0}
+        perPage={branches?.data.pagination.per_page ?? 10}
+        pageNumber={branches?.data.pagination.current_page ?? 1}
+        onPaginationChange={onPaginationChange}
+        onRowCountChange={onRowCountChange}
+        title="Branch List"
+        subtitle=""
+        data={branches?.data.branches ?? []}
+        columns={columns}
+        filters={filters}
+        search={search}
+        actionButtons={actionButtons}
+        onLoading={isPending || deletionHandler.isPending}
+        onNew={handleNew}
+        idField="id"
+        enableNew={true}
+        enablePdfExport={true}
+        enableCsvExport={true}
+        enableFilter={false}
+        onResetTable={resetTable}
+        onSearchChange={onSearchChange}
+        onPdfExport={handlePdfExport}
+        onCsvExport={handleCsvExport}
+      />
+
+      <DeleteConfirmationDialog
+        isOpen={openDeleteModal}
+        onClose={() => {
+          setSelectedItem(null)
+          setOpenDeleteModal(false)
+        }}
+        onConfirm={handleDelete}
+        title="Delete Branch"
+        description={`Are you sure you want to delete the branch '${selectedItem?.name}'? This action cannot be undone.`}
+        itemName={selectedItem?.name ?? "No Branch Selected"}
+      />
+
+      <BranchDialog
+        item={selectedItem}
+        open={isDialogOpen}
+        isEditing={isEditing}
+        onOpenChange={(open) => {
+          setIsDialogOpen(open)
+          if (!open) {
+            setSelectedItem(null)
+            setIsEditing(false)
+          }
+        }}
+        onSuccess={() => {
+          setSelectedItem(null)
+          setIsDialogOpen(false)
+          setIsEditing(false)
+        }}
+      />
+    </>
+  )
+}

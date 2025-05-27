@@ -68,6 +68,7 @@ export const apiRequest = async <T = any>(
     url: fullUrl,
     headers,
     data,
+    responseType: options.responseType || "json",
   };
 
   return axios.request<T>(config);

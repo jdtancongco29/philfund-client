@@ -1,10 +1,10 @@
 import MainLayout from '@/components/layout/MainLayout'
-import { DepartmentsTable } from './DepartmentsTable'
+import { DepartmentSetupTable } from './DepartmentsSetupTable'
 
 function DepartmentSetupPage() {
   return (
     <MainLayout>
-        <DepartmentsTable />
+        <DepartmentSetupTable />
     </MainLayout>
   )
 }

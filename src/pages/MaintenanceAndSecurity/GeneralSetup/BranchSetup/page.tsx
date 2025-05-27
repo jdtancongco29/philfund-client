@@ -1,10 +1,10 @@
 import MainLayout from '@/components/layout/MainLayout'
-import { BranchTable } from './BranchTable'
+import { BranchSetupTable } from './BranchSetupTable'
 
 function BranchSetup() {
   return (
     <MainLayout>
-      <BranchTable />
+      <BranchSetupTable />
     </MainLayout>
   )
 }

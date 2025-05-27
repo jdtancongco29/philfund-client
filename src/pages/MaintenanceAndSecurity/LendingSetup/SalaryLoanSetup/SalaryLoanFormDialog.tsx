@@ -209,39 +209,39 @@ export function SalaryLoanFormDialog({
   useEffect(() => {
     if (item) {
       form.reset({
-        code: item.code,
-        name: item.name,
-        interest_rate: item.interest_rate,
-        surcharge_rate: item.surcharge_rate,
-        min_amount: item.min_amount,
-        max_amount: item.max_amount,
-        vis_service: item.vis_service,
-        vis_insurance: item.vis_insurance,
-        vis_notarial: item.vis_notarial,
-        vis_gross_reciept: item.vis_gross_reciept,
-        vis_computer: item.vis_computer,
-        vis_other_charges: item.vis_other_charges,
-        pga_service_charge: item.pga_service_charge,
-        pga_insurance: item.pga_insurance,
-        pga_notarial: item.pga_notarial,
-        pga_gross_reciept: item.pga_gross_reciept,
-        def_interest: item.def_interest || "",
-        def_charge: item.def_charge || "",
-        def_computer: item.def_computer || "",
-        coa_sl_receivable: item.coa_sl_receivable.id,
-        coa_sl_interest_income: item.coa_sl_interest_income.id,
-        coa_service_charge: item.coa_service_charge.id,
-        coa_notarial: item.coa_notarial.id,
-        coa_gross_receipt: item.coa_gross_receipt.id,
-        coa_computer: item.coa_computer.id,
-        coa_pga_accounts_payable: item.coa_pga_accounts_payable.id,
-        coa_sl_interest_receivable: item.coa_sl_interest_receivable.id,
-        coa_sl_unearned_interest_income: item.coa_sl_unearned_interest_income.id,
-        coa_sl_other_income_penalty: item.coa_sl_other_income_penalty.id,
-        coa_sl_allowance_doubtful_account: item.coa_sl_allowance_doubtful_account.id,
-        coa_sl_bad_dept_expense: item.coa_sl_bad_dept_expense.id,
-        coa_sl_garnished: item.coa_sl_garnished.id,
-        eligible_groups: item.groups.map((group) => group.id),
+        // code: item.code,
+        // name: item.name,
+        // interest_rate: item.interest_rate,
+        // surcharge_rate: item.surcharge_rate,
+        // min_amount: item.min_amount,
+        // max_amount: item.max_amount,
+        // vis_service: item.vis_service,
+        // vis_insurance: item.vis_insurance,
+        // vis_notarial: item.vis_notarial,
+        // vis_gross_reciept: item.vis_gross_reciept,
+        // vis_computer: item.vis_computer,
+        // vis_other_charges: item.vis_other_charges,
+        // pga_service_charge: item.pga_service_charge,
+        // pga_insurance: item.pga_insurance,
+        // pga_notarial: item.pga_notarial,
+        // pga_gross_reciept: item.pga_gross_reciept,
+        // def_interest: item.def_interest || "",
+        // def_charge: item.def_charge || "",
+        // def_computer: item.def_computer || "",
+        // coa_sl_receivable: item.coa_sl_receivable.id,
+        // coa_sl_interest_income: item.coa_sl_interest_income.id,
+        // coa_service_charge: item.coa_service_charge.id,
+        // coa_notarial: item.coa_notarial.id,
+        // coa_gross_receipt: item.coa_gross_receipt.id,
+        // coa_computer: item.coa_computer.id,
+        // coa_pga_accounts_payable: item.coa_pga_accounts_payable.id,
+        // coa_sl_interest_receivable: item.coa_sl_interest_receivable.id,
+        // coa_sl_unearned_interest_income: item.coa_sl_unearned_interest_income.id,
+        // coa_sl_other_income_penalty: item.coa_sl_other_income_penalty.id,
+        // coa_sl_allowance_doubtful_account: item.coa_sl_allowance_doubtful_account.id,
+        // coa_sl_bad_dept_expense: item.coa_sl_bad_dept_expense.id,
+        // coa_sl_garnished: item.coa_sl_garnished.id,
+        // eligible_groups: item.groups.map((group) => group.id),
       })
     } else {
       form.reset()
@@ -290,7 +290,7 @@ export function SalaryLoanFormDialog({
       queryClient.invalidateQueries({ queryKey: ["salary-loan-table"] })
       onSubmit()
       form.reset()
-    } catch (errorData: any) {
+    } catch (errorData: unknown) {
       console.error(errorData)
     }
   }
@@ -385,9 +385,9 @@ export function SalaryLoanFormDialog({
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="basic-info" className="space-y-6 mt-0">
+              <TabsContent value="basic-info" className="space-y-6 mt-0 w-full">
                 {/* Basic Info Section */}
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-2 gap-6 w-full">
                   <FormField
                     disabled={creationHandler.isPending || editingHandler.isPending}
                     control={form.control}
@@ -721,20 +721,20 @@ export function SalaryLoanFormDialog({
                 </div>
 
                 {/* List of Groups Section */}
-                <div>
+                <div className="w-full">
                   <h3 className="text-lg font-medium mb-4">List of Groups</h3>
-                  <Table>
+                  <Table className="w-full">
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-[200px]">Group</TableHead>
                         <TableHead className="text-right">Can Avail of SL</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
+                    <TableBody className="w-full">
                       {groupsData?.data.groups.map((group) => (
-                        <TableRow key={group.id}>
-                          <TableCell>{group.name}</TableCell>
-                          <TableCell className="text-right">
+                        <TableRow className="justify-between w-full" key={group.id}>
+                          <TableCell className="w-full">{group.name}</TableCell>
+                          <TableCell className="flex justify-end mr-2">
                             <FormField
                               disabled={creationHandler.isPending || editingHandler.isPending}
                               control={form.control}

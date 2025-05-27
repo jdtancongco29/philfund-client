@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { apiRequest } from "@/lib/api"
 import {
   DataTable,
@@ -8,18 +8,12 @@ import {
   type FilterDefinition,
   type SearchDefinition,
 } from "@/components/data-table/data-table"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
 
 import { CircleCheck } from "lucide-react"
 import { toast } from "sonner"
-import AddEditEntryDialog from "./AddNewEntryDialog";
+import AddEditEntryDialog from "./AddNewEntryDialog"
 // Import the updated dialog component
 
 interface AccountEntry {
@@ -64,6 +58,7 @@ export default function AccountEntriesTable() {
   const [data, setData] = useState<AccountEntry[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingEntry, setEditingEntry] = useState<AccountEntry | null>(null)
+  const [isExporting, setIsExporting] = useState(false)
 
   // Delete dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -78,13 +73,12 @@ export default function AccountEntriesTable() {
       })
       setData(response.data.data.default_accounts)
       setOnResetTable(true)
-  
     } catch (err) {
       console.error(err)
       toast.error("Error", {
         description: "Failed to load account entries. Please try again.",
         duration: 3000,
-      });
+      })
     } finally {
       setLoading(false)
     }
@@ -102,15 +96,10 @@ export default function AccountEntriesTable() {
   const handleEdit = async (entry: AccountEntry) => {
     try {
       // Fetch full entry details including account details
-      const response = await apiRequest<{ data: AccountEntry }>(
-        "get",
-        `/default-entry/${entry.id}`,
-        null,
-        {
-          useAuth: true,
-          useBranchId: true,
-        }
-      )
+      const response = await apiRequest<{ data: AccountEntry }>("get", `/default-entry/${entry.id}`, null, {
+        useAuth: true,
+        useBranchId: true,
+      })
       setEditingEntry(response.data.data)
       setIsDialogOpen(true)
     } catch (error) {
@@ -118,7 +107,7 @@ export default function AccountEntriesTable() {
       toast.error("Error", {
         description: "Failed to load entry details. Please try again.",
         duration: 3000,
-      });
+      })
       // If individual fetch fails, use the existing entry data
       setEditingEntry(entry)
       setIsDialogOpen(true)
@@ -146,13 +135,13 @@ export default function AccountEntriesTable() {
         description: `Account Entry has been successfully deleted.`,
         icon: <CircleCheck className="h-5 w-5" />,
         duration: 5000,
-      });
+      })
     } catch (error) {
       console.error("Failed to delete entry:", error)
       toast.error("Delete Failed", {
         description: "Failed to delete the account entry. Please try again.",
         duration: 5000,
-      });
+      })
     }
   }
 
@@ -233,13 +222,13 @@ export default function AccountEntriesTable() {
 
   const filters: FilterDefinition[] = [
     {
-        id: "status",
-        label: "Status",
-        options: [
-            { label: "Active", value: "true" },
-            { label: "Inactive", value: "false" },
-        ],
-        type: "input"
+      id: "status",
+      label: "Status",
+      options: [
+        { label: "Active", value: "true" },
+        { label: "Inactive", value: "false" },
+      ],
+      type: "input",
     },
   ]
 
@@ -249,15 +238,316 @@ export default function AccountEntriesTable() {
     enableSearch: true,
   }
 
-  const handlePdfExport = () => {
-    console.log("Exporting Account Entries to PDF...")
-    // Implement PDF export logic here
-  }
+  const downloadFile = useCallback((blob: Blob, filename: string) => {
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  }, [])
 
-  const handleCsvExport = () => {
-    console.log("Exporting Account Entries to CSV...")
-    // Implement CSV export logic here
-  }
+  const getAuthHeaders = useCallback(() => {
+    const authToken = localStorage.getItem("authToken")
+    const branchId = localStorage.getItem("branchId")
+
+    if (!authToken) {
+      throw new Error("Authentication token not found")
+    }
+
+    return {
+      Authorization: `Bearer ${authToken}`,
+      "X-Branch-ID": branchId || "",
+      "Content-Type": "application/json",
+    }
+  }, [])
+
+  const safeCsvValue = useCallback((value: any): string => {
+    if (value === null || value === undefined) return '""'
+    const stringValue = String(value).replace(/"/g, '""')
+    return `"${stringValue}"`
+  }, [])
+
+  const generateCsvFromData = useCallback(() => {
+    try {
+      const headers = ["Particulars", "Name", "Debit", "Credit"]
+
+      const csvRows = [headers.join(",")]
+
+      // Process each entry with proper error handling
+      data.forEach((entry) => {
+        try {
+          const debitAmount = Number.parseFloat(entry.transaction_amount || "0").toFixed(2)
+          const creditAmount = Number.parseFloat(entry.transaction_amount || "0").toFixed(2)
+
+          const row = [safeCsvValue(entry.particulars || ""), safeCsvValue(entry.name || ""), debitAmount, creditAmount]
+          csvRows.push(row.join(","))
+        } catch (entryError) {
+          console.warn("Error processing entry for CSV:", entryError, entry)
+          // Add a basic row even if there's an error
+          csvRows.push(
+            [safeCsvValue(entry.particulars || "Error"), safeCsvValue(entry.name || "Unknown"), "0.00", "0.00"].join(
+              ",",
+            ),
+          )
+        }
+      })
+
+      return csvRows.join("\n")
+    } catch (error) {
+      console.error("Error generating CSV data:", error)
+      // Return minimal CSV with headers only
+      return 'Particulars,Name,Debit,Credit\n"Error generating data","",0.00,0.00'
+    }
+  }, [data, safeCsvValue])
+
+  const handleCsvExport = useCallback(async () => {
+    setIsExporting(true)
+    try {
+      // First try the API endpoint
+      const headers = getAuthHeaders()
+      const response = await fetch("/api/default-entry/export-csv", {
+        method: "GET",
+        headers,
+      })
+
+      if (response.ok) {
+        const blob = await response.blob()
+        const currentDate = new Date().toISOString().split("T")[0]
+        downloadFile(blob, `account-entries-${currentDate}.csv`)
+
+        toast.success("CSV Export Successful", {
+          description: "Account Entries have been exported to CSV successfully.",
+          icon: <CircleCheck className="h-5 w-5" />,
+          duration: 5000,
+        })
+        return // Success, exit early
+      } else {
+        throw new Error(`API endpoint returned status: ${response.status}`)
+      }
+    } catch (apiError) {
+      console.warn("API CSV export failed, using fallback:", apiError)
+
+      // Fallback: Generate CSV from current data
+      try {
+        console.log("Attempting CSV fallback with data:", data.length, "entries")
+
+        if (!data || data.length === 0) {
+          toast.error("No Data to Export", {
+            description: "There are no entries to export. Please refresh and try again.",
+            duration: 5000,
+          })
+          return
+        }
+
+        const csvContent = generateCsvFromData()
+        console.log("Generated CSV content length:", csvContent.length)
+
+        if (!csvContent || csvContent.length < 50) {
+          // Basic sanity check
+          throw new Error("Generated CSV content appears to be empty or invalid")
+        }
+
+        // Create blob with explicit UTF-8 BOM for Excel compatibility
+        const BOM = "\uFEFF"
+        const blob = new Blob([BOM + csvContent], {
+          type: "text/csv;charset=utf-8;",
+        })
+
+        const currentDate = new Date().toISOString().split("T")[0]
+        downloadFile(blob, `account-entries-${currentDate}.csv`)
+
+        toast.success("CSV Export Successful", {
+          description: `Account Entries exported successfully (${data.length} entries).`,
+          icon: <CircleCheck className="h-5 w-5" />,
+          duration: 5000,
+        })
+      } catch (fallbackError) {
+        console.error("Fallback CSV generation failed:", fallbackError)
+        console.error("Data structure:", data)
+
+        toast.error("CSV Export Failed", {
+          description: "Failed to export Account Entries to CSV. Please check the data and try again.",
+          duration: 5000,
+        })
+      }
+    } finally {
+      setIsExporting(false)
+    }
+  }, [getAuthHeaders, downloadFile, generateCsvFromData, data])
+
+  const generatePdfFromData = useCallback(async () => {
+    const printWindow = window.open("", "_blank")
+    if (!printWindow) {
+      throw new Error("Could not open print window")
+    }
+
+    const currentDate = new Date().toLocaleDateString()
+    const totalDebit = data.reduce((sum, entry) => sum + Number.parseFloat(entry.transaction_amount || "0"), 0)
+    const totalCredit = totalDebit // Assuming balanced entries
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Account Entries Report</title>
+          <style>
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 20px; 
+              color: #333;
+              line-height: 1.4;
+            }
+            h1 { 
+              color: #333; 
+              text-align: center; 
+              border-bottom: 3px solid #007bff;
+              padding-bottom: 10px;
+              margin-bottom: 5px;
+            }
+            .header { 
+              text-align: center; 
+              margin-bottom: 30px; 
+              background: #f8f9fa;
+              padding: 15px;
+              border-radius: 5px;
+            }
+            table { 
+              width: 100%; 
+              border-collapse: collapse; 
+              margin-top: 20px;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            th, td { 
+              border: 1px solid #ddd; 
+              padding: 12px 8px; 
+              text-align: left; 
+              font-size: 12px;
+            }
+            th { 
+              background-color: #007bff; 
+              color: white;
+              font-weight: bold; 
+              text-align: center;
+            }
+            .amount { text-align: right; font-family: monospace; }
+            .total-row { 
+              background-color: #f8f9fa; 
+              font-weight: bold; 
+              border-top: 2px solid #007bff;
+            }
+            .footer {
+              margin-top: 30px;
+              text-align: center;
+              font-size: 10px;
+              color: #666;
+            }
+            @media print {
+              body { margin: 0; }
+              .header { page-break-inside: avoid; }
+              @page { margin: 1cm; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Default Account Entries Report</h1>
+            <p><strong>Generated on:</strong> ${currentDate}</p>
+            <p><strong>Total Entries:</strong> ${data.length}</p>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Particulars</th>
+                <th>Name</th>
+                <th>Debit</th>
+                <th>Credit</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data
+                .map(
+                  (entry) => `
+                <tr>
+                  <td>${entry.particulars || "-"}</td>
+                  <td>${entry.name}</td>
+                  <td class="amount">${Number.parseFloat(entry.transaction_amount || "0").toFixed(2)}</td>
+                  <td class="amount">${Number.parseFloat(entry.transaction_amount || "0").toFixed(2)}</td>
+                </tr>
+              `,
+                )
+                .join("")}
+              <tr class="total-row">
+                <td colspan="2"><strong>TOTAL</strong></td>
+                <td class="amount"><strong>${totalDebit.toFixed(2)}</strong></td>
+                <td class="amount"><strong>${totalCredit.toFixed(2)}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="footer">
+            <p>This report was generated automatically from the Account Entries system.</p>
+          </div>
+        </body>
+      </html>
+    `
+
+    printWindow.document.write(htmlContent)
+    printWindow.document.close()
+
+    printWindow.onload = () => {
+      setTimeout(() => {
+        printWindow.print()
+        printWindow.close()
+      }, 250)
+    }
+
+    toast.success("PDF Export Initiated", {
+      description: "PDF print dialog has been opened.",
+      icon: <CircleCheck className="h-5 w-5" />,
+      duration: 3000,
+    })
+  }, [data])
+
+  const handlePdfExport = useCallback(async () => {
+    setIsExporting(true)
+    try {
+      const headers = getAuthHeaders()
+      const response = await fetch("/api/default-entry/export-pdf", {
+        method: "GET",
+        headers,
+      })
+
+      if (response.ok) {
+        const blob = await response.blob()
+        const currentDate = new Date().toISOString().split("T")[0]
+        downloadFile(blob, `account-entries-${currentDate}.pdf`)
+
+        toast.success("PDF Export Successful", {
+          description: "Account Entries have been exported to PDF successfully.",
+          icon: <CircleCheck className="h-5 w-5" />,
+          duration: 5000,
+        })
+      } else {
+        throw new Error(`API endpoint returned status: ${response.status}`)
+      }
+    } catch (error) {
+      console.warn("API PDF export failed, using fallback:", error)
+
+      try {
+        await generatePdfFromData()
+      } catch (fallbackError) {
+        console.error("Fallback PDF generation failed:", fallbackError)
+        toast.error("PDF Export Failed", {
+          description: "Failed to export Account Entries to PDF. Please try again.",
+          duration: 5000,
+        })
+      }
+    } finally {
+      setIsExporting(false)
+    }
+  }, [getAuthHeaders, downloadFile, generatePdfFromData])
 
   return (
     <>
@@ -278,7 +568,7 @@ export default function AccountEntriesTable() {
         enableFilter={true}
         onPdfExport={handlePdfExport}
         onCsvExport={handleCsvExport}
-        onLoading={loading}
+        onLoading={loading || isExporting}
         onResetTable={onResetTable}
       />
 

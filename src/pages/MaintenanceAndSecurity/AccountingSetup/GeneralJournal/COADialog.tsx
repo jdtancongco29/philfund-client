@@ -48,9 +48,7 @@ useEffect(() => {
         null,
         {
           useAuth: true,
-          customHeaders: {
-            'X-Branch-Id': branchId 
-          }
+          useBranchId: true,
         }
       )
       setChartOfAccounts(response.data.data.chart_of_accounts)

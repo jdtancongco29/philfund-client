@@ -135,15 +135,14 @@ export const DepartmentSetupService = {
   /**
    * Export departments to CSV
    */
-  exportCsv: async (): Promise<Blob> => {
+  exportCsv: async () => {
     const endpoint = `/department/export-csv`
     try {
-      const response = await apiRequest<Blob>("get", endpoint, null, {
+      const response = await apiRequest("get", endpoint, null, {
         useAuth: true,
         useBranchId: true,
         responseType: "blob",
       })
-      console.log(response.data);
       return response.data
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || "Failed to export CSV"

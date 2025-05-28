@@ -210,6 +210,42 @@ export const UserManagementService = {
       throw new Error(errorMessage)
     }
   },
+
+  /**
+   * Export users to PDF
+   */
+  exportPdf: async (): Promise<Blob> => {
+    const endpoint = `/user/export-pdf`
+    try {
+      const response = await apiRequest<Blob>("get", endpoint, null, {
+        useAuth: true,
+        useBranchId: true,
+        responseType: "blob",
+      })
+      return response.data
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Failed to export PDF"
+      throw new Error(errorMessage)
+    }
+  },
+
+  /**
+   * Export users to CSV
+   */
+  exportCsv: async () => {
+    const endpoint = `/user/export-csv`
+    try {
+      const response = await apiRequest("get", endpoint, null, {
+        useAuth: true,
+        useBranchId: true,
+        responseType: "blob",
+      })
+      return response.data
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Failed to export CSV"
+      throw new Error(errorMessage)
+    }
+  },
 }
 
 export default UserManagementService

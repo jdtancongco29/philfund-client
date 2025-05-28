@@ -10,45 +10,7 @@ import { BranchDialog } from "./BranchDialog"
 import { PencilIcon, TrashIcon } from "lucide-react"
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog"
 import { toast } from "sonner"
-
-// Helper function to format branches data to CSV with exact format
-const formatBranchesToCsv = (data: any): string => {
-  // Headers as specified
-  const headers = ["Code", "Name", "Address", "Contact", "Email", "City"]
-  const csvRows = [headers.join(",")]
-
-  // Handle different response formats
-  let branches: BranchSetup[] = []
-
-  if (typeof data === "string") {
-    // If API returns CSV string directly, return it
-    return data
-  } else if (Array.isArray(data)) {
-    // If data is array of branches
-    branches = data
-  } else if (data?.branches) {
-    // If data has branches property
-    branches = data.branches
-  } else if (data?.data?.branches) {
-    // If nested in data object
-    branches = data.data.branches
-  }
-
-  // Format each branch according to your specification
-  branches.forEach((branch: BranchSetup) => {
-    const row = [
-      branch.code || "",
-      `"${(branch.name || "").replace(/"/g, '""')}"`, // Escape quotes and wrap in quotes
-      `"${(branch.address || "").replace(/"/g, '""')}"`,
-      branch.contact || "",
-      branch.email || "",
-      `"${(branch.city || "").replace(/"/g, '""')}"`,
-    ]
-    csvRows.push(row.join(","))
-  })
-
-  return csvRows.join("\n")
-}
+import { downloadFile } from "@/lib/utils"
 
 export function BranchSetupTable() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -117,21 +79,14 @@ export function BranchSetupTable() {
 
   const exportCsvMutation = useMutation({
     mutationFn: BranchSetupService.exportCsv,
-    onSuccess: (csvData) => {
-      // Create CSV content with proper formatting
-      const csvContent = formatBranchesToCsv(csvData)
-
-      // Create blob and download
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement("a")
-      link.href = url
-      link.download = `branches-${new Date().toISOString().split("T")[0]}.csv`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
-      toast.success("CSV generated successfully")
+    onSuccess: (csvData: Blob) => {
+      try {
+        const currentDate = new Date().toISOString().split("T")[0]
+        downloadFile(csvData, `branch-${currentDate}.csv`)
+        toast.success("CSV generated successfully")
+      } catch (error) {
+        toast.error("Failed to process CSV data")
+      }
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to export CSV")

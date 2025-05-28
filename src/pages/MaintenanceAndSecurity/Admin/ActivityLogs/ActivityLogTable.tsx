@@ -4,18 +4,19 @@ import { useState, useMemo } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { ArchiveIcon, TrashIcon, XIcon } from "lucide-react"
-import { 
+import {
   DataTableV2,
   ColumnDefinition,
   FilterDefinition,
   SearchDefinition,
   BulkActionButton,
- } from "@/components/data-table/data-table-v2"
+} from "@/components/data-table/data-table-v2"
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog"
 import type { ActivityLog, ActivityLogFilters } from "./Service/ActivityLogType"
 import ActivityLogService from "./Service/ActivityLogService"
 import { toast } from "sonner"
 import type { DateRange } from "react-day-picker"
+import { downloadFile } from "@/lib/utils"
 
 export function ActivityLogTable() {
   const [currentPage, setCurrentPage] = useState(1)
@@ -101,41 +102,67 @@ export function ActivityLogTable() {
   })
 
   // Export mutations
-  // const exportPdfMutation = useMutation({
-  //   mutationFn: () => ActivityLogService.exportToPdf(filters),
-  //   onSuccess: (blob) => {
-  //     const url = window.URL.createObjectURL(blob)
-  //     const a = document.createElement("a")
-  //     a.href = url
-  //     a.download = `activity-logs-${format(new Date(), "yyyy-MM-dd")}.pdf`
-  //     document.body.appendChild(a)
-  //     a.click()
-  //     window.URL.revokeObjectURL(url)
-  //     document.body.removeChild(a)
-  //     toast.success("PDF exported successfully")
-  //   },
-  //   onError: () => {
-  //     toast.error("Failed to export PDF")
-  //   },
-  // })
+  const exportPdfMutation = useMutation({
+    mutationFn: ActivityLogService.exportPdf,
+    onSuccess: (response) => {
+      try {
+        // Ensure we have a proper Blob
+        let blob: Blob
 
-  // const exportCsvMutation = useMutation({
-  //   mutationFn: () => ActivityLogService.exportToCsv(filters),
-  //   onSuccess: (blob) => {
-  //     const url = window.URL.createObjectURL(blob)
-  //     const a = document.createElement("a")
-  //     a.href = url
-  //     a.download = `activity-logs-${format(new Date(), "yyyy-MM-dd")}.csv`
-  //     document.body.appendChild(a)
-  //     a.click()
-  //     window.URL.revokeObjectURL(url)
-  //     document.body.removeChild(a)
-  //     toast.success("CSV exported successfully")
-  //   },
-  //   onError: () => {
-  //     toast.error("Failed to export CSV")
-  //   },
-  // })
+        if (response instanceof Blob) {
+          blob = response
+        } else {
+          // If response is not a Blob, create one
+          blob = new Blob([response], { type: "application/pdf" })
+        }
+
+        const url = window.URL.createObjectURL(blob)
+
+        // Open PDF in new tab for preview
+        const newTab = window.open(url, "_blank")
+        if (newTab) {
+          newTab.focus()
+          // Clean up the URL after a delay to allow the tab to load
+          setTimeout(() => {
+            window.URL.revokeObjectURL(url)
+          }, 1000)
+        } else {
+          // Fallback if popup is blocked
+          const link = document.createElement("a")
+          link.href = url
+          link.download = `activity-log-${new Date().toISOString().split("T")[0]}.pdf`
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          window.URL.revokeObjectURL(url)
+        }
+        toast.success("PDF opened in new tab")
+      } catch (error) {
+        console.error("Error creating PDF URL:", error)
+        toast.error("Failed to open PDF. Please try again.")
+      }
+    },
+    onError: (error: any) => {
+      console.error("PDF export error:", error)
+      toast.error(error.message || "Failed to export PDF")
+    },
+  })
+
+  const exportCsvMutation = useMutation({
+    mutationFn: ActivityLogService.exportCsv,
+    onSuccess: (csvData: Blob) => {
+      try {
+        const currentDate = new Date().toISOString().split("T")[0]
+        downloadFile(csvData, `activity-log-${currentDate}.csv`)
+        toast.success("CSV generated successfully")
+      } catch (error) {
+        toast.error("Failed to process CSV data")
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to export CSV")
+    },
+  })
 
   if (error) return "An error has occurred: " + error.message
 
@@ -295,6 +322,15 @@ export function ActivityLogTable() {
     },
   ]
 
+  // Handle exports
+  const handlePdfExport = () => {
+    exportPdfMutation.mutate()
+  }
+
+  const handleCsvExport = () => {
+    exportCsvMutation.mutate()
+  }
+
   return (
     <>
       <DataTableV2
@@ -320,10 +356,10 @@ export function ActivityLogTable() {
         enablePdfExport={true}
         enableCsvExport={true}
         enableFilter={true}
-        onPdfExport={() => console.log()}
-        onCsvExport={() => console.log()}
         onResetTable={resetTable}
         onSearchChange={onSearchChange}
+        onPdfExport={handlePdfExport}
+        onCsvExport={handleCsvExport}
       />
 
       <DeleteConfirmationDialog
@@ -336,7 +372,7 @@ export function ActivityLogTable() {
         title="Delete Activity Log"
         description={`Are you sure you want to delete this activity log entry? This action cannot be undone.`}
         itemName={itemToDelete?.description ?? "No Item Selected"}
-        // isLoading={deleteMutation.isPending}
+      // isLoading={deleteMutation.isPending}
       />
     </>
   )

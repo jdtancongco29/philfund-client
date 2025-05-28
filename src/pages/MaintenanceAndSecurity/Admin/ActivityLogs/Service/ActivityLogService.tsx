@@ -100,53 +100,39 @@ export const ActivityLogService = {
     },
 
     /**
-     * Export activity logs to PDF
+     * Export activity log to PDF
      */
-    exportToPdf: async (filters: ActivityLogFilters = {}): Promise<Blob> => {
+    exportPdf: async (): Promise<Blob> => {
         const endpoint = `/activity-log/export-pdf`
-
-        // Prepare query parameters for export
-        const params = new URLSearchParams()
-        if (filters.branch_id) params.append("branch_id", filters.branch_id)
-        if (filters.module_name) params.append("module_name", filters.module_name)
-        if (filters.start_date) params.append("start_date", filters.start_date)
-        if (filters.end_date) params.append("end_date", filters.end_date)
-        if (filters.search) params.append("search", filters.search)
-
-        const finalEndpoint = `${endpoint}${params.toString() ? `?${params.toString()}` : ""}`
-
-        const response = await apiRequest<Blob>("get", finalEndpoint, null, {
+        try {
+        const response = await apiRequest<Blob>("get", endpoint, null, {
             useAuth: true,
             useBranchId: true,
             responseType: "blob",
         })
-
         return response.data
+        } catch (error: any) {
+        const errorMessage = error.response?.data?.message || "Failed to export PDF"
+        throw new Error(errorMessage)
+        }
     },
 
     /**
-     * Export activity logs to CSV
+     * Export activity log to CSV
      */
-    exportToCsv: async (filters: ActivityLogFilters = {}): Promise<Blob> => {
+    exportCsv: async () => {
         const endpoint = `/activity-log/export-csv`
-
-        // Prepare query parameters for export
-        const params = new URLSearchParams()
-        if (filters.branch_id) params.append("branch_id", filters.branch_id)
-        if (filters.module_name) params.append("module_name", filters.module_name)
-        if (filters.start_date) params.append("start_date", filters.start_date)
-        if (filters.end_date) params.append("end_date", filters.end_date)
-        if (filters.search) params.append("search", filters.search)
-
-        const finalEndpoint = `${endpoint}${params.toString() ? `?${params.toString()}` : ""}`
-
-        const response = await apiRequest<Blob>("get", finalEndpoint, null, {
+        try {
+        const response = await apiRequest("get", endpoint, null, {
             useAuth: true,
             useBranchId: true,
             responseType: "blob",
         })
-
         return response.data
+        } catch (error: any) {
+        const errorMessage = error.response?.data?.message || "Failed to export CSV"
+        throw new Error(errorMessage)
+        }
     },
 }
 

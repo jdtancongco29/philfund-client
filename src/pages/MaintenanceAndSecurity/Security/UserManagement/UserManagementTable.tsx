@@ -10,6 +10,7 @@ import { UserDialog } from "./UserDialog"
 import { KeyRound, MonitorSmartphone, PencilIcon, TrashIcon } from "lucide-react"
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog"
 import { toast } from "sonner"
+import { downloadFile } from "@/lib/utils"
 
 export function UserManagementTable() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -52,6 +53,69 @@ export function UserManagementTable() {
     },
   })
 
+  // Export mutations
+  const exportPdfMutation = useMutation({
+    mutationFn: UserManagementService.exportPdf,
+    onSuccess: (response) => {
+      try {
+        // Ensure we have a proper Blob
+        let blob: Blob
+
+        if (response instanceof Blob) {
+          blob = response
+        } else {
+          // If response is not a Blob, create one
+          blob = new Blob([response], { type: "application/pdf" })
+        }
+
+        const url = window.URL.createObjectURL(blob)
+
+        // Open PDF in new tab for preview
+        const newTab = window.open(url, "_blank")
+        if (newTab) {
+          newTab.focus()
+          // Clean up the URL after a delay to allow the tab to load
+          setTimeout(() => {
+            window.URL.revokeObjectURL(url)
+          }, 1000)
+        } else {
+          // Fallback if popup is blocked
+          const link = document.createElement("a")
+          link.href = url
+          link.download = `user-management-${new Date().toISOString().split("T")[0]}.pdf`
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          window.URL.revokeObjectURL(url)
+        }
+        toast.success("PDF opened in new tab")
+      } catch (error) {
+        console.error("Error creating PDF URL:", error)
+        toast.error("Failed to open PDF. Please try again.")
+      }
+    },
+    onError: (error: any) => {
+      console.error("PDF export error:", error)
+      toast.error(error.message || "Failed to export PDF")
+    },
+  })
+
+  const exportCsvMutation = useMutation({
+    mutationFn: UserManagementService.exportCsv,
+    onSuccess: (csvData: Blob) => {
+      try {
+        const currentDate = new Date().toISOString().split("T")[0]
+        downloadFile(csvData, `user-management-${currentDate}.csv`)
+        toast.success("CSV generated successfully")
+      } catch (error) {
+        toast.error("Failed to process CSV data")
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to export CSV")
+    },
+  })
+  
   if (error) return "An error has occurred: " + error.message
 
   // Define columns
@@ -258,6 +322,15 @@ export function UserManagementTable() {
     },
   ]
 
+  // Handle exports
+  const handlePdfExport = () => {
+    exportPdfMutation.mutate()
+  }
+
+  const handleCsvExport = () => {
+    exportCsvMutation.mutate()
+  }
+
   return (
     <>
       <DataTableV2
@@ -282,6 +355,8 @@ export function UserManagementTable() {
         enableFilter={false}
         onResetTable={resetTable}
         onSearchChange={onSearchChange}
+        onPdfExport={handlePdfExport}
+        onCsvExport={handleCsvExport}
       />
 
       <DeleteConfirmationDialog

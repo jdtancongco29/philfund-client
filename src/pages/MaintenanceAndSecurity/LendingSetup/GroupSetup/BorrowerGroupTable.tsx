@@ -23,7 +23,7 @@ export function BorrowerGroupTable() {
   const { isPending, error, data: borrowerGroups } = useQuery({
     queryKey: ['borrower-group-table', currentPage, rowsPerPage, searchQuery],
     queryFn: () => GroupSetupService.getAllGroups(currentPage, rowsPerPage, searchQuery),
-    staleTime: Infinity
+    staleTime: 1000 * 60 * 5
   })
 
   const deletionHandler = useMutation({
@@ -145,7 +145,7 @@ export function BorrowerGroupTable() {
         }}
         onConfirm={handleDelete}
         title="Delete Borrower Group"
-        description="Are you sure you want to delete the department '{name}'? This action cannot be undone."
+        description="Are you sure you want to delete the Group '{name}'? This action cannot be undone."
         itemName={selectedItem?.name ?? "No group selected"}
       />
       <GroupDialogForm
@@ -154,9 +154,11 @@ export function BorrowerGroupTable() {
         onCancel={() => {
           setSelectedItem(null);
         }}
-        isEditing={isEditing} onOpenChange={() => {
+        isEditing={isEditing}
+        onOpenChange={() => {
           setIsDialogOpen(false);
           setIsEditing(false);
+          setSelectedItem(null);
         }}
         onSubmit={onSubmit} />
     </>

@@ -109,6 +109,7 @@ export function SalaryLoanTable() {
   // Handle new
   const handleNew = () => {
     setIsDialogOpen(true)
+    setIsEditing(false)
   }
 
   const onSubmit = () => {
@@ -154,7 +155,7 @@ export function SalaryLoanTable() {
         enableNew={true}
         enablePdfExport={true}
         enableCsvExport={true}
-        enableFilter={true}
+        enableFilter={false}
         onResetTable={resetTable}
         onSearchChange={onSearchChange}
       />
@@ -175,10 +176,12 @@ export function SalaryLoanTable() {
         open={isDialogOpen}
         onCancel={() => {
           setSelectedItem(null)
+          setIsEditing(false)
         }}
         isEditing={isEditing}
         onOpenChange={() => {
           setIsDialogOpen(false)
+          setSelectedItem(null)
           setIsEditing(false)
         }}
         onSubmit={onSubmit}

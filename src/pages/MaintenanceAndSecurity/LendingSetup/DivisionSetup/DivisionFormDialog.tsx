@@ -14,6 +14,7 @@ import GroupSetupService from "../GroupSetup/Service/GroupSetupService"
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { AxiosError } from "axios"
 
 // Define the form schema with validation
 const formSchema = z.object({
@@ -97,11 +98,21 @@ export function DivisionDialogForm({
     }
     try {
       await creationHandler.mutateAsync(payload)
-      queryClient.invalidateQueries({ queryKey: ["division-table"] })
+      await queryClient.invalidateQueries({ queryKey: ["division-table"] })
+      await queryClient.invalidateQueries({ queryKey: ["divisions-for-district"] })
       onSubmit()
       form.reset()
-    } catch (errorData: any) {
-      console.error(errorData)
+    } catch (errorData: unknown) {
+      if (errorData instanceof AxiosError) {
+        Object.entries(errorData.response?.data.errors).forEach(([field, messages]) => {
+          const errorMsg = messages as string[];
+          form.setError(field as "code" | "name", {
+            type: 'manual',
+            message: errorMsg[0]
+          });
+        }
+        )
+      }
     }
   }
 
@@ -114,11 +125,21 @@ export function DivisionDialogForm({
     }
     try {
       await editingHandler.mutateAsync(payload)
-      queryClient.invalidateQueries({ queryKey: ["division-table"] })
+      await queryClient.invalidateQueries({ queryKey: ["division-table"] })
+      await queryClient.invalidateQueries({ queryKey: ["divisions-for-district"] })
       onSubmit()
       form.reset()
-    } catch (_error) {
-      console.log(_error)
+    } catch (errorData: unknown) {
+      if (errorData instanceof AxiosError) {
+        Object.entries(errorData.response?.data.errors).forEach(([field, messages]) => {
+          const errorMsg = messages as string[];
+          form.setError(field as "code" | "name", {
+            type: 'manual',
+            message: errorMsg[0]
+          });
+        }
+        )
+      }
     }
   }
 
@@ -135,7 +156,12 @@ export function DivisionDialogForm({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(open) => {
+      onOpenChange(open)
+      if (!open) {
+        form.reset()
+      }
+    }}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">{isEditing ? "Edit" : "Add New"} Division</DialogTitle>

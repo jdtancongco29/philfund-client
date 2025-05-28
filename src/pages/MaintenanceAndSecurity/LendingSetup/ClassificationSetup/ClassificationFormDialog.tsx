@@ -162,7 +162,12 @@ export function ClassificationDialogForm({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(open) => {
+      onOpenChange(open)
+      if (!open) {
+        form.reset()
+      }
+    }}>
       <DialogContent className="sm:max-w-[500px] max-h-3/4 overflow-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">{isEditing ? "Edit" : "Add New"} Classification</DialogTitle>
@@ -185,14 +190,14 @@ export function ClassificationDialogForm({
                     value={field.value}
                   >
                     <FormControl>
-                      <SelectTrigger className="h-12">
+                      <SelectTrigger className="h-12 w-full">
                         <SelectValue placeholder="Select group code" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {groupsData?.data.groups.map((group) => (
                         <SelectItem key={group.id} value={group.id}>
-                          {group.code || group.name}
+                          {group.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -318,7 +323,7 @@ export function ClassificationDialogForm({
                 type="submit"
                 className="bg-blue-500 hover:bg-blue-600"
               >
-                {isEditing ? "Edit" : "Add"} Classification{" "}
+                {isEditing ? "Save" : "Ad Classification"}{" "}
                 {(creationHandler.isPending || editingHandler.isPending) && (
                   <span>
                     <Loader2 className="animate-spin" />

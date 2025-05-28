@@ -12,6 +12,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import GroupSetupService from "./Service/GroupSetupService"
 import { Loader2 } from "lucide-react"
 import { useEffect } from "react"
+import { AxiosError } from "axios"
 
 // Define the form schema with validation
 const formSchema = z.object({
@@ -65,8 +66,17 @@ export function GroupDialogForm({ open, isEditing, item, onOpenChange, onCancel,
       queryClient.invalidateQueries({ queryKey: ['borrower-group-table'] })
       onSubmit();
       form.reset()
-    } catch (errorData: any) {
-      console.error(errorData);
+    } catch (errorData: unknown) {
+      if (errorData instanceof AxiosError) {
+        Object.entries(errorData.response?.data.errors).forEach(([field, messages]) => {
+          const errorMsg = messages as string[];
+          form.setError(field as "code" | "name", {
+            type: 'manual',
+            message: errorMsg[0]
+          });
+        }
+        )
+      }
     }
   }
 
@@ -77,8 +87,17 @@ export function GroupDialogForm({ open, isEditing, item, onOpenChange, onCancel,
       queryClient.invalidateQueries({ queryKey: ['borrower-group-table'] })
       onSubmit();
       form.reset()
-    } catch (_error) {
-      console.log(_error);
+    } catch (errorData: unknown) {
+      if (errorData instanceof AxiosError) {
+        Object.entries(errorData.response?.data.errors).forEach(([field, messages]) => {
+          const errorMsg = messages as string[];
+          form.setError(field as "code" | "name", {
+            type: 'manual',
+            message: errorMsg[0]
+          });
+        }
+        )
+      }
     }
   }
 
@@ -95,8 +114,14 @@ export function GroupDialogForm({ open, isEditing, item, onOpenChange, onCancel,
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog
+      open={open} onOpenChange={(open) => {
+        onOpenChange(open)
+        if (!open) {
+          form.reset()
+        }
+      }}>
+      <DialogContent className="sm:max-w-[500px]" autoFocus={false}>
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">{isEditing ? "Edit" : "Add New"} Group</DialogTitle>
           <DialogDescription className="text-base text-muted-foreground">
@@ -104,18 +129,30 @@ export function GroupDialogForm({ open, isEditing, item, onOpenChange, onCancel,
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+          <form autoFocus={false} onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            <input
+              autoFocus
+              type="text"
+              style={{
+                position: 'absolute',
+                left: '-9999px',
+                width: '1px',
+                height: '1px',
+                opacity: 0,
+                pointerEvents: 'none',
+              }}
+            />
             <FormField
               disabled={creationHandler.isPending || editingHandler.isPending}
               control={form.control}
               name="code"
               render={({ field }) => (
-                <FormItem>
+                <FormItem autoFocus={false}>
                   <FormLabel className="text-base font-medium">
                     Group Code <span className="text-destructive">*</span>
                   </FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter group code" {...field} className="h-12" />
+                  <FormControl autoFocus={false}>
+                    <Input placeholder="Enter group code" {...field} autoFocus={false} className="h-12" />
                   </FormControl>
                   <p className="text-sm text-muted-foreground">A unique code to identify this borrower group</p>
                   <FormMessage />
@@ -131,8 +168,8 @@ export function GroupDialogForm({ open, isEditing, item, onOpenChange, onCancel,
                   <FormLabel className="text-base font-medium">
                     Group Name <span className="text-destructive">*</span>
                   </FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter group name" {...field} className="h-12" />
+                  <FormControl autoFocus={false}>
+                    <Input autoFocus={false} placeholder="Enter group name" {...field} className="h-12" />
                   </FormControl>
                   <p className="text-sm text-muted-foreground">A descriptive name for this borrower group</p>
                   <FormMessage />
@@ -155,7 +192,7 @@ export function GroupDialogForm({ open, isEditing, item, onOpenChange, onCancel,
               <Button
                 disabled={creationHandler.isPending || editingHandler.isPending}
                 type="submit" className="bg-blue-500 hover:bg-blue-600">
-                {isEditing ? "Edit" : "Add"} Group {(creationHandler.isPending || editingHandler.isPending) && <span><Loader2 className="animate-spin" /></span>}
+                {isEditing ? "Save" : "Add Group "} {(creationHandler.isPending || editingHandler.isPending) && <span><Loader2 className="animate-spin" /></span>}
               </Button>
             </div>
           </form>

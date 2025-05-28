@@ -1,10 +1,10 @@
-import ComingSoon from '@/components/coming-soon'
 import MainLayout from '@/components/layout/MainLayout'
+import { ApprovalTable } from './ApprovalTable'
 
 function ApprovalPage() {
   return (
     <MainLayout>
-        <ComingSoon />
+        <ApprovalTable />
     </MainLayout>
   )
 }

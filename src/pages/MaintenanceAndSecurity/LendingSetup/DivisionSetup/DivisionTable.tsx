@@ -27,7 +27,7 @@ export function DivisionTable() {
   } = useQuery({
     queryKey: ["division-table", currentPage, rowsPerPage, searchQuery],
     queryFn: () => DivisionSetupService.getAllDivisions(currentPage, rowsPerPage, searchQuery),
-    staleTime: Infinity,
+    staleTime: 1000 * 60 * 5,
   })
 
   const deletionHandler = useMutation({
@@ -44,7 +44,9 @@ export function DivisionTable() {
       id: "group",
       header: "Group",
       accessorKey: "group",
-      cell: (row) => row.group.name,
+      cell: (row) => <div><p className="font-bold">{row.name}</p>
+        <p className="text-xs">{row.group.name}</p>
+      </div>,
       enableSorting: true,
     },
     {
@@ -166,8 +168,9 @@ export function DivisionTable() {
         }}
         isEditing={isEditing}
         onOpenChange={() => {
-          setIsDialogOpen(false)
-          setIsEditing(false)
+          setIsDialogOpen(false);
+          setIsEditing(false);
+          setSelectedItem(null);
         }}
         onSubmit={onSubmit}
       />

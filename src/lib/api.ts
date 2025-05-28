@@ -6,6 +6,7 @@ interface ApiOptions {
   useAuth?: boolean; // Enables Authorization: Bearer <token>
   useBranchId?: boolean; // Enables X-Branch-Id from cookie
   customHeaders?: Record<string, string>; // Custom headers
+  responseType?: XMLHttpRequestResponseType
 }
 
 // Get token from cookies
@@ -67,6 +68,7 @@ export const apiRequest = async <T = any>(
     url: fullUrl,
     headers,
     data,
+    responseType: options.responseType || "json",
   };
 
   return axios.request<T>(config);

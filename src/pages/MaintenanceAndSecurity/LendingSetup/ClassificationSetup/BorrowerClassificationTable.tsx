@@ -27,7 +27,7 @@ export function BorrowerClassificationTable() {
   } = useQuery({
     queryKey: ["borrower-classification-table", currentPage, rowsPerPage, searchQuery],
     queryFn: () => ClassificationSetupService.getAllClassifications(currentPage, rowsPerPage, searchQuery),
-    staleTime: Infinity,
+    staleTime: 1000 * 60 * 5,
   })
 
   const deletionHandler = useMutation({
@@ -44,6 +44,9 @@ export function BorrowerClassificationTable() {
       id: "group",
       header: "Group",
       accessorKey: "name",
+      cell: (item) => {
+        return item.group.name;
+      },
       enableSorting: true,
     },
     {
@@ -77,7 +80,7 @@ export function BorrowerClassificationTable() {
     {
       accessorKey: "bonus_loan_eligible",
       id: "bonus_loan_eligible",
-      header: "Eligible for Bonus Loan",
+      header: "Bonus Loan Eligible",
       cell: (row) => (
         <div className="flex justify-start">
           {row.bonus_loan_eligible ? (

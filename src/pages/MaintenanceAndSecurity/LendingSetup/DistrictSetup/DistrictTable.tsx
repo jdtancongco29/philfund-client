@@ -27,7 +27,7 @@ export function DistrictTable() {
   } = useQuery({
     queryKey: ["district-table", currentPage, rowsPerPage, searchQuery],
     queryFn: () => DistrictSetupService.getAllDistricts(currentPage, rowsPerPage, searchQuery),
-    staleTime: Infinity,
+    staleTime: () => 1000 * 60 * 5,
   })
 
   const deletionHandler = useMutation({
@@ -42,8 +42,9 @@ export function DistrictTable() {
   const columns: ColumnDefinition<District>[] = [
     {
       id: "division",
-      header: "Division Code",
+      header: "Division Name",
       accessorKey: "code",
+      cell: (item) => item.division.name,
       enableSorting: true,
     },
     {
@@ -168,6 +169,7 @@ export function DistrictTable() {
         onOpenChange={() => {
           setIsDialogOpen(false)
           setIsEditing(false)
+          setSelectedItem(null)
         }}
         onSubmit={onSubmit}
       />

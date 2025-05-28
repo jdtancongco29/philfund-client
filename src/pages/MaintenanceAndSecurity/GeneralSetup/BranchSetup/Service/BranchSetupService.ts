@@ -177,7 +177,6 @@ export const BranchSetupService = {
         useBranchId: true,
         responseType: "blob",
       })
-      console.log('pdf', response.data);
       return response.data
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || "Failed to export PDF"
@@ -188,15 +187,14 @@ export const BranchSetupService = {
   /**
    * Export branches to CSV
    */
-  exportCsv: async (): Promise<Blob> => {
+  exportCsv: async () => {
     const endpoint = `/branch/export-csv`
     try {
-      const response = await apiRequest<Blob>("get", endpoint, null, {
+      const response = await apiRequest("get", endpoint, null, {
         useAuth: true,
         useBranchId: true,
         responseType: "blob",
       })
-      console.log('csv', response.data);
       return response.data
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || "Failed to export CSV"

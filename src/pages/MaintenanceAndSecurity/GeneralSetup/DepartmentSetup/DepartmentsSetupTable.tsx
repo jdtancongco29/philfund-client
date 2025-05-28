@@ -10,6 +10,7 @@ import { DepartmentDialog } from "./DepartmentDialog"
 import { PencilIcon, TrashIcon } from "lucide-react"
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog"
 import { toast } from "sonner"
+import { downloadFile } from "@/lib/utils"
 
 export function DepartmentSetupTable() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -100,66 +101,19 @@ export function DepartmentSetupTable() {
 
   const exportCsvMutation = useMutation({
     mutationFn: DepartmentSetupService.exportCsv,
-    onSuccess: (csvData) => {
-      // Handle the CSV data directly from API
-      let csvContent: string
-
-      if (typeof csvData === "string") {
-        // If API returns CSV string directly
-        csvContent = csvData
-      } else if (csvData instanceof Blob) {
-        // If API returns a Blob, we need to read it
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          const csvContent = e.target?.result as string
-          downloadCsv(csvContent)
-        }
-        reader.readAsText(csvData)
-        return
-      } else {
-        // Fallback: format the data manually
-        csvContent = formatDepartmentsToCsv(csvData)
+    onSuccess: (csvData: Blob) => {
+      try {
+        const currentDate = new Date().toISOString().split("T")[0]
+        downloadFile(csvData, `departments-${currentDate}.csv`)
+        toast.success("CSV generated successfully")
+      } catch (error) {
+        toast.error("Failed to process CSV data")
       }
-
-      downloadCsv(csvContent)
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to export CSV")
     },
   })
-
-  // Helper function to download CSV
-  const downloadCsv = (csvContent: string) => {
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.href = url
-    link.download = `departments-${new Date().toISOString().split("T")[0]}.csv`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
-    toast.success("CSV generated successfully")
-  }
-
-  // Helper function to format departments data to CSV (fallback)
-  const formatDepartmentsToCsv = (data: any) => {
-    const headers = ["Code", "Name"]
-    const csvRows = [headers.join(",")]
-
-    // Get departments from current table data if API data is not available
-    const departmentsData = data?.departments || data?.data?.departments || departments?.data?.departments || []
-
-    departmentsData.forEach((department: DepartmentSetup) => {
-      const row = [
-        department.code || "",
-        department.name?.includes(",") ? `"${department.name}"` : department.name || "",
-      ]
-      csvRows.push(row.join(","))
-    })
-
-    return csvRows.join("\n")
-  }
 
   if (error) return "An error has occurred: " + error.message
 

@@ -214,217 +214,49 @@ export default function ChartOfAccounts() {
     }
   }, [getAuthHeaders, downloadFile, generateCsvFromData, accounts])
 
-  const generatePdfFromData = useCallback(async () => {
-    const printWindow = window.open("", "_blank")
-    if (!printWindow) {
-      throw new Error("Could not open print window")
-    }
 
-    const currentDate = new Date().toLocaleDateString()
 
-    const assetAccounts = accounts.filter((account) => account.major_classification.name === "Asset").length
-    const liabilityAccounts = accounts.filter((account) => account.major_classification.name === "Liabilities").length
-    const equityAccounts = accounts.filter((account) => account.major_classification.name === "Equity").length
-
-    const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>Chart of Accounts Report</title>
-        <style>
-          body { 
-            font-family: Arial, sans-serif; 
-            margin: 20px; 
-            color: #333;
-            line-height: 1.4;
-          }
-          h1 { 
-            color: #333; 
-            text-align: center; 
-            border-bottom: 3px solid #007bff;
-            padding-bottom: 10px;
-            margin-bottom: 5px;
-          }
-          .header { 
-            text-align: center; 
-            margin-bottom: 30px; 
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
-          }
-          .summary {
-            display: flex;
-            justify-content: space-around;
-            margin: 20px 0;
-            background: #e9ecef;
-            padding: 15px;
-            border-radius: 5px;
-          }
-          .summary-item {
-            text-align: center;
-          }
-          table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin-top: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-          }
-          th, td { 
-            border: 1px solid #ddd; 
-            padding: 8px 6px; 
-            text-align: left; 
-            font-size: 11px;
-          }
-          th { 
-            background-color: #007bff; 
-            color: white;
-            font-weight: bold; 
-            text-align: center;
-          }
-          .classification-asset { 
-            background-color: #e3f2fd; 
-          }
-          .classification-liability { 
-            background-color: #ffebee; 
-          }
-          .classification-equity { 
-            background-color: #e8f5e8; 
-          }
-          .contra-yes { 
-            color: #dc3545; 
-            font-weight: bold; 
-          }
-          .contra-no { 
-            color: #28a745; 
-          }
-          .footer {
-            margin-top: 30px;
-            text-align: center;
-            font-size: 10px;
-            color: #666;
-          }
-          @media print {
-            body { margin: 0; }
-            .header { page-break-inside: avoid; }
-            @page { margin: 1cm; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>Chart of Accounts Report</h1>
-          <p><strong>Generated on:</strong> ${currentDate}</p>
-        </div>
-        <div class="summary">
-          <div class="summary-item">
-            <h3>${accounts.length}</h3>
-            <p>Total Accounts</p>
-          </div>
-          <div class="summary-item">
-            <h3>${assetAccounts}</h3>
-            <p>Asset Accounts</p>
-          </div>
-          <div class="summary-item">
-            <h3>${liabilityAccounts}</h3>
-            <p>Liability Accounts</p>
-          </div>
-          <div class="summary-item">
-            <h3>${equityAccounts}</h3>
-            <p>Equity Accounts</p>
-          </div>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Code</th>
-              <th>Account Name</th>
-              <th>Classification</th>
-              <th>Sub-Grouping</th>
-              <th>Normal Balance</th>
-              <th>Contra</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${accounts
-              .map(
-                (account) => `
-              <tr class="classification-${account.major_classification.name.toLowerCase()}">
-                <td>${account.code}</td>
-                <td>${account.name}</td>
-                <td>${account.major_classification.name}</td>
-                <td>${account.category}</td>
-                <td>${account.normal_balance.charAt(0).toUpperCase() + account.normal_balance.slice(1)}</td>
-                <td class="${account.is_contra ? "contra-yes" : "contra-no"}">
-                  ${account.is_contra ? "Yes" : "No"}
-                </td>
-              </tr>
-            `,
-              )
-              .join("")}
-          </tbody>
-        </table>
-        <div class="footer">
-          <p>This report was generated automatically from the Chart of Accounts system.</p>
-        </div>
-      </body>
-    </html>
-  `
-
-    printWindow.document.write(htmlContent)
-    printWindow.document.close()
-
-    printWindow.onload = () => {
-      setTimeout(() => {
-        printWindow.print()
-        printWindow.close()
-      }, 250)
-    }
-
-    toast.success("PDF Export Initiated", {
-      description: "PDF print dialog has been opened.",
-      icon: <Download className="h-5 w-5" />,
-      duration: 3000,
+  const exportPdf = async (): Promise<Blob> => {
+  const endpoint = `/coa/export-pdf` // adjust endpoint if needed
+  try {
+    const response = await apiRequest<Blob>("get", endpoint, null, {
+      useAuth: true,
+      useBranchId: true,
+      responseType: "blob",
     })
-  }, [accounts])
-
-  const handlePdfExport = useCallback(async () => {
-    setIsExporting(true)
-    try {
-      const headers = getAuthHeaders()
-      const response = await fetch("/coa/export-pdf", {
-        method: "GET",
-        headers,
-      })
-
-      if (response.ok) {
-        const blob = await response.blob()
-        const currentDate = new Date().toISOString().split("T")[0]
-        downloadFile(blob, `chart-of-accounts-${currentDate}.pdf`)
-
-        toast.success("PDF Export Successful", {
-          description: "Chart of Accounts have been exported to PDF successfully.",
-          icon: <Download className="h-5 w-5" />,
-          duration: 5000,
-        })
-      } else {
-        throw new Error(`API endpoint returned status: ${response.status}`)
-      }
-    } catch (error) {
-      console.warn("API PDF export failed, using fallback:", error)
-
-      try {
-        await generatePdfFromData()
-      } catch (fallbackError) {
-        console.error("Fallback PDF generation failed:", fallbackError)
-        toast.error("PDF Export Failed", {
-          description: "Failed to export Chart of Accounts to PDF. Please try again.",
-          duration: 5000,
-        })
-      }
-    } finally {
-      setIsExporting(false)
+    return response.data
+  } catch (error: any) {
+    const errorMessage = error.response?.data?.message || "Failed to export PDF"
+    throw new Error(errorMessage)
+  }
+}
+const handlePdfExport = useCallback(async () => {
+  setIsExporting(true)
+  try {
+    const blob = await exportPdf()
+    const url = window.URL.createObjectURL(blob)
+    
+    const newTab = window.open(url, "_blank")
+    if (newTab) {
+      newTab.focus()
+    } else {
+      const link = document.createElement("a")
+      link.href = url
+      link.download = `general-journal-${new Date().toISOString().split("T")[0]}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
     }
-  }, [getAuthHeaders, downloadFile, generatePdfFromData])
+
+    toast.success("PDF opened in new tab")
+  } catch (error: any) {
+    toast.error("PDF Export Failed", {
+      description: error.message || "Could not export General Journal PDF.",
+    })
+  } finally {
+    setIsExporting(false)
+  }
+}, [])
 
   const fetchAccounts = async () => {
     setLoading(true)

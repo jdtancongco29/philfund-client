@@ -378,176 +378,48 @@ export default function AccountEntriesTable() {
     }
   }, [getAuthHeaders, downloadFile, generateCsvFromData, data])
 
-  const generatePdfFromData = useCallback(async () => {
-    const printWindow = window.open("", "_blank")
-    if (!printWindow) {
-      throw new Error("Could not open print window")
-    }
-
-    const currentDate = new Date().toLocaleDateString()
-    const totalDebit = data.reduce((sum, entry) => sum + Number.parseFloat(entry.transaction_amount || "0"), 0)
-    const totalCredit = totalDebit // Assuming balanced entries
-
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Account Entries Report</title>
-          <style>
-            body { 
-              font-family: Arial, sans-serif; 
-              margin: 20px; 
-              color: #333;
-              line-height: 1.4;
-            }
-            h1 { 
-              color: #333; 
-              text-align: center; 
-              border-bottom: 3px solid #007bff;
-              padding-bottom: 10px;
-              margin-bottom: 5px;
-            }
-            .header { 
-              text-align: center; 
-              margin-bottom: 30px; 
-              background: #f8f9fa;
-              padding: 15px;
-              border-radius: 5px;
-            }
-            table { 
-              width: 100%; 
-              border-collapse: collapse; 
-              margin-top: 20px;
-              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            }
-            th, td { 
-              border: 1px solid #ddd; 
-              padding: 12px 8px; 
-              text-align: left; 
-              font-size: 12px;
-            }
-            th { 
-              background-color: #007bff; 
-              color: white;
-              font-weight: bold; 
-              text-align: center;
-            }
-            .amount { text-align: right; font-family: monospace; }
-            .total-row { 
-              background-color: #f8f9fa; 
-              font-weight: bold; 
-              border-top: 2px solid #007bff;
-            }
-            .footer {
-              margin-top: 30px;
-              text-align: center;
-              font-size: 10px;
-              color: #666;
-            }
-            @media print {
-              body { margin: 0; }
-              .header { page-break-inside: avoid; }
-              @page { margin: 1cm; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>Default Account Entries Report</h1>
-            <p><strong>Generated on:</strong> ${currentDate}</p>
-            <p><strong>Total Entries:</strong> ${data.length}</p>
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Particulars</th>
-                <th>Name</th>
-                <th>Debit</th>
-                <th>Credit</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${data
-                .map(
-                  (entry) => `
-                <tr>
-                  <td>${entry.particulars || "-"}</td>
-                  <td>${entry.name}</td>
-                  <td class="amount">${Number.parseFloat(entry.transaction_amount || "0").toFixed(2)}</td>
-                  <td class="amount">${Number.parseFloat(entry.transaction_amount || "0").toFixed(2)}</td>
-                </tr>
-              `,
-                )
-                .join("")}
-              <tr class="total-row">
-                <td colspan="2"><strong>TOTAL</strong></td>
-                <td class="amount"><strong>${totalDebit.toFixed(2)}</strong></td>
-                <td class="amount"><strong>${totalCredit.toFixed(2)}</strong></td>
-              </tr>
-            </tbody>
-          </table>
-          <div class="footer">
-            <p>This report was generated automatically from the Account Entries system.</p>
-          </div>
-        </body>
-      </html>
-    `
-
-    printWindow.document.write(htmlContent)
-    printWindow.document.close()
-
-    printWindow.onload = () => {
-      setTimeout(() => {
-        printWindow.print()
-        printWindow.close()
-      }, 250)
-    }
-
-    toast.success("PDF Export Initiated", {
-      description: "PDF print dialog has been opened.",
-      icon: <CircleCheck className="h-5 w-5" />,
-      duration: 3000,
+ const exportPdf = async (): Promise<Blob> => {
+  const endpoint = `/default-entry/export-pdf` // adjust endpoint if needed
+  try {
+    const response = await apiRequest<Blob>("get", endpoint, null, {
+      useAuth: true,
+      useBranchId: true,
+      responseType: "blob",
     })
-  }, [data])
-
-  const handlePdfExport = useCallback(async () => {
-    setIsExporting(true)
-    try {
-      const headers = getAuthHeaders()
-      const response = await fetch("/api/default-entry/export-pdf", {
-        method: "GET",
-        headers,
-      })
-
-      if (response.ok) {
-        const blob = await response.blob()
-        const currentDate = new Date().toISOString().split("T")[0]
-        downloadFile(blob, `account-entries-${currentDate}.pdf`)
-
-        toast.success("PDF Export Successful", {
-          description: "Account Entries have been exported to PDF successfully.",
-          icon: <CircleCheck className="h-5 w-5" />,
-          duration: 5000,
-        })
-      } else {
-        throw new Error(`API endpoint returned status: ${response.status}`)
-      }
-    } catch (error) {
-      console.warn("API PDF export failed, using fallback:", error)
-
-      try {
-        await generatePdfFromData()
-      } catch (fallbackError) {
-        console.error("Fallback PDF generation failed:", fallbackError)
-        toast.error("PDF Export Failed", {
-          description: "Failed to export Account Entries to PDF. Please try again.",
-          duration: 5000,
-        })
-      }
-    } finally {
-      setIsExporting(false)
+    return response.data
+  } catch (error: any) {
+    const errorMessage = error.response?.data?.message || "Failed to export PDF"
+    throw new Error(errorMessage)
+  }
+}
+const handlePdfExport = useCallback(async () => {
+  setIsExporting(true)
+  try {
+    const blob = await exportPdf()
+    const url = window.URL.createObjectURL(blob)
+    
+    const newTab = window.open(url, "_blank")
+    if (newTab) {
+      newTab.focus()
+    } else {
+      const link = document.createElement("a")
+      link.href = url
+      link.download = `general-journal-${new Date().toISOString().split("T")[0]}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
     }
-  }, [getAuthHeaders, downloadFile, generatePdfFromData])
+
+    toast.success("PDF opened in new tab")
+  } catch (error: any) {
+    toast.error("PDF Export Failed", {
+      description: error.message || "Could not export General Journal PDF.",
+    })
+  } finally {
+    setIsExporting(false)
+  }
+}, [])
+
 
   return (
     <>

@@ -94,7 +94,7 @@ export function EditAccountDialog({ open, onOpenChange, onEditAccount, account }
       if (account.branches && account.branches.length > 0) {
         setSelectedBranches(account.branches.map(branch => branch.uid));
       } else {
-        setSelectedBranches(["a050d30b-e7ae-4673-bf69-9e3ee5585d33"]);
+        setSelectedBranches([""]);
       }
 
 

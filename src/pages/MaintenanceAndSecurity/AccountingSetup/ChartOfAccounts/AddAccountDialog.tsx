@@ -6,7 +6,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import { Badge } from "@/components/ui/badge"
+import { Building2, X } from "lucide-react"
 import { COADialog } from "./COADialog"
+import { BranchSelectionDialog } from "./BranchSelectionDialog"
 
 interface ChartOfAccount {
   id: string
@@ -33,6 +36,17 @@ interface ChartOfAccount {
     code: string
     name: string
   }>
+}
+
+interface Branch {
+  id: string
+  code: string
+  name: string
+  email: string
+  address: string
+  contact: string
+  city: string
+  status: boolean
 }
 
 interface AddEditAccountDialogProps {
@@ -79,11 +93,14 @@ export function AddEditAccountDialog({
   const [selectedHeader, setSelectedHeader] = useState<{ id: string; code: string; name: string } | null>(null)
   const [isContraAccount, setIsContraAccount] = useState(false)
   const [normalBalance, setNormalBalance] = useState<"debit" | "credit">("debit")
-  const [selectedBranches, setSelectedBranches] = useState<string[]>(["a050d30b-e7ae-4673-bf69-9e3ee5585d33"])
+  const [selectedBranches, setSelectedBranches] = useState<Branch[]>([])
+  // Remove hardcoded branch ID - start with empty array
+  const [selectedBranchIds, setSelectedBranchIds] = useState<string[]>([])
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
   const [showCOADialog, setShowCOADialog] = useState(false)
+  const [showBranchDialog, setShowBranchDialog] = useState(false)
 
   const isEditMode = mode === "edit" && editingAccount
 
@@ -106,7 +123,7 @@ export function AddEditAccountDialog({
         if (!editingAccount.is_header && editingAccount.parent) {
           setSelectedHeader({
             id: editingAccount.parent.id,
-            code: editingAccount.code, // You might need to get the parent code from API
+            code: editingAccount.code,
             name: editingAccount.parent.name,
           })
           setHeaderAccountLabel(`${editingAccount.parent.name}`)
@@ -115,9 +132,26 @@ export function AddEditAccountDialog({
           setHeaderAccountLabel("")
         }
 
-        // Handle branches
+        // Handle branches - use actual branch IDs from the editing account
         if (editingAccount.branches && editingAccount.branches.length > 0) {
-          setSelectedBranches(editingAccount.branches.map((branch) => branch.uid))
+          const branchIds = editingAccount.branches.map((branch) => branch.uid)
+          setSelectedBranchIds(branchIds)
+          // Convert to Branch format for display
+          const branches = editingAccount.branches.map((branch) => ({
+            id: branch.uid,
+            code: branch.code,
+            name: branch.name,
+            email: "",
+            address: "",
+            contact: "",
+            city: "",
+            status: true,
+          }))
+          setSelectedBranches(branches)
+        } else {
+          // If no branches in editing account, reset to empty
+          setSelectedBranchIds([])
+          setSelectedBranches([])
         }
       } else {
         // Reset form for add mode
@@ -138,7 +172,9 @@ export function AddEditAccountDialog({
     setSelectedHeader(null)
     setIsContraAccount(false)
     setNormalBalance("debit")
-    setSelectedBranches(["a050d30b-e7ae-4673-bf69-9e3ee5585d33"])
+    setSelectedBranches([])
+    // Reset to empty array instead of hardcoded ID
+    setSelectedBranchIds([])
     setErrors({})
   }
 
@@ -153,7 +189,23 @@ export function AddEditAccountDialog({
     if (accountType === "subsidiary" && !selectedHeader) {
       newErrors.headerAccount = "Header account selection is required."
     }
+    if (selectedBranchIds.length === 0) {
+      newErrors.branches = "At least one branch must be selected."
+    }
     return newErrors
+  }
+
+  const handleBranchSelection = (branches: Branch[]) => {
+    setSelectedBranches(branches)
+    // Use the actual selected branch IDs from the dialog
+    setSelectedBranchIds(branches.map((branch) => branch.id))
+  }
+
+  const removeBranch = (branchId: string) => {
+    const updatedBranches = selectedBranches.filter((branch) => branch.id !== branchId)
+    setSelectedBranches(updatedBranches)
+    // Update the branch IDs array to match the updated branches
+    setSelectedBranchIds(updatedBranches.map((branch) => branch.id))
   }
 
   const handleSubmit = async () => {
@@ -172,7 +224,8 @@ export function AddEditAccountDialog({
       is_contra: isContraAccount,
       normal_balance: normalBalance,
       special_classification: specialClassification.trim(),
-      branches: selectedBranches,
+      // Use the actual selected branch IDs from the dialog
+      branches: selectedBranchIds,
     }
 
     setIsLoading(true)
@@ -207,214 +260,262 @@ export function AddEditAccountDialog({
   const submitButtonText = isEditMode ? (isLoading ? "Updating..." : "Update") : isLoading ? "Adding..." : "Add Account"
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>{dialogTitle}</DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-[700px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{dialogTitle}</DialogTitle>
+          </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label className={errors.code ? "text-red-500" : undefined}>
-              Account Code <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              className={errors.code ? "border-red-500" : undefined}
-            />
-            {errors.code && <p className="text-sm text-red-600">{errors.code}</p>}
-          </div>
-
-          <div>
-            <Label className={errors.name ? "text-red-500" : undefined}>
-              Account Name <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className={errors.name ? "border-red-500" : undefined}
-            />
-            {errors.name && <p className="text-sm text-red-600">{errors.name}</p>}
-          </div>
-
-          <div className="col-span-2">
-            <Label className={errors.description ? "text-red-500" : undefined}>
-              Description <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className={errors.description ? "border-red-500" : undefined}
-            />
-            {errors.description && <p className="text-sm text-red-600">{errors.description}</p>}
-          </div>
-
-          <div>
-            <Label className={errors.major_classification ? "text-red-500" : undefined}>
-              Major Classification <span className="text-red-500">*</span>
-            </Label>
-            <select
-              value={majorClassification}
-              onChange={(e) => {
-                setMajorClassification(e.target.value)
-                setCategory("")
-              }}
-              className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${errors.major_classification ? "border-red-500" : ""}`}
-            >
-              <option value="">Select...</option>
-              {classificationOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            {errors.major_classification && <p className="text-sm text-red-600">{errors.major_classification}</p>}
-          </div>
-
-          <div>
-            <Label className={errors.category ? "text-red-500" : undefined}>
-              Category <span className="text-red-500">*</span>
-            </Label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${errors.category ? "border-red-500" : ""}`}
-              disabled={!majorClassification}
-            >
-              <option value="">Select...</option>
-              {(categoryOptionsMap[majorClassification] || []).map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-            {errors.category && <p className="text-sm text-red-600">{errors.category}</p>}
-          </div>
-
-          <div className="col-span-2">
-            <Label className={errors.special_classification ? "text-red-500" : undefined}>
-              Special Classification <span className="text-red-500">*</span>
-            </Label>
-            <select
-              value={specialClassification}
-              onChange={(e) => setSpecialClassification(e.target.value)}
-              className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${errors.special_classification ? "border-red-500" : ""}`}
-            >
-              <option value="">Select...</option>
-              <option value="regular account">Regular account</option>
-              <option value="cash account">Cash account</option>
-              <option value="cash in bank account">Cash in bank account</option>
-              <option value="receivable account">Receivable account</option>
-              <option value="payable account">Payable account</option>
-              <option value="allowance for bad debts">Allowance for bad debts</option>
-              <option value="properties and equipment">Properties and equipment</option>
-              <option value="accumulated depreciation">Accumulated depreciation</option>
-              <option value="accumulated amortization">Accumulated amortization</option>
-              <option value="cost of sales">Cost of sales</option>
-              <option value="sales debits">Sales debits</option>
-              <option value="sales">Sales</option>
-              <option value="sales discount">Sales discount</option>
-              <option value="other income">Other income</option>
-              <option value="retained income">Retained income</option>
-            </select>
-            {errors.special_classification && <p className="text-sm text-red-600">{errors.special_classification}</p>}
-          </div>
-
-          <div>
-            <Label>Account Type</Label>
-            <div className="flex gap-4 mt-2">
-              <Button
-                type="button"
-                variant={accountType === "header" ? "default" : "outline"}
-                onClick={() => setAccountType("header")}
-              >
-                Header
-              </Button>
-              <Button
-                type="button"
-                variant={accountType === "subsidiary" ? "default" : "outline"}
-                onClick={() => setAccountType("subsidiary")}
-              >
-                Subsidiary
-              </Button>
-            </div>
-          </div>
-
-          <div>
-            <Label>Normal Balance</Label>
-            <div className="flex gap-4 mt-2">
-              <Button
-                type="button"
-                variant={normalBalance === "debit" ? "default" : "outline"}
-                onClick={() => setNormalBalance("debit")}
-              >
-                Debit
-              </Button>
-              <Button
-                type="button"
-                variant={normalBalance === "credit" ? "default" : "outline"}
-                onClick={() => setNormalBalance("credit")}
-              >
-                Credit
-              </Button>
-            </div>
-          </div>
-
-          {accountType === "subsidiary" && (
-            <div className="col-span-2">
-              <Label className={errors.headerAccount ? "text-red-500" : undefined}>
-                Header Account <span className="text-red-500">*</span>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className={errors.code ? "text-red-500" : undefined}>
+                Account Code <span className="text-red-500">*</span>
               </Label>
-              <div className="flex gap-2">
-                <Input
-                  readOnly
-                  value={headerAccountLabel}
-                  className={errors.headerAccount ? "border-red-500" : undefined}
-                  placeholder="Select a header account"
-                />
-                <Button type="button" onClick={() => setShowCOADialog(true)}>
-                  Select
+              <Input
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                className={errors.code ? "border-red-500" : undefined}
+              />
+              {errors.code && <p className="text-sm text-red-600">{errors.code}</p>}
+            </div>
+
+            <div>
+              <Label className={errors.name ? "text-red-500" : undefined}>
+                Account Name <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className={errors.name ? "border-red-500" : undefined}
+              />
+              {errors.name && <p className="text-sm text-red-600">{errors.name}</p>}
+            </div>
+
+            <div className="col-span-2">
+              <Label className={errors.description ? "text-red-500" : undefined}>
+                Description <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className={errors.description ? "border-red-500" : undefined}
+              />
+              {errors.description && <p className="text-sm text-red-600">{errors.description}</p>}
+            </div>
+
+            <div>
+              <Label className={errors.major_classification ? "text-red-500" : undefined}>
+                Major Classification <span className="text-red-500">*</span>
+              </Label>
+              <select
+                value={majorClassification}
+                onChange={(e) => {
+                  setMajorClassification(e.target.value)
+                  setCategory("")
+                }}
+                className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${errors.major_classification ? "border-red-500" : ""}`}
+              >
+                <option value="">Select...</option>
+                {classificationOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              {errors.major_classification && <p className="text-sm text-red-600">{errors.major_classification}</p>}
+            </div>
+
+            <div>
+              <Label className={errors.category ? "text-red-500" : undefined}>
+                Category <span className="text-red-500">*</span>
+              </Label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${errors.category ? "border-red-500" : ""}`}
+                disabled={!majorClassification}
+              >
+                <option value="">Select...</option>
+                {(categoryOptionsMap[majorClassification] || []).map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+              {errors.category && <p className="text-sm text-red-600">{errors.category}</p>}
+            </div>
+
+            <div className="col-span-2">
+              <Label className={errors.special_classification ? "text-red-500" : undefined}>
+                Special Classification <span className="text-red-500">*</span>
+              </Label>
+              <select
+                value={specialClassification}
+                onChange={(e) => setSpecialClassification(e.target.value)}
+                className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${errors.special_classification ? "border-red-500" : ""}`}
+              >
+                <option value="">Select...</option>
+                <option value="regular account">Regular account</option>
+                <option value="cash account">Cash account</option>
+                <option value="cash in bank account">Cash in bank account</option>
+                <option value="receivable account">Receivable account</option>
+                <option value="payable account">Payable account</option>
+                <option value="allowance for bad debts">Allowance for bad debts</option>
+                <option value="properties and equipment">Properties and equipment</option>
+                <option value="accumulated depreciation">Accumulated depreciation</option>
+                <option value="accumulated amortization">Accumulated amortization</option>
+                <option value="cost of sales">Cost of sales</option>
+                <option value="sales debits">Sales debits</option>
+                <option value="sales">Sales</option>
+                <option value="sales discount">Sales discount</option>
+                <option value="other income">Other income</option>
+                <option value="retained income">Retained income</option>
+              </select>
+              {errors.special_classification && <p className="text-sm text-red-600">{errors.special_classification}</p>}
+            </div>
+
+            <div>
+              <Label>Account Type</Label>
+              <div className="flex gap-4 mt-2">
+                <Button
+                  type="button"
+                  variant={accountType === "header" ? "default" : "outline"}
+                  onClick={() => setAccountType("header")}
+                >
+                  Header
+                </Button>
+                <Button
+                  type="button"
+                  variant={accountType === "subsidiary" ? "default" : "outline"}
+                  onClick={() => setAccountType("subsidiary")}
+                >
+                  Subsidiary
                 </Button>
               </div>
-              {errors.headerAccount && <p className="text-sm text-red-600">{errors.headerAccount}</p>}
             </div>
-          )}
 
-          <div className="col-span-2">
-            <div className="flex items-center space-x-2">
-              <Switch id="contra-account" checked={isContraAccount} onCheckedChange={setIsContraAccount} />
-              <Label htmlFor="contra-account">Contra Account</Label>
+            <div>
+              <Label>Normal Balance</Label>
+              <div className="flex gap-4 mt-2">
+                <Button
+                  type="button"
+                  variant={normalBalance === "debit" ? "default" : "outline"}
+                  onClick={() => setNormalBalance("debit")}
+                >
+                  Debit
+                </Button>
+                <Button
+                  type="button"
+                  variant={normalBalance === "credit" ? "default" : "outline"}
+                  onClick={() => setNormalBalance("credit")}
+                >
+                  Credit
+                </Button>
+              </div>
             </div>
-          </div>
 
-          {errors.general && (
+            {accountType === "subsidiary" && (
+              <div className="col-span-2">
+                <Label className={errors.headerAccount ? "text-red-500" : undefined}>
+                  Header Account <span className="text-red-500">*</span>
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    readOnly
+                    value={headerAccountLabel}
+                    className={errors.headerAccount ? "border-red-500" : undefined}
+                    placeholder="Select a header account"
+                  />
+                  <Button type="button" onClick={() => setShowCOADialog(true)}>
+                    Select
+                  </Button>
+                </div>
+                {errors.headerAccount && <p className="text-sm text-red-600">{errors.headerAccount}</p>}
+              </div>
+            )}
+
             <div className="col-span-2">
-              <p className="text-sm text-red-600">{errors.general}</p>
+              <Label className={errors.branches ? "text-red-500" : undefined}>
+                Branches <span className="text-red-500">*</span>
+              </Label>
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowBranchDialog(true)}
+                    className="flex items-center gap-2"
+                  >
+                    <Building2 className="h-4 w-4" />
+                    Select Branches
+                  </Button>
+                  <span className="text-sm text-muted-foreground self-center">
+                    {selectedBranches.length} branch{selectedBranches.length !== 1 ? "es" : ""} selected
+                  </span>
+                </div>
+
+                {selectedBranches.length > 0 && (
+                  <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto p-2 border rounded">
+                    {selectedBranches.map((branch) => (
+                      <Badge key={branch.id} variant="secondary" className="flex items-center gap-1">
+                        {branch.name}
+                        <X
+                          className="h-3 w-3 cursor-pointer hover:text-red-500"
+                          onClick={() => removeBranch(branch.id)}
+                        />
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+
+                {errors.branches && <p className="text-sm text-red-600">{errors.branches}</p>}
+              </div>
             </div>
-          )}
 
-          <div className="col-span-2 flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
-              Cancel
-            </Button>
-            <Button type="button" onClick={handleSubmit} disabled={isLoading}>
-              {submitButtonText}
-            </Button>
+            <div className="col-span-2">
+              <div className="flex items-center space-x-2">
+                <Switch id="contra-account" checked={isContraAccount} onCheckedChange={setIsContraAccount} />
+                <Label htmlFor="contra-account">Contra Account</Label>
+              </div>
+            </div>
+
+            {errors.general && (
+              <div className="col-span-2">
+                <p className="text-sm text-red-600">{errors.general}</p>
+              </div>
+            )}
+
+            <div className="col-span-2 flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
+                Cancel
+              </Button>
+              <Button type="button" onClick={handleSubmit} disabled={isLoading}>
+                {submitButtonText}
+              </Button>
+            </div>
           </div>
-        </div>
+        </DialogContent>
+      </Dialog>
 
-        <COADialog
-          open={showCOADialog}
-          onClose={() => setShowCOADialog(false)}
-          onSelect={(coa) => {
-            setHeaderAccountLabel(`${coa.code} - ${coa.name}`)
-            setSelectedHeader({ id: coa.id, code: coa.code, name: coa.name })
-            setShowCOADialog(false)
-          }}
-        />
-      </DialogContent>
-    </Dialog>
+      <COADialog
+        open={showCOADialog}
+        onClose={() => setShowCOADialog(false)}
+        onSelect={(coa) => {
+          setHeaderAccountLabel(`${coa.code} - ${coa.name}`)
+          setSelectedHeader({ id: coa.id, code: coa.code, name: coa.name })
+          setShowCOADialog(false)
+        }}
+      />
+
+      <BranchSelectionDialog
+        open={showBranchDialog}
+        onClose={() => setShowBranchDialog(false)}
+        onSelect={handleBranchSelection}
+        selectedBranchIds={selectedBranchIds}
+        multiple={true}
+      />
+    </>
   )
 }
 

@@ -125,7 +125,25 @@ export default function ReferenceManagement() {
     },
   ];
 
-  const filters: FilterDefinition[] = [];
+  const filters: FilterDefinition[] = [
+  {
+    id: "code",
+    label: "Code",
+    type: "select",
+    options: Array.from(new Set(reference.map((r) => r.code))).map((code) => ({
+      label: code,
+      value: code,
+    })),
+    placeholder: "Select Code",
+  },
+  {
+    id: "name",
+    label: "Name",
+    type: "input",
+    placeholder: "Enter Name",
+  },
+];
+
 
   const search: SearchDefinition = {
     title: "Search",
@@ -245,7 +263,7 @@ export default function ReferenceManagement() {
         enableNew
         enablePdfExport={false}
         enableCsvExport={false}
-        enableFilter={false}
+        enableFilter={true}
         onLoading={loading}
         onResetTable={onResetTable}
       />

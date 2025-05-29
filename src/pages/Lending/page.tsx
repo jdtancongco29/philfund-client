@@ -1,10 +1,11 @@
-import ComingSoon from '@/components/coming-soon'
+
 import MainLayout from '@/components/layout/MainLayout'
+import BorrowersMasterList from './BorrowerMasterList/BorrowerMasterList'
 
 function LendingPage() {
   return (
     <MainLayout>  
-        <ComingSoon />
+        <BorrowersMasterList />
     </MainLayout>
   )
 }

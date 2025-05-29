@@ -5,8 +5,17 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { toast } from "sonner"
-import { CircleCheck } from "lucide-react"
+import { CircleCheck, AlertTriangle } from "lucide-react"
 import Select from "react-select"
 
 import { apiRequest } from "@/lib/api"
@@ -126,6 +135,36 @@ export default function AccountsSetupForm() {
   const [, setError] = useState<string | null>(null)
   const [configId, setConfigId] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [isDiscardDialogOpen, setIsDiscardDialogOpen] = useState(false)
+
+  // Store original values to check for changes
+  const [originalValues, setOriginalValues] = useState<{
+    retainedEarnings: ChartOfAccount | null
+    incomeSummary: ChartOfAccount | null
+    nonLoansAR: ChartOfAccount | null
+    ap: ChartOfAccount | null
+    arDebit: ChartOfAccount | null
+    collections: ChartOfAccount | null
+    apCredit: ChartOfAccount | null
+    accountingPayable: ChartOfAccount | null
+    incomeTax: ChartOfAccount | null
+    inputTax: ChartOfAccount | null
+    outputTax: ChartOfAccount | null
+    vatRate: string
+  }>({
+    retainedEarnings: null,
+    incomeSummary: null,
+    nonLoansAR: null,
+    ap: null,
+    arDebit: null,
+    collections: null,
+    apCredit: null,
+    accountingPayable: null,
+    incomeTax: null,
+    inputTax: null,
+    outputTax: null,
+    vatRate: "12%"
+  })
 
   useEffect(() => {
     const fetchAccountingDefaults = async () => {
@@ -156,7 +195,24 @@ export default function AccountsSetupForm() {
           setOutputTax(data.data.coa_output_tax_account)
 
           const vatRateValue = Number.parseFloat(data.data.vat_rate)
-          setVatRate(`${vatRateValue}%`)
+          const formattedVatRate = `${vatRateValue}%`
+          setVatRate(formattedVatRate)
+
+          // Store original values
+          setOriginalValues({
+            retainedEarnings: data.data.coa_retained_earnings_account,
+            incomeSummary: data.data.coa_income_expense_summary_account,
+            nonLoansAR: data.data.coa_non_loans_ar_account,
+            ap: data.data.coa_accounts_payable_account,
+            arDebit: data.data.coa_ar_collected_debit_account,
+            collections: null,
+            apCredit: data.data.coa_ap_paid_credit_account,
+            accountingPayable: null,
+            incomeTax: data.data.coa_income_tax_account,
+            inputTax: data.data.coa_input_tax_account,
+            outputTax: data.data.coa_output_tax_account,
+            vatRate: formattedVatRate
+          })
         }
       } catch (err) {
         console.error("Error fetching accounting defaults:", err)
@@ -181,6 +237,66 @@ export default function AccountsSetupForm() {
     } finally {
       setLoadingCOA(false)
     }
+  }
+
+  const hasChanges = () => {
+    return (
+      retainedEarnings?.id !== originalValues.retainedEarnings?.id ||
+      incomeSummary?.id !== originalValues.incomeSummary?.id ||
+      nonLoansAR?.id !== originalValues.nonLoansAR?.id ||
+      ap?.id !== originalValues.ap?.id ||
+      arDebit?.id !== originalValues.arDebit?.id ||
+      collections?.id !== originalValues.collections?.id ||
+      apCredit?.id !== originalValues.apCredit?.id ||
+      accountingPayable?.id !== originalValues.accountingPayable?.id ||
+      incomeTax?.id !== originalValues.incomeTax?.id ||
+      inputTax?.id !== originalValues.inputTax?.id ||
+      outputTax?.id !== originalValues.outputTax?.id ||
+      vatRate !== originalValues.vatRate
+    )
+  }
+
+  const handleCancel = () => {
+    if (hasChanges()) {
+      setIsDiscardDialogOpen(true)
+    } else {
+      // No changes, can safely navigate away or close
+      console.log("No changes to discard")
+      // Add your navigation logic here
+    }
+  }
+
+  const handleDiscardChanges = () => {
+    // Reset all values to original
+    setRetainedEarnings(originalValues.retainedEarnings)
+    setIncomeSummary(originalValues.incomeSummary)
+    setNonLoansAR(originalValues.nonLoansAR)
+    setAP(originalValues.ap)
+    setARDebit(originalValues.arDebit)
+    setCollections(originalValues.collections)
+    setAPCredit(originalValues.apCredit)
+    setAccountingPayable(originalValues.accountingPayable)
+    setIncomeTax(originalValues.incomeTax)
+    setInputTax(originalValues.inputTax)
+    setOutputTax(originalValues.outputTax)
+    setVatRate(originalValues.vatRate)
+    
+    // Clear any field errors
+    setFieldErrors({})
+    
+    setIsDiscardDialogOpen(false)
+    
+    toast.success("Changes Discarded", {
+      description: "All changes have been reverted to the last saved state.",
+      duration: 3000,
+    })
+
+    // Add your navigation logic here if needed
+    // For example: router.push('/dashboard') or onClose()
+  }
+
+  const handleKeepEditing = () => {
+    setIsDiscardDialogOpen(false)
   }
 
   const handleSave = async () => {
@@ -217,6 +333,22 @@ export default function AccountsSetupForm() {
         if (!configId && saveResult.data?.data?.id) {
           setConfigId(saveResult.data.data.id)
         }
+
+        // Update original values after successful save
+        setOriginalValues({
+          retainedEarnings,
+          incomeSummary,
+          nonLoansAR,
+          ap,
+          arDebit,
+          collections,
+          apCredit,
+          accountingPayable,
+          incomeTax,
+          inputTax,
+          outputTax,
+          vatRate
+        })
       }
     } catch (err: any) {
       console.error("Error saving data:", err)
@@ -412,7 +544,42 @@ export default function AccountsSetupForm() {
         </div>
       </CardContent>
       <CardFooter className="flex justify-end gap-4">
-        <Button variant="outline">Cancel</Button>
+        <Dialog open={isDiscardDialogOpen} onOpenChange={setIsDiscardDialogOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline" onClick={handleCancel}>
+              Cancel
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader className="text-center sm:text-left">
+              <div className="flex items-center gap-3 mb-2">
+              
+                <DialogTitle className="text-lg font-semibold">
+                  Discard changes?
+                </DialogTitle>
+              </div>
+              <DialogDescription className="text-sm text-muted-foreground">
+                Are you sure you want to discard all changes? Any unsaved progress will be lost.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 mt-6">
+              <Button 
+                variant="outline" 
+                onClick={handleKeepEditing}
+                className="w-full sm:w-auto"
+              >
+                Keep editing
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={handleDiscardChanges}
+                className="w-full sm:w-auto"
+              >
+                Discard changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         <Button onClick={handleSave}>Save Changes</Button>
       </CardFooter>
     </Card>

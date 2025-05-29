@@ -152,7 +152,7 @@ export function CashAdvanceFormDialog({
     defaultValues: {
       code: "",
       name: "",
-      type: "salary loan",
+      type: "bonus loan",
       loan_code: "",
       interest_rate: 0,
       surcharge_rate: 0,
@@ -192,6 +192,14 @@ export function CashAdvanceFormDialog({
     return coaData.data.chartOfAccounts.filter((account) => !usedValues.includes(account.id))
   }
 
+  const getCoaFieldCode = (id: string) => {
+    const coa = coaData?.data.chartOfAccounts.filter(coa => coa.id == id);
+    if (coa?.length != 0 || false) {
+      return coa![0].code;
+    }
+    return "";
+  }
+
   // Check if form should be disabled (loading or pending operations)
   const isFormDisabled = creationHandler.isPending || editingHandler.isPending || (isEditing && isLoadingDetail)
 
@@ -202,7 +210,7 @@ export function CashAdvanceFormDialog({
         code: detail.code,
         name: detail.name,
         type: detail.type,
-        loan_code: detail.loan!.id,
+        loan_code: detail.loan?.id ?? "",
         interest_rate: Number.parseFloat(detail.interest_rate),
         surcharge_rate: Number.parseFloat(detail.surcharge_rate),
         max_amt: detail.max_amt ? Number.parseFloat(detail.max_amt) : null,
@@ -222,7 +230,7 @@ export function CashAdvanceFormDialog({
         {
           code: "",
           name: "",
-          type: "salary loan",
+          type: "bonus loan",
           loan_code: "",
           interest_rate: 0,
           surcharge_rate: 0,
@@ -486,29 +494,31 @@ export function CashAdvanceFormDialog({
                       disabled={isFormDisabled}
                       control={form.control}
                       name="loan_code"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            {watchedType === "bonus loan" ? "Bonus Loan" : "Salary Loan"} Code{" "}
-                            <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="h-11 w-full">
-                                <SelectValue placeholder="Select..." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {getAvailableLoans().map((loan) => (
-                                <SelectItem key={loan.id} value={loan.id}>
-                                  {loan.code} - {loan.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      render={({ field }) => {
+                        return (
+                          <FormItem key={field.value}>
+                            <FormLabel className="text-base font-medium">
+                              {watchedType === "bonus loan" ? "Bonus Loan" : "Salary Loan"} Code{" "}
+                              <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="h-11 w-full">
+                                  <SelectValue placeholder="Select..." />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {getAvailableLoans().map((loan) => (
+                                  <SelectItem key={loan.id} value={loan.id}>
+                                    {loan.code}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )
+                      }}
                     />
 
                     <div className="grid grid-cols-2 gap-6">
@@ -681,7 +691,7 @@ export function CashAdvanceFormDialog({
                             Loans Receivable <span className="text-red-500">*</span>
                           </FormLabel>
                           <div className="grid grid-cols-2 gap-4">
-                            <Input placeholder="Account Code" className="h-11" readOnly />
+                            <Input value={getCoaFieldCode(field.value)} placeholder="Account Code" className="h-11" readOnly />
                             <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="h-11 w-full">
@@ -712,7 +722,7 @@ export function CashAdvanceFormDialog({
                             Interest Receivable <span className="text-red-500">*</span>
                           </FormLabel>
                           <div className="grid grid-cols-2 gap-4">
-                            <Input placeholder="Account Code" className="h-11" readOnly />
+                            <Input value={getCoaFieldCode(field.value)} placeholder="Account Code" className="h-11" readOnly />
                             <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="h-11 w-full">
@@ -743,7 +753,7 @@ export function CashAdvanceFormDialog({
                             Interest Income <span className="text-red-500">*</span>
                           </FormLabel>
                           <div className="grid grid-cols-2 gap-4">
-                            <Input placeholder="Account Code" className="h-11" readOnly />
+                            <Input value={getCoaFieldCode(field.value)} placeholder="Account Code" className="h-11" readOnly />
                             <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="h-11 w-full">
@@ -774,7 +784,7 @@ export function CashAdvanceFormDialog({
                             Garnished Expense <span className="text-red-500">*</span>
                           </FormLabel>
                           <div className="grid grid-cols-2 gap-4">
-                            <Input placeholder="Account Code" className="h-11" readOnly />
+                            <Input value={getCoaFieldCode(field.value)} placeholder="Account Code" className="h-11" readOnly />
                             <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="h-11 w-full">
@@ -804,7 +814,7 @@ export function CashAdvanceFormDialog({
                         <FormItem>
                           <FormLabel className="text-base font-medium">Unearned Interest</FormLabel>
                           <div className="grid grid-cols-2 gap-4">
-                            <Input placeholder="Account Code" className="h-11" readOnly />
+                            <Input value={getCoaFieldCode(field.value ?? "")} placeholder="Account Code" className="h-11" readOnly />
                             <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="h-11 w-full">
@@ -833,7 +843,7 @@ export function CashAdvanceFormDialog({
                         <FormItem>
                           <FormLabel className="text-base font-medium">Other Income Penalty</FormLabel>
                           <div className="grid grid-cols-2 gap-4">
-                            <Input placeholder="Account Code" className="h-11" readOnly />
+                            <Input value={getCoaFieldCode(field.value ?? "")} placeholder="Account Code" className="h-11" readOnly />
                             <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="h-11 w-full">
@@ -862,7 +872,7 @@ export function CashAdvanceFormDialog({
                         <FormItem>
                           <FormLabel className="text-base font-medium">Allowance for Doubtful Account</FormLabel>
                           <div className="grid grid-cols-2 gap-4">
-                            <Input placeholder="Account Code" className="h-11" readOnly />
+                            <Input value={getCoaFieldCode(field.value ?? "")} placeholder="Account Code" className="h-11" readOnly />
                             <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="h-11 w-full">
@@ -891,7 +901,7 @@ export function CashAdvanceFormDialog({
                         <FormItem>
                           <FormLabel className="text-base font-medium">Bad Debt Expense</FormLabel>
                           <div className="grid grid-cols-2 gap-4">
-                            <Input placeholder="Account Code" className="h-11" readOnly />
+                            <Input value={getCoaFieldCode(field.value)} placeholder="Account Code" className="h-11" readOnly />
                             <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="h-11 w-full">

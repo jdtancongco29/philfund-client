@@ -10,7 +10,6 @@ import { DataTable, type ColumnDefinition, type FilterDefinition } from "@/compo
 import { DdeleteDialog } from "./DeleteCOADialog"
 import { AddEditAccountDialog } from "./AddAccountDialog"
 
-
 interface Branch {
   uid: string
   code: string
@@ -214,49 +213,47 @@ export default function ChartOfAccounts() {
     }
   }, [getAuthHeaders, downloadFile, generateCsvFromData, accounts])
 
-
-
   const exportPdf = async (): Promise<Blob> => {
-  const endpoint = `/coa/export-pdf` // adjust endpoint if needed
-  try {
-    const response = await apiRequest<Blob>("get", endpoint, null, {
-      useAuth: true,
-      useBranchId: true,
-      responseType: "blob",
-    })
-    return response.data
-  } catch (error: any) {
-    const errorMessage = error.response?.data?.message || "Failed to export PDF"
-    throw new Error(errorMessage)
-  }
-}
-const handlePdfExport = useCallback(async () => {
-  setIsExporting(true)
-  try {
-    const blob = await exportPdf()
-    const url = window.URL.createObjectURL(blob)
-    
-    const newTab = window.open(url, "_blank")
-    if (newTab) {
-      newTab.focus()
-    } else {
-      const link = document.createElement("a")
-      link.href = url
-      link.download = `general-journal-${new Date().toISOString().split("T")[0]}.pdf`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
+    const endpoint = `/coa/export-pdf` // adjust endpoint if needed
+    try {
+      const response = await apiRequest<Blob>("get", endpoint, null, {
+        useAuth: true,
+        useBranchId: true,
+        responseType: "blob",
+      })
+      return response.data
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Failed to export PDF"
+      throw new Error(errorMessage)
     }
-
-    toast.success("PDF opened in new tab")
-  } catch (error: any) {
-    toast.error("PDF Export Failed", {
-      description: error.message || "Could not export General Journal PDF.",
-    })
-  } finally {
-    setIsExporting(false)
   }
-}, [])
+  const handlePdfExport = useCallback(async () => {
+    setIsExporting(true)
+    try {
+      const blob = await exportPdf()
+      const url = window.URL.createObjectURL(blob)
+
+      const newTab = window.open(url, "_blank")
+      if (newTab) {
+        newTab.focus()
+      } else {
+        const link = document.createElement("a")
+        link.href = url
+        link.download = `general-journal-${new Date().toISOString().split("T")[0]}.pdf`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      }
+
+      toast.success("PDF opened in new tab")
+    } catch (error: any) {
+      toast.error("PDF Export Failed", {
+        description: error.message || "Could not export General Journal PDF.",
+      })
+    } finally {
+      setIsExporting(false)
+    }
+  }, [])
 
   const fetchAccounts = async () => {
     setLoading(true)
@@ -357,13 +354,8 @@ const handlePdfExport = useCallback(async () => {
       header: "Contra",
       accessorKey: "is_contra",
       enableSorting: true,
-      
-      cell: (account) => (
-          <div className="font-medium">
-          {account.is_contra ? "Yes" : "No"}
-        </div>
 
-      ),
+      cell: (account) => <div className="font-medium">{account.is_contra ? "Yes" : "No"}</div>,
     },
     {
       id: "branches",
@@ -394,7 +386,6 @@ const handlePdfExport = useCallback(async () => {
         { label: "Expense", value: "Expense" },
       ],
     },
-
   ]
 
   const search = {
@@ -425,16 +416,10 @@ const handlePdfExport = useCallback(async () => {
       }
     } catch (err: any) {
       console.error("Error adding account:", err)
-      if (err.response && err.response.data && err.response.data.errors) {
-        const errorMessages = Object.values(err.response.data.errors).flat().join(", ")
-        toast.error("Failed to add account", {
-          description: errorMessages,
-        })
-      } else {
-        toast.error("Failed to add account", {
-          description: err.message || "An error occurred while adding the account",
-        })
-      }
+
+      // Re-throw the error so the dialog component can handle it
+      // Don't show toast here as the dialog will display the errors
+      throw err
     }
   }
 
@@ -468,14 +453,13 @@ const handlePdfExport = useCallback(async () => {
         setAccountToEdit(null)
       } else {
         throw new Error(response.data.message || "Failed to update account")
-          
       }
     } catch (err: any) {
       console.error("Error updating account:", err)
-      toast.error("Failed to update account", {
-        description: err.message || "An error occurred while updating the account",
-      })
-            setIsEditDialogOpen(true)
+
+      // Let the dialog component handle the error display
+      // Don't close the dialog here - let it stay open to show errors
+      throw err // Re-throw the error so the dialog can handle it
     }
   }
 

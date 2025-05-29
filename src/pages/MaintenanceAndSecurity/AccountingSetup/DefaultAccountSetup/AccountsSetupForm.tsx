@@ -15,7 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
-import { CircleCheck,  } from "lucide-react"
+import { CircleCheck } from "lucide-react"
 import Select from "react-select"
 
 import { apiRequest } from "@/lib/api"
@@ -163,7 +163,7 @@ export default function AccountsSetupForm() {
     incomeTax: null,
     inputTax: null,
     outputTax: null,
-    vatRate: "12%"
+    vatRate: "12%",
   })
 
   useEffect(() => {
@@ -211,7 +211,7 @@ export default function AccountsSetupForm() {
             incomeTax: data.data.coa_income_tax_account,
             inputTax: data.data.coa_input_tax_account,
             outputTax: data.data.coa_output_tax_account,
-            vatRate: formattedVatRate
+            vatRate: formattedVatRate,
           })
         }
       } catch (err) {
@@ -238,6 +238,67 @@ export default function AccountsSetupForm() {
       setLoadingCOA(false)
     }
   }
+
+  const validateDuplicateAccounts = () => {
+    const accounts = [
+      { field: "coa_retained_earnings_account", account: retainedEarnings, label: "Retained Earnings" },
+      { field: "coa_income_expense_summary_account", account: incomeSummary, label: "Income & Expense Summary" },
+      { field: "coa_non_loans_ar_account", account: nonLoansAR, label: "Non-loans A/R" },
+      { field: "coa_accounts_payable_account", account: ap, label: "A/P" },
+      { field: "coa_ar_collected_debit_account", account: arDebit, label: "A/R Debit" },
+      { field: "collections", account: collections, label: "Collections" },
+      { field: "coa_ap_paid_credit_account", account: apCredit, label: "A/P Credit" },
+      { field: "accounting_payable", account: accountingPayable, label: "Accounting Payable PGA" },
+      { field: "coa_income_tax_account", account: incomeTax, label: "Income Tax" },
+      { field: "coa_input_tax_account", account: inputTax, label: "Input Tax" },
+      { field: "coa_output_tax_account", account: outputTax, label: "Output Tax" },
+    ]
+
+    const newFieldErrors: Record<string, string> = {}
+    const accountMap = new Map<string, string[]>()
+
+    // Group fields by account ID
+    accounts.forEach(({  account, label }) => {
+      if (account?.id) {
+        if (!accountMap.has(account.id)) {
+          accountMap.set(account.id, [])
+        }
+        accountMap.get(account.id)?.push(label)
+      }
+    })
+
+    // Find duplicates and set errors
+    accountMap.forEach((labels, accountId) => {
+      if (labels.length > 1) {
+        const duplicateMessage = `This account is also used in: ${labels.slice(1).join(", ")}`
+
+        accounts.forEach(({ field, account }) => {
+          if (account?.id === accountId) {
+            newFieldErrors[field] = duplicateMessage
+          }
+        })
+      }
+    })
+
+    setFieldErrors(newFieldErrors)
+    return Object.keys(newFieldErrors).length === 0
+  }
+
+  useEffect(() => {
+    validateDuplicateAccounts()
+  }, [
+    retainedEarnings,
+    incomeSummary,
+    nonLoansAR,
+    ap,
+    arDebit,
+    collections,
+    apCredit,
+    accountingPayable,
+    incomeTax,
+    inputTax,
+    outputTax,
+  ])
 
   const hasChanges = () => {
     return (
@@ -280,12 +341,12 @@ export default function AccountsSetupForm() {
     setInputTax(originalValues.inputTax)
     setOutputTax(originalValues.outputTax)
     setVatRate(originalValues.vatRate)
-    
+
     // Clear any field errors
     setFieldErrors({})
-    
+
     setIsDiscardDialogOpen(false)
-    
+
     toast.success("Changes Discarded", {
       description: "All changes have been reverted to the last saved state.",
       duration: 3000,
@@ -301,7 +362,16 @@ export default function AccountsSetupForm() {
 
   const handleSave = async () => {
     try {
-      setFieldErrors({})
+      // Validate duplicates before saving
+      const isValid = validateDuplicateAccounts()
+      if (!isValid) {
+        toast.error("Save Failed", {
+          description: "Please resolve duplicate account selections before saving.",
+          duration: 6000,
+        })
+        return
+      }
+
       const formData = {
         coa_retained_earnings_account: retainedEarnings?.id || null,
         coa_income_expense_summary_account: incomeSummary?.id || null,
@@ -347,20 +417,27 @@ export default function AccountsSetupForm() {
           incomeTax,
           inputTax,
           outputTax,
-          vatRate
+          vatRate,
         })
       }
     } catch (err: any) {
       console.error("Error saving data:", err)
       const apiError = err?.response?.data || err
 
-      if (apiError?.errors?.coa_fields?.length) {
-        const fieldErrorMsg = apiError.errors.coa_fields[0] || "Duplicate data in fields"
+      if (apiError?.errors) {
+        const newFieldErrors: Record<string, string> = {}
+        Object.keys(apiError.errors).forEach((field) => {
+          if (apiError.errors[field] && apiError.errors[field].length > 0) {
+            newFieldErrors[field] = apiError.errors[field][0]
+          }
+        })
+
+        setFieldErrors(newFieldErrors)
+
         toast.error("Save Failed", {
-          description: "There are duplicate data in the fields.",
+          description: "There are errors in the form. Please check the fields.",
           duration: 6000,
         })
-        setFieldErrors({ coa_fields: fieldErrorMsg })
       } else if (apiError?.message) {
         toast.error("Save Failed", {
           description: apiError.message,
@@ -408,7 +485,7 @@ export default function AccountsSetupForm() {
               required
               selectedAccount={retainedEarnings}
               onAccountSelect={setRetainedEarnings}
-              error={fieldErrors.coa_fields}
+              error={fieldErrors.coa_retained_earnings_account}
               chartOfAccounts={chartOfAccounts}
               loadingCOA={loadingCOA}
             />
@@ -418,7 +495,7 @@ export default function AccountsSetupForm() {
               required
               selectedAccount={incomeSummary}
               onAccountSelect={setIncomeSummary}
-              error={fieldErrors.coa_fields}
+              error={fieldErrors.coa_income_expense_summary_account}
               chartOfAccounts={chartOfAccounts}
               loadingCOA={loadingCOA}
             />
@@ -433,7 +510,7 @@ export default function AccountsSetupForm() {
               required
               selectedAccount={nonLoansAR}
               onAccountSelect={setNonLoansAR}
-              error={fieldErrors.coa_fields}
+              error={fieldErrors.coa_non_loans_ar_account}
               chartOfAccounts={chartOfAccounts}
               loadingCOA={loadingCOA}
             />
@@ -443,7 +520,7 @@ export default function AccountsSetupForm() {
               required
               selectedAccount={ap}
               onAccountSelect={setAP}
-              error={fieldErrors.coa_fields}
+              error={fieldErrors.coa_accounts_payable_account}
               chartOfAccounts={chartOfAccounts}
               loadingCOA={loadingCOA}
             />
@@ -453,7 +530,7 @@ export default function AccountsSetupForm() {
               required
               selectedAccount={arDebit}
               onAccountSelect={setARDebit}
-              error={fieldErrors.coa_fields}
+              error={fieldErrors.coa_ar_collected_debit_account}
               chartOfAccounts={chartOfAccounts}
               loadingCOA={loadingCOA}
             />
@@ -463,7 +540,7 @@ export default function AccountsSetupForm() {
               required
               selectedAccount={collections}
               onAccountSelect={setCollections}
-              error={fieldErrors.coa_fields}
+              error={fieldErrors.collections}
               chartOfAccounts={chartOfAccounts}
               loadingCOA={loadingCOA}
             />
@@ -473,7 +550,7 @@ export default function AccountsSetupForm() {
               required
               selectedAccount={apCredit}
               onAccountSelect={setAPCredit}
-              error={fieldErrors.coa_fields}
+              error={fieldErrors.coa_ap_paid_credit_account}
               chartOfAccounts={chartOfAccounts}
               loadingCOA={loadingCOA}
             />
@@ -483,7 +560,7 @@ export default function AccountsSetupForm() {
               required
               selectedAccount={accountingPayable}
               onAccountSelect={setAccountingPayable}
-              error={fieldErrors.coa_fields}
+              error={fieldErrors.accounting_payable}
               chartOfAccounts={chartOfAccounts}
               loadingCOA={loadingCOA}
             />
@@ -498,7 +575,7 @@ export default function AccountsSetupForm() {
               required
               selectedAccount={incomeTax}
               onAccountSelect={setIncomeTax}
-              error={fieldErrors.coa_fields}
+              error={fieldErrors.coa_income_tax_account}
               chartOfAccounts={chartOfAccounts}
               loadingCOA={loadingCOA}
             />
@@ -508,7 +585,7 @@ export default function AccountsSetupForm() {
               required
               selectedAccount={inputTax}
               onAccountSelect={setInputTax}
-              error={fieldErrors.coa_fields}
+              error={fieldErrors.coa_input_tax_account}
               chartOfAccounts={chartOfAccounts}
               loadingCOA={loadingCOA}
             />
@@ -518,7 +595,7 @@ export default function AccountsSetupForm() {
               required
               selectedAccount={outputTax}
               onAccountSelect={setOutputTax}
-              error={fieldErrors.coa_fields}
+              error={fieldErrors.coa_output_tax_account}
               chartOfAccounts={chartOfAccounts}
               loadingCOA={loadingCOA}
             />
@@ -553,28 +630,17 @@ export default function AccountsSetupForm() {
           <DialogContent className="sm:max-w-md">
             <DialogHeader className="text-center sm:text-left">
               <div className="flex items-center gap-3 mb-2">
-              
-                <DialogTitle className="text-lg font-semibold">
-                  Discard changes?
-                </DialogTitle>
+                <DialogTitle className="text-lg font-semibold">Discard changes?</DialogTitle>
               </div>
               <DialogDescription className="text-sm text-muted-foreground">
                 Are you sure you want to discard all changes? Any unsaved progress will be lost.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 mt-6">
-              <Button 
-                variant="outline" 
-                onClick={handleKeepEditing}
-                className="w-full sm:w-auto"
-              >
+              <Button variant="outline" onClick={handleKeepEditing} className="w-full sm:w-auto">
                 Keep editing
               </Button>
-              <Button 
-                variant="destructive" 
-                onClick={handleDiscardChanges}
-                className="w-full sm:w-auto"
-              >
+              <Button variant="destructive" onClick={handleDiscardChanges} className="w-full sm:w-auto">
                 Discard changes
               </Button>
             </DialogFooter>

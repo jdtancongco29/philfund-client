@@ -106,19 +106,19 @@ export default function ReferenceManagement() {
   const columns: ColumnDefinition<Reference>[] = [
     {
       id: "code",
-      header: "Code",
+      header: "Reference Code",
       accessorKey: "code",
       enableSorting: true,
     },
     {
       id: "name",
-      header: "Name",
+      header: "Reference Name",
       accessorKey: "name",
       enableSorting: true,
     },
     {
       id: "module",
-      header: "Module",
+      header: "Associated Modules",
       accessorKey: "module",
       cell: (item) => item.module.name,
       enableSorting: true,

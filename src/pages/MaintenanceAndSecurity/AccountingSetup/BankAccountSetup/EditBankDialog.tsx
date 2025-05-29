@@ -471,6 +471,8 @@ export function EditBankDialog({ open, onOpenChange, onSubmit, onReset, initialV
             >
               <option value="">Select account type</option>
               <option value="salary funds account">Salary Funds Account</option>
+              <option value="bonus funds account">Bonus Funds Account</option>
+              <option value="check encashment account">Check Encashment Account</option>
             </select>
             <p className="text-sm text-gray-600">The type or purpose of this bank account</p>
             {errors.account_type && <p className="text-sm text-red-600">{errors.account_type}</p>}

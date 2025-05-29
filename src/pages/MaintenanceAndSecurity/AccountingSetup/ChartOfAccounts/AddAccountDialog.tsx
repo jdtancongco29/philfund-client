@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
-import { X } from 'lucide-react'
+import { X } from "lucide-react"
 import { COADialog } from "./COADialog"
 import { BranchSelectionDialog } from "./BranchSelectionDialog"
 
@@ -236,10 +236,13 @@ export function AddEditAccountDialog({
         await onAddAccount(payload)
       }
 
+      // Only reset form and close dialog on successful operation
       resetForm()
       onOpenChange(false)
     } catch (error: any) {
       console.error(`Failed to ${isEditMode ? "update" : "add"} account:`, error)
+
+      // Handle API validation errors
       if (error?.response?.data?.errors) {
         const apiErrors: Record<string, string> = {}
         for (const key in error.response.data.errors) {
@@ -248,9 +251,22 @@ export function AddEditAccountDialog({
           }
         }
         setErrors(apiErrors)
-      } else {
-        setErrors({ general: "An unexpected error occurred." })
       }
+      // Handle API error messages
+      else if (error?.response?.data?.message) {
+        setErrors({ general: error.response.data.message })
+      }
+      // Handle network or other errors
+      else if (error?.message) {
+        setErrors({ general: error.message })
+      }
+      // Fallback error message
+      else {
+        setErrors({ general: "An unexpected error occurred. Please try again." })
+      }
+
+      // DO NOT close dialog on error - let user see the errors and try again
+      // Only the successful path above should call onOpenChange(false)
     } finally {
       setIsLoading(false)
     }
@@ -311,7 +327,9 @@ export function AddEditAccountDialog({
             </div>
 
             <div>
-              <Label>Header <span className="text-red-500">*</span></Label>
+              <Label>
+                Header <span className="text-red-500">*</span>
+              </Label>
               <div className="flex gap-6 mt-2">
                 <div className="flex items-center space-x-2">
                   <input
@@ -323,7 +341,9 @@ export function AddEditAccountDialog({
                     onChange={() => setAccountType("header")}
                     className="h-4 w-4"
                   />
-                  <Label htmlFor="header-account" className="font-normal">Header Account</Label>
+                  <Label htmlFor="header-account" className="font-normal">
+                    Header Account
+                  </Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <input
@@ -335,7 +355,9 @@ export function AddEditAccountDialog({
                     onChange={() => setAccountType("subsidiary")}
                     className="h-4 w-4"
                   />
-                  <Label htmlFor="subsidiary-account" className="font-normal">Subsidiary Account</Label>
+                  <Label htmlFor="subsidiary-account" className="font-normal">
+                    Subsidiary Account
+                  </Label>
                 </div>
               </div>
             </div>
@@ -371,7 +393,9 @@ export function AddEditAccountDialog({
             )}
 
             <div>
-              <Label>Normal Balance <span className="text-red-500">*</span></Label>
+              <Label>
+                Normal Balance <span className="text-red-500">*</span>
+              </Label>
               <div className="flex gap-6 mt-2">
                 <div className="flex items-center space-x-2">
                   <input
@@ -383,7 +407,9 @@ export function AddEditAccountDialog({
                     onChange={() => setNormalBalance("debit")}
                     className="h-4 w-4"
                   />
-                  <Label htmlFor="debit-balance" className="font-normal">Debit</Label>
+                  <Label htmlFor="debit-balance" className="font-normal">
+                    Debit
+                  </Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <input
@@ -395,7 +421,9 @@ export function AddEditAccountDialog({
                     onChange={() => setNormalBalance("credit")}
                     className="h-4 w-4"
                   />
-                  <Label htmlFor="credit-balance" className="font-normal">Credit</Label>
+                  <Label htmlFor="credit-balance" className="font-normal">
+                    Credit
+                  </Label>
                 </div>
               </div>
               <p className="text-sm text-muted-foreground mt-1">The normal balance side for this account</p>
@@ -444,7 +472,9 @@ export function AddEditAccountDialog({
               <Switch id="contra-account" checked={isContraAccount} onCheckedChange={setIsContraAccount} />
               <div>
                 <Label htmlFor="contra-account">Contra Account</Label>
-                <p className="text-sm text-muted-foreground">Check this if the account is a contra account (reduces the balance of another account)</p>
+                <p className="text-sm text-muted-foreground">
+                  Check this if the account is a contra account (reduces the balance of another account)
+                </p>
               </div>
             </div>
 
@@ -496,7 +526,7 @@ export function AddEditAccountDialog({
                     ))}
                   </div>
                 )}
-                
+
                 <Button
                   type="button"
                   variant="outline"
@@ -525,7 +555,6 @@ export function AddEditAccountDialog({
               </Button>
             </div>
           </div>
-
         </DialogContent>
       </Dialog>
 
@@ -550,5 +579,4 @@ export function AddEditAccountDialog({
   )
 }
 
-// Export both the new combined component and maintain backward compatibility
 export { AddEditAccountDialog as AddAccountDialog }

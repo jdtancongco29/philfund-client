@@ -113,16 +113,16 @@ export function CashAdvanceFormDialog({
     "eligible_class"
   ];
 
-  const coaFields = [
-    "coa_loan_receivable",
-    "coa_interest_receivable",
-    "coa_interest_income",
-    "coa_garnished",
-    "coa_unearned_interest",
-    "coa_other_income_penalty",
-    "coa_allowance_doubtful",
-    "coa_bad_dept_expense"
-  ];
+  // const coaFields = [
+  //   "coa_loan_receivable",
+  //   "coa_interest_receivable",
+  //   "coa_interest_income",
+  //   "coa_garnished",
+  //   "coa_unearned_interest",
+  //   "coa_other_income_penalty",
+  //   "coa_allowance_doubtful",
+  //   "coa_bad_dept_expense"
+  // ];
 
   const editingHandler = useMutation({
     mutationFn: (newCashAdvance: UpdateCashAdvanceSetupPayload) => {
@@ -393,8 +393,7 @@ export function CashAdvanceFormDialog({
 
   // Get dialog title based on type
   const getDialogTitle = () => {
-    const typeText = watchedType === "bonus loan" ? "Bonus Loan" : "Salary Loan"
-    return `${isEditing ? "Edit" : "Add New"} ${typeText} Cash Advance`
+    return `${isEditing ? "Edit" : "Add New"} Cash Advance`
   }
 
   return (
@@ -465,7 +464,7 @@ export function CashAdvanceFormDialog({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-base font-medium">
-                            {watchedType === "bonus loan" ? "Bonus Loan" : "Salary Loan"} CA Code{" "}
+                            {"CA Code"}
                             <span className="text-red-500">*</span>
                           </FormLabel>
                           <FormControl>
@@ -487,7 +486,7 @@ export function CashAdvanceFormDialog({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-base font-medium">
-                            {watchedType === "bonus loan" ? "Bonus Loan" : "Salary Loan"} CA Name{" "}
+                            CA Name
                             <span className="text-red-500">*</span>
                           </FormLabel>
                           <FormControl>
@@ -507,19 +506,22 @@ export function CashAdvanceFormDialog({
                       control={form.control}
                       name="type"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem key={field.name}>
                           <FormLabel className="text-base font-medium">
                             Loan Type <span className="text-red-500">*</span>
                           </FormLabel>
-                          <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
+                          <Select disabled={isFormDisabled} onValueChange={(value) => {
+                            field.onChange(value)
+                            form.setValue("loan_code", "")
+                          }} value={field.value}>
                             <FormControl>
-                              <SelectTrigger className="h-11 w-full" disabled>
+                              <SelectTrigger className="h-11 w-full" >
                                 <SelectValue placeholder="Select loan type..." />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="salary loan">Salary Loan</SelectItem>
                               <SelectItem value="bonus loan">Bonus Loan</SelectItem>
+                              <SelectItem value="salary loan">Salary Loan</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -535,7 +537,7 @@ export function CashAdvanceFormDialog({
                         return (
                           <FormItem key={field.value}>
                             <FormLabel className="text-base font-medium">
-                              {watchedType === "bonus loan" ? "Bonus Loan" : "Salary Loan"} Code{" "}
+                              Code
                               <span className="text-red-500">*</span>
                             </FormLabel>
                             <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>

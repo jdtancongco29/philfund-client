@@ -106,6 +106,11 @@ export function AddEditAccountDialog({
 
   // Reset form when dialog opens/closes or mode changes
   useEffect(() => {
+    if (!open) {
+      resetForm();
+      return;
+    }
+
     if (open) {
       if (isEditMode) {
         // Populate form with editing account data
@@ -149,7 +154,6 @@ export function AddEditAccountDialog({
           }))
           setSelectedBranches(branches)
         } else {
-          // If no branches in editing account, reset to empty
           setSelectedBranchIds([])
           setSelectedBranches([])
         }

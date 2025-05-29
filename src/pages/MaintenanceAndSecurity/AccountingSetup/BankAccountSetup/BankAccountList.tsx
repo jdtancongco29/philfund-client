@@ -9,13 +9,17 @@ import { toast } from "sonner"
 import { EditBankDialog, type FormValues } from "./EditBankDialog"
 import { DeleteDataDialog } from "./DeleteDataDialog"
 
+interface Coa {
+  id: string
+  code: string
+  name: string
+}
+
 interface Bank {
   id: string
   branch_id: string
   branch_name: string
-  coa_id: string
-  coa_code: string
-  coa_name: string
+  coa: Coa
   code: string
   name: string
   address: string
@@ -95,9 +99,10 @@ export default function BankAccountsTable() {
       enableSorting: true,
     },
     {
-      id: "coa_name",
+      id: "coa",
       header: "Chart of Account",
-      accessorKey: "coa_name",
+          accessorKey: "coa",
+      cell: (item) => item.coa.name,
       enableSorting: true,
     },
     {
@@ -134,8 +139,8 @@ export default function BankAccountsTable() {
       address: bank.address,
       branch_id: bank.branch_id,
       branch_name: bank.branch_name,
-      coa_name: bank.coa_name,
-      coa_id: bank.coa_id,
+      coa_name: bank.coa.name,
+      coa_id: bank.coa.id,
       account_type: bank.account_type,
       status: bank.status,
     })
@@ -259,7 +264,7 @@ export default function BankAccountsTable() {
             safeCsvValue(bank.code || ""),
             safeCsvValue(bank.name || ""),
             safeCsvValue(bank.branch_name || ""),
-            safeCsvValue(bank.coa_name || ""),
+            safeCsvValue(bank.coa.name || ""),
             safeCsvValue(bank.account_type || ""),
             safeCsvValue(bank.address || ""),
             bank.status === 1 ? "Active" : "Inactive",

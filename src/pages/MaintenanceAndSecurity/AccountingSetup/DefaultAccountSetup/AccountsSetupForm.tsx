@@ -15,7 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
-import { CircleCheck, AlertTriangle } from "lucide-react"
+import { CircleCheck,  } from "lucide-react"
 import Select from "react-select"
 
 import { apiRequest } from "@/lib/api"

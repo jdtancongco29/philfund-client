@@ -54,6 +54,7 @@ interface EditReferenceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: FormValues) => Promise<void>;
+  
   onReset: boolean;
   initialValues?: FormValues | null;
   modules: Module[];
@@ -62,7 +63,7 @@ interface EditReferenceDialogProps {
 export function EditReferenceDialog({
   open,
   onOpenChange,
-  // onSubmit,
+  onSubmit,
   onReset,
   initialValues,
   modules,
@@ -159,7 +160,7 @@ export function EditReferenceDialog({
     try {
       setErrors({}); // Clear any previous errors
 
-      //await onSubmit(formValues);
+      await onSubmit(formValues);
 
       // Reset form on success
       setFormValues({

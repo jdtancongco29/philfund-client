@@ -197,6 +197,43 @@ export const SalaryLoanSetupService = {
 
     return response.data;
   },
+  /**
+   * Export to PDF
+   */
+  exportPdf: async (): Promise<Blob> => {
+    const endpoint = `/salary-loan-setup/export-pdf`;
+    try {
+      const response = await apiRequest<Blob>("get", endpoint, null, {
+        useAuth: true,
+        useBranchId: true,
+        responseType: "blob",
+      });
+      return response.data;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || "Failed to export PDF";
+      throw new Error(errorMessage);
+    }
+  },
+
+  /**
+   * Export to CSV
+   */
+  exportCsv: async () => {
+    const endpoint = `/salary-loan-setup/export-csv`;
+    try {
+      const response = await apiRequest("get", endpoint, null, {
+        useAuth: true,
+        useBranchId: true,
+        responseType: "blob",
+      });
+      return response.data;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || "Failed to export CSV";
+      throw new Error(errorMessage);
+    }
+  },
 };
 
 export default SalaryLoanSetupService;

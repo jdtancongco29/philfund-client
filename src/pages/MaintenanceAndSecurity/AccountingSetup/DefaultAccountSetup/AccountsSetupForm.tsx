@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect, useState } from "react"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -5,9 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
 import { CircleCheck } from "lucide-react"
+import Select from "react-select"
 
 import { apiRequest } from "@/lib/api"
-import { COADialog } from "./COADialog"
 
 interface ChartOfAccount {
   id: string
@@ -31,6 +33,8 @@ interface AccountFieldProps {
   selectedAccount: ChartOfAccount | null
   onAccountSelect: (account: ChartOfAccount | null) => void
   error?: string | null
+  chartOfAccounts: ChartOfAccount[]
+  loadingCOA: boolean
 }
 
 interface ApiResponse {
@@ -39,9 +43,16 @@ interface ApiResponse {
   data: any
 }
 
-const AccountField = ({ label, description, required = false, selectedAccount, onAccountSelect, error }: AccountFieldProps) => {
-  const [dialogOpen, setDialogOpen] = useState(false)
-
+const AccountField = ({
+  label,
+  description,
+  required = false,
+  selectedAccount,
+  onAccountSelect,
+  error,
+  chartOfAccounts,
+  loadingCOA,
+}: AccountFieldProps) => {
   return (
     <div className="space-y-2">
       <div className="flex items-center">
@@ -50,50 +61,46 @@ const AccountField = ({ label, description, required = false, selectedAccount, o
         </Label>
       </div>
       <div className="space-y-2">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <Label>Account Code</Label>
-            <Input
-              readOnly
-              placeholder="Select account..."
-              value={selectedAccount?.code || ""}
-              onClick={() => setDialogOpen(true)}
-              className={error ? "border-red-500" : ""}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Account Name</Label>
-            <Input
-              readOnly
-              placeholder="Select account..."
-              value={selectedAccount?.name || ""}
-              onClick={() => setDialogOpen(true)}
-              className={error ? "border-red-500" : ""}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            className="w-1/3 rounded-md border border-gray-300 px-3 py-2 text-sm"
+            placeholder="Account Code"
+            value={selectedAccount?.code || ""}
+            readOnly
+          />
+          <div className="w-2/3">
+            <Select<{ value: string; label: string }>
+              value={
+                selectedAccount
+                  ? {
+                      value: selectedAccount.id,
+                      label: selectedAccount.name,
+                    }
+                  : null
+              }
+              onChange={(selectedOption) => {
+                if (selectedOption) {
+                  const account = chartOfAccounts.find((coa) => coa.id === selectedOption.value)
+                  onAccountSelect(account || null)
+                } else {
+                  onAccountSelect(null)
+                }
+              }}
+              options={chartOfAccounts.map((coa) => ({
+                value: coa.id,
+                label: coa.name,
+              }))}
+              placeholder={loadingCOA ? "Loading chart of accounts..." : "Select..."}
+              isLoading={loadingCOA}
+              isClearable
+              classNamePrefix={error ? "react-select-error" : "react-select"}
             />
           </div>
         </div>
         {error && <p className="text-sm text-red-500">{error}</p>}
-        {selectedAccount && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => onAccountSelect(null)}
-            className="text-red-500 hover:text-red-700"
-          >
-            Clear Selection
-          </Button>
-        )}
       </div>
       <p className="text-sm text-muted-foreground">{description}</p>
-      <COADialog
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        onSelect={(account) => {
-          onAccountSelect(account)
-          setDialogOpen(false)
-        }}
-      />
     </div>
   )
 }
@@ -112,6 +119,9 @@ export default function AccountsSetupForm() {
   const [outputTax, setOutputTax] = useState<ChartOfAccount | null>(null)
   const [vatRate, setVatRate] = useState("12%")
 
+  const [chartOfAccounts, setChartOfAccounts] = useState<ChartOfAccount[]>([])
+  const [loadingCOA, setLoadingCOA] = useState(false)
+
   const [isLoading, setIsLoading] = useState(true)
   const [, setError] = useState<string | null>(null)
   const [configId, setConfigId] = useState<string | null>(null)
@@ -122,6 +132,9 @@ export default function AccountsSetupForm() {
       try {
         setIsLoading(true)
         setError(null)
+
+        // Fetch chart of accounts first
+        await fetchChartOfAccounts()
 
         const result = await apiRequest<ApiResponse>("get", "/accounting-general-defaults", null, {
           useAuth: true,
@@ -142,18 +155,33 @@ export default function AccountsSetupForm() {
           setInputTax(data.data.coa_input_tax_account)
           setOutputTax(data.data.coa_output_tax_account)
 
-          const vatRateValue = parseFloat(data.data.vat_rate)
+          const vatRateValue = Number.parseFloat(data.data.vat_rate)
           setVatRate(`${vatRateValue}%`)
         }
       } catch (err) {
-        console.error('Error fetching accounting defaults:', err)
-        setError(err instanceof Error ? err.message : 'An error occurred while fetching data')
+        console.error("Error fetching accounting defaults:", err)
+        setError(err instanceof Error ? err.message : "An error occurred while fetching data")
       } finally {
         setIsLoading(false)
       }
     }
     fetchAccountingDefaults()
   }, [])
+
+  const fetchChartOfAccounts = async () => {
+    setLoadingCOA(true)
+    try {
+      const response = await apiRequest<{ data: { chartOfAccounts: ChartOfAccount[] } }>("get", "/coa", null, {
+        useAuth: true,
+        useBranchId: true,
+      })
+      setChartOfAccounts(response.data.data.chartOfAccounts)
+    } catch (error) {
+      console.error("Error fetching chart of accounts:", error)
+    } finally {
+      setLoadingCOA(false)
+    }
+  }
 
   const handleSave = async () => {
     try {
@@ -168,7 +196,7 @@ export default function AccountsSetupForm() {
         coa_income_tax_account: incomeTax?.id || null,
         coa_input_tax_account: inputTax?.id || null,
         coa_output_tax_account: outputTax?.id || null,
-        vat_rate: parseFloat(vatRate.replace('%', '')),
+        vat_rate: Number.parseFloat(vatRate.replace("%", "")),
       }
 
       const endpoint = configId ? `/accounting-general-defaults/${configId}` : "/accounting-general-defaults"
@@ -242,34 +270,140 @@ export default function AccountsSetupForm() {
         <div className="space-y-6">
           <h3 className="text-lg font-semibold">General Accounts</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <AccountField label="Retained Earnings" description="Account for retained earnings" required selectedAccount={retainedEarnings} onAccountSelect={setRetainedEarnings} error={fieldErrors.coa_fields} />
-            <AccountField label="Income & Expense Summary" description="Account for income and expense summary" required selectedAccount={incomeSummary} onAccountSelect={setIncomeSummary} error={fieldErrors.coa_fields} />
+            <AccountField
+              label="Retained Earnings"
+              description="Account for retained earnings"
+              required
+              selectedAccount={retainedEarnings}
+              onAccountSelect={setRetainedEarnings}
+              error={fieldErrors.coa_fields}
+              chartOfAccounts={chartOfAccounts}
+              loadingCOA={loadingCOA}
+            />
+            <AccountField
+              label="Income & Expense Summary"
+              description="Account for income and expense summary"
+              required
+              selectedAccount={incomeSummary}
+              onAccountSelect={setIncomeSummary}
+              error={fieldErrors.coa_fields}
+              chartOfAccounts={chartOfAccounts}
+              loadingCOA={loadingCOA}
+            />
           </div>
         </div>
         <div className="space-y-6">
           <h3 className="text-lg font-semibold">Receivable & Payables</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <AccountField label="Non-loans A/R" description="Account for non-loan accounts receivable" required selectedAccount={nonLoansAR} onAccountSelect={setNonLoansAR} error={fieldErrors.coa_fields} />
-            <AccountField label="A/P" description="Account for accounts payable" required selectedAccount={ap} onAccountSelect={setAP} error={fieldErrors.coa_fields} />
-            <AccountField label="A/R Debit" description="Account for accounts receivable debit" required selectedAccount={arDebit} onAccountSelect={setARDebit} error={fieldErrors.coa_fields} />
-            <AccountField label="Collections" description="Account for collections" required selectedAccount={collections} onAccountSelect={setCollections} error={fieldErrors.coa_fields} />
-            <AccountField label="A/P Credit" description="Account for accounts payable credit" required selectedAccount={apCredit} onAccountSelect={setAPCredit} error={fieldErrors.coa_fields} />
-            <AccountField label="Accounting Payable PGA" description="Account for accounting payable PGA" required selectedAccount={accountingPayable} onAccountSelect={setAccountingPayable} error={fieldErrors.coa_fields} />
+            <AccountField
+              label="Non-loans A/R"
+              description="Account for non-loan accounts receivable"
+              required
+              selectedAccount={nonLoansAR}
+              onAccountSelect={setNonLoansAR}
+              error={fieldErrors.coa_fields}
+              chartOfAccounts={chartOfAccounts}
+              loadingCOA={loadingCOA}
+            />
+            <AccountField
+              label="A/P"
+              description="Account for accounts payable"
+              required
+              selectedAccount={ap}
+              onAccountSelect={setAP}
+              error={fieldErrors.coa_fields}
+              chartOfAccounts={chartOfAccounts}
+              loadingCOA={loadingCOA}
+            />
+            <AccountField
+              label="A/R Debit"
+              description="Account for accounts receivable debit"
+              required
+              selectedAccount={arDebit}
+              onAccountSelect={setARDebit}
+              error={fieldErrors.coa_fields}
+              chartOfAccounts={chartOfAccounts}
+              loadingCOA={loadingCOA}
+            />
+            <AccountField
+              label="Collections"
+              description="Account for collections"
+              required
+              selectedAccount={collections}
+              onAccountSelect={setCollections}
+              error={fieldErrors.coa_fields}
+              chartOfAccounts={chartOfAccounts}
+              loadingCOA={loadingCOA}
+            />
+            <AccountField
+              label="A/P Credit"
+              description="Account for accounts payable credit"
+              required
+              selectedAccount={apCredit}
+              onAccountSelect={setAPCredit}
+              error={fieldErrors.coa_fields}
+              chartOfAccounts={chartOfAccounts}
+              loadingCOA={loadingCOA}
+            />
+            <AccountField
+              label="Accounting Payable PGA"
+              description="Account for accounting payable PGA"
+              required
+              selectedAccount={accountingPayable}
+              onAccountSelect={setAccountingPayable}
+              error={fieldErrors.coa_fields}
+              chartOfAccounts={chartOfAccounts}
+              loadingCOA={loadingCOA}
+            />
           </div>
         </div>
         <div className="space-y-6">
           <h3 className="text-lg font-semibold">Tax Accounts</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <AccountField label="Income Tax" description="Account for income tax" required selectedAccount={incomeTax} onAccountSelect={setIncomeTax} error={fieldErrors.coa_fields} />
-            <AccountField label="Input Tax" description="Account for input tax" required selectedAccount={inputTax} onAccountSelect={setInputTax} error={fieldErrors.coa_fields} />
-            <AccountField label="Output Tax" description="Account for output tax" required selectedAccount={outputTax} onAccountSelect={setOutputTax} error={fieldErrors.coa_fields} />
+            <AccountField
+              label="Income Tax"
+              description="Account for income tax"
+              required
+              selectedAccount={incomeTax}
+              onAccountSelect={setIncomeTax}
+              error={fieldErrors.coa_fields}
+              chartOfAccounts={chartOfAccounts}
+              loadingCOA={loadingCOA}
+            />
+            <AccountField
+              label="Input Tax"
+              description="Account for input tax"
+              required
+              selectedAccount={inputTax}
+              onAccountSelect={setInputTax}
+              error={fieldErrors.coa_fields}
+              chartOfAccounts={chartOfAccounts}
+              loadingCOA={loadingCOA}
+            />
+            <AccountField
+              label="Output Tax"
+              description="Account for output tax"
+              required
+              selectedAccount={outputTax}
+              onAccountSelect={setOutputTax}
+              error={fieldErrors.coa_fields}
+              chartOfAccounts={chartOfAccounts}
+              loadingCOA={loadingCOA}
+            />
             <div className="space-y-2">
               <div className="flex items-center">
-                <Label htmlFor="vat-rate" className="font-medium">VAT Rate</Label>
+                <Label htmlFor="vat-rate" className="font-medium">
+                  VAT Rate
+                </Label>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Input id="vat-rate" value={vatRate} onChange={(e) => setVatRate(e.target.value)} placeholder="e.g., 12%" />
+                  <Input
+                    id="vat-rate"
+                    value={vatRate}
+                    onChange={(e) => setVatRate(e.target.value)}
+                    placeholder="e.g., 12%"
+                  />
                 </div>
               </div>
               <p className="text-sm text-muted-foreground">Current VAT rate to be applied</p>

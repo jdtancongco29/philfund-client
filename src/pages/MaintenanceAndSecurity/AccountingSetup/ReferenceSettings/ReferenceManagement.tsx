@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CircleCheck } from "lucide-react";
+import { CircleCheck, Info } from "lucide-react";
 import { toast } from "sonner";
 import {
   DataTable,
@@ -106,19 +106,19 @@ export default function ReferenceManagement() {
   const columns: ColumnDefinition<Reference>[] = [
     {
       id: "code",
-      header: "Code",
+      header: "Reference Code",
       accessorKey: "code",
       enableSorting: true,
     },
     {
       id: "name",
-      header: "Name",
+      header: "Reference Name",
       accessorKey: "name",
       enableSorting: true,
     },
     {
       id: "module",
-      header: "Module",
+      header: "Associated Modules",
       accessorKey: "module",
       cell: (item) => item.module.name,
       enableSorting: true,
@@ -249,9 +249,27 @@ export default function ReferenceManagement() {
 
   return (
     <>
+         
+        <div className="bg-white rounded-lg border p-4 mb-6">
+        <div className="flex items-start gap-3">
+          <div className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
+            <Info className="h-4 w-4" />
+          </div>
+          <div>
+            <h2 className="text-sm font-medium">Global Reference Data</h2>
+            <p className="text-sm text-muted-foreground">
+              Reference settings defined here are globally accessible and applicable across all branches of the
+              application. Changes made here will affect all modules that use these references.
+            </p>
+          </div>
+        </div>
+      </div>
+
+
+       
       <DataTable
-        title="Reference"
-        subtitle="Manage existing references"
+        title="Reference Management"
+        subtitle="Create, edit, and delete reference entries used throughout the system"
         data={reference}
         columns={columns}
         filters={filters}

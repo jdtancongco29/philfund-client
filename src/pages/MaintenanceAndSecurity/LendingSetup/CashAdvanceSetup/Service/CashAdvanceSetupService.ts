@@ -96,6 +96,7 @@ export const CashAdvanceSetupService = {
     id: string,
     payload: UpdateCashAdvanceSetupPayload
   ): Promise<ApiResponse<CashAdvanceSetup>> => {
+    console.log(payload);
     const endpoint = `/cash-advance-setup/${id}`;
     const response = await apiRequest<ApiResponse<CashAdvanceSetup>>(
       "put",

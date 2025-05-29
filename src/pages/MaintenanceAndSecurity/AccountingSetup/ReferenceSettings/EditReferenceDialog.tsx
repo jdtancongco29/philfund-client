@@ -7,6 +7,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import Select from "react-select";
 import { Input } from "@/components/ui/input";
 import { ModuleSelectionDialog } from "./ModuleSelectionDialog";
 
@@ -77,9 +78,6 @@ export function EditReferenceDialog({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [moduleDialogOpen, setModuleDialogOpen] = useState(false);
-  const [selectedModuleName, setSelectedModuleName] = useState<string>("");
-
   const isEditMode = Boolean(initialValues);
 
   // Reset form when dialog opens or initialValues change
@@ -94,23 +92,8 @@ export function EditReferenceDialog({
 
       setFormValues(resetValues);
       setErrors({});
-
-      if (initialValues?.module_id) {
-        const foundModule = modules.find(
-          (mod) => mod.id === initialValues.module_id
-        );
-        setSelectedModuleName(foundModule ? foundModule.name : "");
-      } else {
-        setSelectedModuleName("");
-      }
-
-      setTimeout(() => {
-        if (document.activeElement instanceof HTMLElement) {
-          document.activeElement.blur();
-        }
-      }, 0);
     }
-  }, [initialValues, open, modules]);
+  }, [initialValues, open]);
 
   // Handle reset trigger
   useEffect(() => {
@@ -121,7 +104,6 @@ export function EditReferenceDialog({
         module_id: "",
         status: true,
       });
-      setSelectedModuleName("");
       setErrors({});
     }
   }, [onReset]);
@@ -148,7 +130,6 @@ export function EditReferenceDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate form
     const validationErrors = validateForm(formValues);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -158,26 +139,18 @@ export function EditReferenceDialog({
     setIsSubmitting(true);
 
     try {
-      setErrors({}); // Clear any previous errors
-
+      setErrors({});
       await onSubmit(formValues);
-
-      // Reset form on success
       setFormValues({
         code: "",
         name: "",
         module_id: "",
         status: true,
       });
-      setSelectedModuleName("");
       onOpenChange(false);
     } catch (error: any) {
-      console.log("Caught error:", error);
-
       const response = error.response?.data || error;
-
       if (response?.errors) {
-        // Handle server validation errors
         const serverErrors: Record<string, string> = {};
         for (const [field, messages] of Object.entries(response.errors)) {
           serverErrors[field] = Array.isArray(messages)
@@ -204,7 +177,6 @@ export function EditReferenceDialog({
       module_id: "",
       status: true,
     });
-    setSelectedModuleName("");
     setErrors({});
     onOpenChange(false);
   };
@@ -264,43 +236,34 @@ export function EditReferenceDialog({
             )}
           </div>
 
-          {/* Module Selection Field */}
-          <div className="space-y-2">
+          {/* Module Dropdown */}
+            <div className="space-y-2">
             <label className="text-sm font-medium leading-none">
               Module <span className="text-red-500">*</span>
             </label>
-            <div className="flex items-center space-x-3">
-              <Button
-                type="button"
-                onClick={() => setModuleDialogOpen(true)}
-                variant="outline"
-              >
-                {selectedModuleName ? "Change Module" : "Select Module"}
-              </Button>
-              <div className="flex-1">
-                {selectedModuleName ? (
-                  <div className="p-2 bg-gray-50 rounded border">
-                    <span className="font-medium text-sm text-gray-700">
-                      Selected:
-                    </span>
-                    <span className="ml-2 font-semibold">
-                      {selectedModuleName}
-                    </span>
-                  </div>
-                ) : (
-                  <span className="text-gray-500 italic">
-                    No module selected
-                  </span>
-                )}
-              </div>
-            </div>
+            <Select<{ value: string; label: string }>
+              value={
+                modules
+                  .map((mod) => ({ value: mod.id, label: mod.name }))
+                  .find((option) => option.value === formValues.module_id) || null
+              }
+              onChange={(selectedOption) =>
+                handleInputChange(
+                  "module_id",
+                  selectedOption ? selectedOption.value : ""
+                )
+              }
+              options={modules.map((mod) => ({
+                value: mod.id,
+                label: mod.name,
+              }))}
+              placeholder="Select a module..."
+              classNamePrefix={errors.module_id ? "react-select-error" : "react-select"}
+            />
             {errors.module_id && (
               <p className="text-sm text-red-600">{errors.module_id}</p>
             )}
-          </div>
-
-          {/* Status Field */}
-          
+            </div>
 
           <DialogFooter className="pt-4">
             <Button
@@ -324,17 +287,6 @@ export function EditReferenceDialog({
             </Button>
           </DialogFooter>
         </form>
-
-        {/* Module Selection Dialog */}
-        <ModuleSelectionDialog
-          open={moduleDialogOpen}
-          onClose={() => setModuleDialogOpen(false)}
-          onSelect={(mod) => {
-            handleInputChange("module_id", mod.id);
-            setSelectedModuleName(mod.name);
-            setModuleDialogOpen(false);
-          }}
-        />
       </DialogContent>
     </Dialog>
   );

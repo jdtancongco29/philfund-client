@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import Select from "react-select";
 import { Input } from "@/components/ui/input";
-import { ModuleSelectionDialog } from "./ModuleSelectionDialog";
+
 
 // Form validation schema interface
 interface FormSchema {

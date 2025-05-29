@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
-import { Building2, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { COADialog } from "./COADialog"
 import { BranchSelectionDialog } from "./BranchSelectionDialog"
 
@@ -89,7 +89,7 @@ export function AddEditAccountDialog({
   const [category, setCategory] = useState("")
   const [specialClassification, setSpecialClassification] = useState("")
   const [accountType, setAccountType] = useState<"header" | "subsidiary">("header")
-  const [headerAccountLabel, setHeaderAccountLabel] = useState("")
+  const [, setHeaderAccountLabel] = useState("")
   const [selectedHeader, setSelectedHeader] = useState<{ id: string; code: string; name: string } | null>(null)
   const [isContraAccount, setIsContraAccount] = useState(false)
   const [normalBalance, setNormalBalance] = useState<"debit" | "credit">("debit")

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
-import { Building2, X } from "lucide-react"
+import { X } from 'lucide-react'
 import { COADialog } from "./COADialog"
 import { BranchSelectionDialog } from "./BranchSelectionDialog"
 
@@ -89,7 +89,7 @@ export function AddEditAccountDialog({
   const [category, setCategory] = useState("")
   const [specialClassification, setSpecialClassification] = useState("")
   const [accountType, setAccountType] = useState<"header" | "subsidiary">("header")
-  const [headerAccountLabel, setHeaderAccountLabel] = useState("")
+  const [, setHeaderAccountLabel] = useState("")
   const [selectedHeader, setSelectedHeader] = useState<{ id: string; code: string; name: string } | null>(null)
   const [isContraAccount, setIsContraAccount] = useState(false)
   const [normalBalance, setNormalBalance] = useState<"debit" | "credit">("debit")
@@ -267,43 +267,7 @@ export function AddEditAccountDialog({
             <DialogTitle>{dialogTitle}</DialogTitle>
           </DialogHeader>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label className={errors.code ? "text-red-500" : undefined}>
-                Account Code <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                className={errors.code ? "border-red-500" : undefined}
-              />
-              {errors.code && <p className="text-sm text-red-600">{errors.code}</p>}
-            </div>
-
-            <div>
-              <Label className={errors.name ? "text-red-500" : undefined}>
-                Account Name <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className={errors.name ? "border-red-500" : undefined}
-              />
-              {errors.name && <p className="text-sm text-red-600">{errors.name}</p>}
-            </div>
-
-            <div className="col-span-2">
-              <Label className={errors.description ? "text-red-500" : undefined}>
-                Description <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className={errors.description ? "border-red-500" : undefined}
-              />
-              {errors.description && <p className="text-sm text-red-600">{errors.description}</p>}
-            </div>
-
+          <div className="space-y-4">
             <div>
               <Label className={errors.major_classification ? "text-red-500" : undefined}>
                 Major Classification <span className="text-red-500">*</span>
@@ -346,7 +310,145 @@ export function AddEditAccountDialog({
               {errors.category && <p className="text-sm text-red-600">{errors.category}</p>}
             </div>
 
-            <div className="col-span-2">
+            <div>
+              <Label>Header <span className="text-red-500">*</span></Label>
+              <div className="flex gap-6 mt-2">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="header-account"
+                    name="accountType"
+                    value="header"
+                    checked={accountType === "header"}
+                    onChange={() => setAccountType("header")}
+                    className="h-4 w-4"
+                  />
+                  <Label htmlFor="header-account" className="font-normal">Header Account</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="subsidiary-account"
+                    name="accountType"
+                    value="subsidiary"
+                    checked={accountType === "subsidiary"}
+                    onChange={() => setAccountType("subsidiary")}
+                    className="h-4 w-4"
+                  />
+                  <Label htmlFor="subsidiary-account" className="font-normal">Subsidiary Account</Label>
+                </div>
+              </div>
+            </div>
+
+            {accountType === "subsidiary" && (
+              <div>
+                <Label className={errors.headerAccount ? "text-red-500" : undefined}>
+                  Header account <span className="text-red-500">*</span>
+                </Label>
+                <div className="flex gap-2">
+                  <select
+                    value={selectedHeader?.id || ""}
+                    onChange={(e) => {
+                      const selectedId = e.target.value
+                      if (selectedId) {
+                        // This would need to be populated with actual header accounts
+                        // For now, using placeholder logic
+                        setHeaderAccountLabel("Selected Header Account")
+                        setSelectedHeader({ id: selectedId, code: "", name: "Selected Header Account" })
+                      } else {
+                        setHeaderAccountLabel("")
+                        setSelectedHeader(null)
+                      }
+                    }}
+                    className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${errors.headerAccount ? "border-red-500" : ""}`}
+                  >
+                    <option value="">Select...</option>
+                    {/* Header accounts would be populated here */}
+                  </select>
+                </div>
+                {errors.headerAccount && <p className="text-sm text-red-600">{errors.headerAccount}</p>}
+              </div>
+            )}
+
+            <div>
+              <Label>Normal Balance <span className="text-red-500">*</span></Label>
+              <div className="flex gap-6 mt-2">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="debit-balance"
+                    name="normalBalance"
+                    value="debit"
+                    checked={normalBalance === "debit"}
+                    onChange={() => setNormalBalance("debit")}
+                    className="h-4 w-4"
+                  />
+                  <Label htmlFor="debit-balance" className="font-normal">Debit</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="credit-balance"
+                    name="normalBalance"
+                    value="credit"
+                    checked={normalBalance === "credit"}
+                    onChange={() => setNormalBalance("credit")}
+                    className="h-4 w-4"
+                  />
+                  <Label htmlFor="credit-balance" className="font-normal">Credit</Label>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">The normal balance side for this account</p>
+            </div>
+
+            <div>
+              <Label className={errors.code ? "text-red-500" : undefined}>
+                Account Code <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                className={errors.code ? "border-red-500" : undefined}
+                placeholder="Enter account code"
+              />
+              {errors.code && <p className="text-sm text-red-600">{errors.code}</p>}
+            </div>
+
+            <div>
+              <Label className={errors.name ? "text-red-500" : undefined}>
+                Account Name <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className={errors.name ? "border-red-500" : undefined}
+                placeholder="Enter account name"
+              />
+              {errors.name && <p className="text-sm text-red-600">{errors.name}</p>}
+            </div>
+
+            <div>
+              <Label className={errors.description ? "text-red-500" : undefined}>
+                Description <span className="text-red-500">*</span>
+              </Label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className={`flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none ${errors.description ? "border-red-500" : ""}`}
+                placeholder="Enter a description of the account and when to use it"
+              />
+              {errors.description && <p className="text-sm text-red-600">{errors.description}</p>}
+            </div>
+
+            <div className="flex items-start space-x-2">
+              <Switch id="contra-account" checked={isContraAccount} onCheckedChange={setIsContraAccount} />
+              <div>
+                <Label htmlFor="contra-account">Contra Account</Label>
+                <p className="text-sm text-muted-foreground">Check this if the account is a contra account (reduces the balance of another account)</p>
+              </div>
+            </div>
+
+            <div>
               <Label className={errors.special_classification ? "text-red-500" : undefined}>
                 Special Classification <span className="text-red-500">*</span>
               </Label>
@@ -372,91 +474,17 @@ export function AddEditAccountDialog({
                 <option value="other income">Other income</option>
                 <option value="retained income">Retained income</option>
               </select>
+              <p className="text-sm text-muted-foreground mt-1">The special classification of this account</p>
               {errors.special_classification && <p className="text-sm text-red-600">{errors.special_classification}</p>}
             </div>
 
             <div>
-              <Label>Account Type</Label>
-              <div className="flex gap-4 mt-2">
-                <Button
-                  type="button"
-                  variant={accountType === "header" ? "default" : "outline"}
-                  onClick={() => setAccountType("header")}
-                >
-                  Header
-                </Button>
-                <Button
-                  type="button"
-                  variant={accountType === "subsidiary" ? "default" : "outline"}
-                  onClick={() => setAccountType("subsidiary")}
-                >
-                  Subsidiary
-                </Button>
-              </div>
-            </div>
-
-            <div>
-              <Label>Normal Balance</Label>
-              <div className="flex gap-4 mt-2">
-                <Button
-                  type="button"
-                  variant={normalBalance === "debit" ? "default" : "outline"}
-                  onClick={() => setNormalBalance("debit")}
-                >
-                  Debit
-                </Button>
-                <Button
-                  type="button"
-                  variant={normalBalance === "credit" ? "default" : "outline"}
-                  onClick={() => setNormalBalance("credit")}
-                >
-                  Credit
-                </Button>
-              </div>
-            </div>
-
-            {accountType === "subsidiary" && (
-              <div className="col-span-2">
-                <Label className={errors.headerAccount ? "text-red-500" : undefined}>
-                  Header Account <span className="text-red-500">*</span>
-                </Label>
-                <div className="flex gap-2">
-                  <Input
-                    readOnly
-                    value={headerAccountLabel}
-                    className={errors.headerAccount ? "border-red-500" : undefined}
-                    placeholder="Select a header account"
-                  />
-                  <Button type="button" onClick={() => setShowCOADialog(true)}>
-                    Select
-                  </Button>
-                </div>
-                {errors.headerAccount && <p className="text-sm text-red-600">{errors.headerAccount}</p>}
-              </div>
-            )}
-
-            <div className="col-span-2">
               <Label className={errors.branches ? "text-red-500" : undefined}>
-                Branches <span className="text-red-500">*</span>
+                Branch <span className="text-red-500">*</span>
               </Label>
               <div className="space-y-2">
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowBranchDialog(true)}
-                    className="flex items-center gap-2"
-                  >
-                    <Building2 className="h-4 w-4" />
-                    Select Branches
-                  </Button>
-                  <span className="text-sm text-muted-foreground self-center">
-                    {selectedBranches.length} branch{selectedBranches.length !== 1 ? "es" : ""} selected
-                  </span>
-                </div>
-
                 {selectedBranches.length > 0 && (
-                  <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto p-2 border rounded">
+                  <div className="flex flex-wrap gap-2 p-2 border rounded">
                     {selectedBranches.map((branch) => (
                       <Badge key={branch.id} variant="secondary" className="flex items-center gap-1">
                         {branch.name}
@@ -468,25 +496,27 @@ export function AddEditAccountDialog({
                     ))}
                   </div>
                 )}
+                
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowBranchDialog(true)}
+                  className="w-full justify-start text-muted-foreground"
+                >
+                  Select special classifications...
+                </Button>
 
                 {errors.branches && <p className="text-sm text-red-600">{errors.branches}</p>}
               </div>
             </div>
 
-            <div className="col-span-2">
-              <div className="flex items-center space-x-2">
-                <Switch id="contra-account" checked={isContraAccount} onCheckedChange={setIsContraAccount} />
-                <Label htmlFor="contra-account">Contra Account</Label>
-              </div>
-            </div>
-
             {errors.general && (
-              <div className="col-span-2">
+              <div>
                 <p className="text-sm text-red-600">{errors.general}</p>
               </div>
             )}
 
-            <div className="col-span-2 flex justify-end gap-2">
+            <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
                 Cancel
               </Button>
@@ -495,6 +525,7 @@ export function AddEditAccountDialog({
               </Button>
             </div>
           </div>
+
         </DialogContent>
       </Dialog>
 

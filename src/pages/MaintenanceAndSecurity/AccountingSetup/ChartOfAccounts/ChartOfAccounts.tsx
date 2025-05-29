@@ -372,18 +372,27 @@ export default function ChartOfAccounts() {
           : "-",
     },
   ]
-
   const filters: FilterDefinition[] = [
     {
-      id: "major_classification",
-      label: "Classification",
+      id: "accountType",
+      label: "Filter by Classification",
       type: "select",
       options: [
-        { label: "Asset", value: "Asset" },
-        { label: "Liabilities", value: "Liabilities" },
-        { label: "Equity", value: "Equity" },
-        { label: "Revenue", value: "Revenue" },
-        { label: "Expense", value: "Expense" },
+        { label: "Regular account", value: "regular account" },
+        { label: "Cash account", value: "cash account" },
+        { label: "Cash in bank account", value: "cash in bank account" },
+        { label: "Receivable account", value: "receivable account" },
+        { label: "Payable account", value: "payable account" },
+        { label: "Allowance for bad debts", value: "allowance for bad debts" },
+        { label: "Properties and equipment", value: "properties and equipment" },
+        { label: "Accumulated depreciation", value: "accumulated depreciation" },
+        { label: "Accumulated amortization", value: "accumulated amortization" },
+        { label: "Cost of sales", value: "cost of sales" },
+        { label: "Sales debits", value: "sales debits" },
+        { label: "Sales", value: "sales" },
+        { label: "Sales discount", value: "sales discount" },
+        { label: "Other income", value: "other income" },
+        { label: "Retained income", value: "retained income" },
       ],
     },
   ]

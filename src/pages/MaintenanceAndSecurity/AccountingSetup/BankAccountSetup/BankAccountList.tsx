@@ -88,7 +88,7 @@ export default function BankAccountsTable() {
     },
     {
       id: "name",
-      header: "Bank Name",
+      header: "Name",
       accessorKey: "name",
       enableSorting: true,
     },
@@ -101,21 +101,34 @@ export default function BankAccountsTable() {
     {
       id: "coa",
       header: "Chart of Account",
-          accessorKey: "coa",
-      cell: (item) => item.coa.name,
+      accessorKey: "coa",
+      cell: (item) => (
+        <div>
+          <div>{item.coa.code}</div>
+          <div>{item.coa.name}</div>
+        </div>
+      ),
       enableSorting: true,
     },
     {
-      id: "account_type",
-      header: "Type",
-      accessorKey: "account_type",
+      id: "status",
+      header: "Status",
+      accessorKey: "status",
       enableSorting: true,
-    },
-    {
-      id: "address",
-      header: "Address",
-      accessorKey: "address",
-      enableSorting: false,
+      displayCondition: [
+        {
+          value: 1,
+          label: "Active",
+          className:
+            "inline-flex items-center rounded-full bg-[#059669] px-2 py-1 text-xs font-medium text-white ring-1 ring-inset ring-[#059669]/20",
+        },
+        {
+          value: 0,
+          label: "Inactive",
+          className:
+            "inline-flex items-center rounded-full bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20",
+        },
+      ],
     },
   ]
 

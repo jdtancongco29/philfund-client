@@ -371,7 +371,6 @@ export function CashAdvanceFormDialog({
       setActiveTab("chart-of-accounts")
       return
     }
-
     const branch_id = getBranchId()
     if (branch_id) {
       if (isEditing) {

@@ -153,6 +153,7 @@ export function CashAdvanceTable() {
   const onSubmit = () => {
     setSelectedItem(null)
     setIsDialogOpen(false)
+    setIsEditing(false)
   }
 
   const onPaginationChange = (page: number) => {
@@ -218,6 +219,7 @@ export function CashAdvanceTable() {
         onOpenChange={() => {
           setIsDialogOpen(false)
           setIsEditing(false)
+          setSelectedItem(null)
         }}
         onSubmit={onSubmit}
       />

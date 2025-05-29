@@ -258,7 +258,7 @@ export default function AccountsSetupForm() {
     const accountMap = new Map<string, string[]>()
 
     // Group fields by account ID
-    accounts.forEach(({ field, account, label }) => {
+    accounts.forEach(({  account, label }) => {
       if (account?.id) {
         if (!accountMap.has(account.id)) {
           accountMap.set(account.id, [])
@@ -270,7 +270,7 @@ export default function AccountsSetupForm() {
     // Find duplicates and set errors
     accountMap.forEach((labels, accountId) => {
       if (labels.length > 1) {
-        const duplicateMessage = `This account is also used in: ${labels.filter((label, index) => index > 0).join(", ")}`
+        const duplicateMessage = `This account is also used in: ${labels.slice(1).join(", ")}`
 
         accounts.forEach(({ field, account }) => {
           if (account?.id === accountId) {

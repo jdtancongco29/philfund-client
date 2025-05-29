@@ -9,6 +9,8 @@ import CashAdvanceSetupService from "./Service/CashAdvanceSetupService"
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog"
 import { DataTableV2 } from "@/components/data-table/data-table-v2"
 import { Badge } from "@/components/ui/badge"
+import { toast } from "sonner"
+import { downloadFile } from "@/lib/utils"
 
 export function CashAdvanceTable() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -34,6 +36,48 @@ export function CashAdvanceTable() {
   const deletionHandler = useMutation({
     mutationFn: (uuid: string) => {
       return CashAdvanceSetupService.deleteCashAdvanceSetup(uuid)
+    },
+  })
+
+  // Export mutations
+  const exportPdfMutation = useMutation({
+    mutationFn: CashAdvanceSetupService.exportPdf,
+    onSuccess: (blob) => {
+      const url = window.URL.createObjectURL(blob)
+      // Open PDF in new tab for preview
+      const newTab = window.open(url, "_blank")
+      if (newTab) {
+        newTab.focus()
+      } else {
+        // Fallback if popup is blocked
+        const link = document.createElement("a")
+        link.href = url
+        link.download = `cash-advances-${new Date().toISOString().split("T")[0]}.pdf`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      }
+      toast.success("PDF opened in new tab")
+    },
+    onError: () => {
+      toast.error("Failed to export PDF")
+    },
+  })
+
+  const exportCsvMutation = useMutation({
+    mutationFn: CashAdvanceSetupService.exportCsv,
+    onSuccess: (csvData: Blob) => {
+      try {
+        const currentDate = new Date().toISOString().split("T")[0]
+        downloadFile(csvData, `cash-advances-${currentDate}.csv`)
+        toast.success("CSV generated successfully")
+      } catch (error: unknown) {
+        console.error(error);
+        toast.error("Failed to process CSV data")
+      }
+    },
+    onError: () => {
+      toast.error("Failed to export CSV")
     },
   })
 
@@ -191,8 +235,10 @@ export function CashAdvanceTable() {
         onNew={handleNew}
         idField="id"
         enableNew={true}
-        enablePdfExport={false}
-        enableCsvExport={false}
+        enablePdfExport={true}
+        onPdfExport={exportPdfMutation.mutate}
+        onCsvExport={exportCsvMutation.mutate}
+        enableCsvExport={true}
         enableFilter={false}
         onResetTable={resetTable}
         onSearchChange={onSearchChange}

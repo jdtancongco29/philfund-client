@@ -362,14 +362,11 @@ export default function ChartOfAccounts() {
       header: "Branch",
       accessorKey: "branches",
       enableSorting: false,
-      cell: (account) =>
-        account.branches && account.branches.length > 0
-          ? account.branches.map((branch) => (
-              <Badge key={branch.uid} variant="secondary" className="mr-1">
-                {branch.name}
-              </Badge>
-            ))
-          : "-",
+       cell: (item) => (
+        <div>
+          <div>{item.major_classification.name}</div>
+        </div>
+      ),
     },
   ]
   const filters: FilterDefinition[] = [

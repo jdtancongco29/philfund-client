@@ -357,8 +357,12 @@ const handlePdfExport = useCallback(async () => {
       header: "Contra",
       accessorKey: "is_contra",
       enableSorting: true,
+      
       cell: (account) => (
-        <Badge variant={account.is_contra ? "destructive" : "outline"}>{account.is_contra ? "Yes" : "No"}</Badge>
+          <div className="font-medium">
+          {account.is_contra ? "Yes" : "No"}
+        </div>
+
       ),
     },
     {
@@ -390,24 +394,7 @@ const handlePdfExport = useCallback(async () => {
         { label: "Expense", value: "Expense" },
       ],
     },
-    {
-      id: "normal_balance",
-      label: "Normal Balance",
-      type: "select",
-      options: [
-        { label: "Debit", value: "debit" },
-        { label: "Credit", value: "credit" },
-      ],
-    },
-    {
-      id: "is_contra",
-      label: "Contra Account",
-      type: "select",
-      options: [
-        { label: "Yes", value: "true" },
-        { label: "No", value: "false" },
-      ],
-    },
+
   ]
 
   const search = {

@@ -41,13 +41,21 @@ const formSchema = z
       .min(1, "Interest rate must be positive")
       .refine((val) => Number(val) <= 100, {
         message: "Interest rate must not exceed 100%",
-      }),
+      })
+      .refine((val) => Number(val) <= 100, {
+        message: "Interest rate must not exceed 100%",
+      })
+    ,
     surcharge_rate: z
       .number()
       .min(1, "Surcharge rate must be positive")
       .refine((val) => Number(val) <= 100, {
         message: "Surcharge rate must not exceed 100%",
-      }),
+      })
+      .refine((val) => Number(val) <= 100, {
+        message: "Surcharge rate must not exceed 100%",
+      })
+    ,
     max_amt: z.number().min(0, "Maximum amount must be positive").optional().nullable(),
     max_rate: z
       .number()
@@ -56,7 +64,11 @@ const formSchema = z
       .nullable()
       .refine((val) => Number(val) <= 100, {
         message: "Max rate must not exceed 100%",
-      }),
+      })
+      .refine((val) => Number(val) <= 100, {
+        message: "Maximum rate must not exceed 100%",
+      })
+    ,
 
     // Classifications - at least one required
     eligible_class: z.array(z.string()).min(1, "At least one classification must be selected"),

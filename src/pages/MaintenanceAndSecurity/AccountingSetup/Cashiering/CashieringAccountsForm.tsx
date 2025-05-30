@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react"
 import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
 import { CircleCheck } from "lucide-react"
+import Select from "react-select"
 
 import { apiRequest } from "@/lib/api"
-import { COADialog } from "./COADialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 
 interface ChartOfAccount {
   id: string
@@ -33,6 +33,8 @@ interface AccountFieldProps {
   selectedAccount: ChartOfAccount | null
   onAccountSelect: (account: ChartOfAccount | null) => void
   error?: string | null
+  chartOfAccounts: ChartOfAccount[]
+  loadingCOA: boolean
 }
 
 interface ApiResponse {
@@ -41,9 +43,16 @@ interface ApiResponse {
   data: any
 }
 
-const AccountField = ({ label, description, required = false, selectedAccount, onAccountSelect, error }: AccountFieldProps) => {
-  const [dialogOpen, setDialogOpen] = useState(false)
-
+const AccountField = ({
+  label,
+  description,
+  required = false,
+  selectedAccount,
+  onAccountSelect,
+  error,
+  chartOfAccounts,
+  loadingCOA,
+}: AccountFieldProps) => {
   return (
     <div className="space-y-2">
       <div className="flex items-center">
@@ -52,50 +61,46 @@ const AccountField = ({ label, description, required = false, selectedAccount, o
         </Label>
       </div>
       <div className="space-y-2">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <Label>Account Code</Label>
-            <Input
-              readOnly
-              placeholder="Select account..."
-              value={selectedAccount?.code || ""}
-              onClick={() => setDialogOpen(true)}
-              className={error ? "border-red-500" : ""}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Account Name</Label>
-            <Input
-              readOnly
-              placeholder="Select account..."
-              value={selectedAccount?.name || ""}
-              onClick={() => setDialogOpen(true)}
-              className={error ? "border-red-500" : ""}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            className="w-1/3 rounded-md border border-gray-300 px-3 py-2 text-sm"
+            placeholder="Account Code"
+            value={selectedAccount?.code || ""}
+            readOnly
+          />
+          <div className="w-2/3">
+            <Select<{ value: string; label: string }>
+              value={
+                selectedAccount
+                  ? {
+                      value: selectedAccount.id,
+                      label: selectedAccount.name,
+                    }
+                  : null
+              }
+              onChange={(selectedOption) => {
+                if (selectedOption) {
+                  const account = chartOfAccounts.find((coa) => coa.id === selectedOption.value)
+                  onAccountSelect(account || null)
+                } else {
+                  onAccountSelect(null)
+                }
+              }}
+              options={chartOfAccounts.map((coa) => ({
+                value: coa.id,
+                label: coa.name,
+              }))}
+              placeholder={loadingCOA ? "Loading chart of accounts..." : "Select..."}
+              isLoading={loadingCOA}
+              isClearable
+              classNamePrefix={error ? "react-select-error" : "react-select"}
             />
           </div>
         </div>
         {error && <p className="text-sm text-red-500">{error}</p>}
-        {selectedAccount && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => onAccountSelect(null)}
-            className="text-red-500 hover:text-red-700"
-          >
-            Clear Selection
-          </Button>
-        )}
       </div>
       <p className="text-sm text-muted-foreground">{description}</p>
-      <COADialog
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        onSelect={(account) => {
-          onAccountSelect(account)
-          setDialogOpen(false)
-        }}
-      />
     </div>
   )
 }
@@ -108,16 +113,23 @@ export default function CashieringAccountsForm() {
   const [pettyCashTaxable, setPettyCashTaxable] = useState<ChartOfAccount | null>(null)
   const [pettyCashNonTaxable, setPettyCashNonTaxable] = useState<ChartOfAccount | null>(null)
 
+  const [chartOfAccounts, setChartOfAccounts] = useState<ChartOfAccount[]>([])
+  const [loadingCOA, setLoadingCOA] = useState(false)
+
   const [isLoading, setIsLoading] = useState(true)
   const [, setError] = useState<string | null>(null)
   const [configId, setConfigId] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
 
   useEffect(() => {
     const fetchCashieringDefaults = async () => {
       try {
         setIsLoading(true)
         setError(null)
+
+        // Fetch chart of accounts first
+        await fetchChartOfAccounts()
 
         const result = await apiRequest<ApiResponse>("get", "/accounting-cashiering-defaults", null, {
           useAuth: true,
@@ -136,8 +148,8 @@ export default function CashieringAccountsForm() {
           setPettyCashNonTaxable(data.data.coa_petty_cash_non_taxable)
         }
       } catch (err) {
-        console.error('Error fetching cashiering defaults:', err)
-        setError(err instanceof Error ? err.message : 'An error occurred while fetching data')
+        console.error("Error fetching cashiering defaults:", err)
+        setError(err instanceof Error ? err.message : "An error occurred while fetching data")
       } finally {
         setIsLoading(false)
       }
@@ -145,9 +157,84 @@ export default function CashieringAccountsForm() {
     fetchCashieringDefaults()
   }, [])
 
+  const fetchChartOfAccounts = async () => {
+    setLoadingCOA(true)
+    try {
+      const response = await apiRequest<{ data: { chartOfAccounts: ChartOfAccount[] } }>("get", "/coa", null, {
+        useAuth: true,
+        useBranchId: true,
+      })
+      setChartOfAccounts(response.data.data.chartOfAccounts)
+    } catch (error) {
+      console.error("Error fetching chart of accounts:", error)
+    } finally {
+      setLoadingCOA(false)
+    }
+  }
+
+  const validateDuplicateAccounts = () => {
+    const accounts = [
+      { field: "coa_outstanding_cash_salary", account: outstandingCashSalary, label: "Outstanding Cash Fund (Salary)" },
+      { field: "coa_outstanding_cash_bonus", account: outstandingCashBonus, label: "Outstanding Cash Fund (Bonus)" },
+      { field: "coa_encashment_fund", account: encashmentFund, label: "COH: Encashment Fund" },
+      { field: "coa_internal_cashier", account: internalCashier, label: "COH: Internal Cashier" },
+      { field: "coa_petty_cash_taxable", account: pettyCashTaxable, label: "Petty Cash Fund (Taxable)" },
+      { field: "coa_petty_cash_non_taxable", account: pettyCashNonTaxable, label: "Petty Cash Fund (Non-Taxable)" },
+    ]
+
+    const newFieldErrors: Record<string, string> = {}
+    const accountMap = new Map<string, string[]>()
+
+    // Group fields by account ID
+    accounts.forEach(({  account, label }) => {
+      if (account?.id) {
+        if (!accountMap.has(account.id)) {
+          accountMap.set(account.id, [])
+        }
+        accountMap.get(account.id)?.push(label)
+      }
+    })
+
+    // Find duplicates and set errors
+    accountMap.forEach((labels, accountId) => {
+      if (labels.length > 1) {
+        const duplicateMessage = `This account is also used in: ${labels.slice(1).join(", ")}`
+
+        accounts.forEach(({ field, account }) => {
+          if (account?.id === accountId) {
+            newFieldErrors[field] = duplicateMessage
+          }
+        })
+      }
+    })
+
+    setFieldErrors(newFieldErrors)
+    return Object.keys(newFieldErrors).length === 0
+  }
+
+  useEffect(() => {
+    validateDuplicateAccounts()
+  }, [
+    outstandingCashSalary,
+    outstandingCashBonus,
+    encashmentFund,
+    internalCashier,
+    pettyCashTaxable,
+    pettyCashNonTaxable,
+  ])
+
   const handleSave = async () => {
     try {
-      setFieldErrors({})
+      // Validate duplicates before saving
+      const isValid = validateDuplicateAccounts()
+      if (!isValid) {
+        toast.error("Save Failed", {
+          description: "Please resolve duplicate account selections before saving.",
+          duration: 6000,
+        })
+        return
+      }
+
       const formData = {
         coa_outstanding_cash_salary: outstandingCashSalary?.id || null,
         coa_outstanding_cash_bonus: outstandingCashBonus?.id || null,
@@ -178,9 +265,7 @@ export default function CashieringAccountsForm() {
 
       if (apiError?.errors) {
         const newFieldErrors: Record<string, string> = {}
-        
-        
-        Object.keys(apiError.errors).forEach(field => {
+        Object.keys(apiError.errors).forEach((field) => {
           if (apiError.errors[field] && apiError.errors[field].length > 0) {
             newFieldErrors[field] = apiError.errors[field][0]
           }
@@ -189,7 +274,7 @@ export default function CashieringAccountsForm() {
         setFieldErrors(newFieldErrors)
 
         toast.error("Save Failed", {
-          description: "There are duplicate data in the fields.",
+          description: "There are errors in the form. Please check the fields.",
           duration: 6000,
         })
       } else if (apiError?.message) {
@@ -209,8 +294,7 @@ export default function CashieringAccountsForm() {
   }
 
   const handleCancel = () => {
-    // Reset to original values or navigate away
-    console.log("Form cancelled")
+    setCancelDialogOpen(true)
   }
 
   if (isLoading) {
@@ -227,84 +311,115 @@ export default function CashieringAccountsForm() {
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="text-2xl">Cashiering Accounts Configuration</CardTitle>
-        <CardDescription>
-          Configure default accounts for cashiering operations and petty cash management
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-8">
-        <div className="space-y-6">
-          <h3 className="text-lg font-semibold">Outstanding Cash Fund Accounts</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <AccountField 
-              label="Outstanding Cash Fund (Salary)" 
-              description="Account for outstanding cash fund for salary payments" 
-              required 
-              selectedAccount={outstandingCashSalary} 
-              onAccountSelect={setOutstandingCashSalary} 
-              error={fieldErrors.coa_outstanding_cash_salary} 
-            />
-            <AccountField 
-              label="Outstanding Cash Fund (Bonus)" 
-              description="Account for outstanding cash fund for bonus payments" 
-              required 
-              selectedAccount={outstandingCashBonus} 
-              onAccountSelect={setOutstandingCashBonus} 
-              error={fieldErrors.coa_outstanding_cash_bonus} 
-            />
+    <>
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="text-2xl">Cashiering Accounts</CardTitle>
+
+        </CardHeader>
+        <CardContent className="space-y-8">
+          <div className="space-y-6">
+            <h3 className="text-lg font-semibold">Outstanding Cash Fund Accounts</h3>
+            <div className="grid grid-cols-1 gap-8">
+              <AccountField
+                label="Outstanding Cash Fund (Salary)"
+                description="Account for outstanding cash fund for salary payments"
+                required
+                selectedAccount={outstandingCashSalary}
+                onAccountSelect={setOutstandingCashSalary}
+                error={fieldErrors.coa_outstanding_cash_salary}
+                chartOfAccounts={chartOfAccounts}
+                loadingCOA={loadingCOA}
+              />
+              <AccountField
+                label="Outstanding Cash Fund (Bonus)"
+                description="Account for outstanding cash fund for bonus payments"
+                required
+                selectedAccount={outstandingCashBonus}
+                onAccountSelect={setOutstandingCashBonus}
+                error={fieldErrors.coa_outstanding_cash_bonus}
+                chartOfAccounts={chartOfAccounts}
+                loadingCOA={loadingCOA}
+              />
+            </div>
           </div>
-        </div>
-        
-        <div className="space-y-6">
-          <h3 className="text-lg font-semibold">Cash On Hand Accounts</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <AccountField 
-              label="COH: Encashment Fund" 
-              description="Account for cash on hand encashment fund" 
-              required 
-              selectedAccount={encashmentFund} 
-              onAccountSelect={setEncashmentFund} 
-              error={fieldErrors.coa_encashment_fund} 
-            />
-            <AccountField 
-              label="COH: Internal Cashier" 
-              description="Account for internal cashier cash on hand" 
-              required 
-              selectedAccount={internalCashier} 
-              onAccountSelect={setInternalCashier} 
-              error={fieldErrors.coa_internal_cashier} 
-            />
+
+          <div className="space-y-6">
+            <h3 className="text-lg font-semibold">Cash On Hand Accounts</h3>
+            <div className="grid grid-cols-1 gap-8">
+              <AccountField
+                label="COH: Encashment Fund"
+                description="Account for cash on hand encashment fund"
+                required
+                selectedAccount={encashmentFund}
+                onAccountSelect={setEncashmentFund}
+                error={fieldErrors.coa_encashment_fund}
+                chartOfAccounts={chartOfAccounts}
+                loadingCOA={loadingCOA}
+              />
+              <AccountField
+                label="COH: Internal Cashier"
+                description="Account for internal cashier cash on hand"
+                required
+                selectedAccount={internalCashier}
+                onAccountSelect={setInternalCashier}
+                error={fieldErrors.coa_internal_cashier}
+                chartOfAccounts={chartOfAccounts}
+                loadingCOA={loadingCOA}
+              />
+            </div>
           </div>
-        </div>
-        
-        <div className="space-y-6">
-          <h3 className="text-lg font-semibold">Petty Cash Fund Accounts</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <AccountField 
-              label="Petty Cash Fund (Taxable)" 
-              description="Account for taxable petty cash fund transactions" 
-              required 
-              selectedAccount={pettyCashTaxable} 
-              onAccountSelect={setPettyCashTaxable} 
-              error={fieldErrors.coa_petty_cash_taxable} 
-            />
-            <AccountField 
-              label="Petty Cash Fund (Non-Taxable)" 
-              description="Account for non-taxable petty cash fund transactions" 
-              required 
-              selectedAccount={pettyCashNonTaxable} 
-              onAccountSelect={setPettyCashNonTaxable} 
-              error={fieldErrors.coa_petty_cash_non_taxable} 
-            />
+
+          <div className="space-y-6">
+            <h3 className="text-lg font-semibold">Petty Cash Fund Accounts</h3>
+            <div className="grid grid-cols-1 gap-8">
+              <AccountField
+                label="Petty Cash Fund (Taxable)"
+                description="Account for taxable petty cash fund transactions"
+                required
+                selectedAccount={pettyCashTaxable}
+                onAccountSelect={setPettyCashTaxable}
+                error={fieldErrors.coa_petty_cash_taxable}
+                chartOfAccounts={chartOfAccounts}
+                loadingCOA={loadingCOA}
+              />
+              <AccountField
+                label="Petty Cash Fund (Non-Taxable)"
+                description="Account for non-taxable petty cash fund transactions"
+                required
+                selectedAccount={pettyCashNonTaxable}
+                onAccountSelect={setPettyCashNonTaxable}
+                error={fieldErrors.coa_petty_cash_non_taxable}
+                chartOfAccounts={chartOfAccounts}
+                loadingCOA={loadingCOA}
+              />
+            </div>
           </div>
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-end gap-4">
-        <Button variant="outline" onClick={handleCancel}>Cancel</Button>
-        <Button onClick={handleSave}>Save Changes</Button>
-      </CardFooter>
-    </Card>
+        </CardContent>
+        <CardFooter className="flex justify-end gap-4">
+          <Button variant="outline" onClick={handleCancel}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave}>Save Changes</Button>
+        </CardFooter>
+      </Card>
+
+      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Discard changes?</DialogTitle>
+          </DialogHeader>
+          <p>Are you sure you want to discard all changes? Any unsaved progress will be lost.</p>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setCancelDialogOpen(false)}>
+              No, keep editing
+            </Button>
+            <Button variant="destructive" onClick={() => window.location.reload()}>
+              Yes, discard
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

@@ -21,9 +21,8 @@ import UserPermissionsPage from "./pages/MaintenanceAndSecurity/Security/UserPer
 import ApprovalPage from "./pages/MaintenanceAndSecurity/Admin/Approval/page"
 import BackupAndRestorePage from "./pages/MaintenanceAndSecurity/Admin/BackupAndRestore/page"
 import ActivityLogsPage from "./pages/MaintenanceAndSecurity/Admin/ActivityLogs/page"
-import BonusLoanCASetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/BonusLoanCASetup/page"
+import CashAdvanceSetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/CashAdvanceSetup/page"
 import BonusLoanSetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/BonusLoanSetup/page"
-import SalaryLoanCASetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/SalaryLoanCASetup/page"
 import SalaryLoanSetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/SalaryLoanSetup/page"
 import SchoolOfficeSetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/SchoolOfficeSetup/page"
 import DistrictSetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/DistrictSetup/page"
@@ -145,16 +144,12 @@ function App() {
               element={<SalaryLoanSetupPage />}
             />
             <Route
-              path="/maintenance-and-security/lending-setup/salary-loan-ca-setup"
-              element={<SalaryLoanCASetupPage />}
-            />
-            <Route
               path="/maintenance-and-security/lending-setup/bonus-loan-setup"
               element={<BonusLoanSetupPage />}
             />
             <Route
-              path="/maintenance-and-security/lending-setup/bonus-loan-ca-setup"
-              element={<BonusLoanCASetupPage />}
+              path="/maintenance-and-security/lending-setup/ca-setup"
+              element={<CashAdvanceSetupPage />}
             />
             <Route
               path="/maintenance-and-security/accounting-setup/general-journal"

@@ -96,6 +96,7 @@ export const CashAdvanceSetupService = {
     id: string,
     payload: UpdateCashAdvanceSetupPayload
   ): Promise<ApiResponse<CashAdvanceSetup>> => {
+    console.log(payload);
     const endpoint = `/cash-advance-setup/${id}`;
     const response = await apiRequest<ApiResponse<CashAdvanceSetup>>(
       "put",
@@ -173,6 +174,44 @@ export const CashAdvanceSetupService = {
     );
 
     return response.data;
+  },
+
+  /**
+   * Export to PDF
+   */
+  exportPdf: async (): Promise<Blob> => {
+    const endpoint = `/cash-advance-setup/export-pdf`;
+    try {
+      const response = await apiRequest<Blob>("get", endpoint, null, {
+        useAuth: true,
+        useBranchId: true,
+        responseType: "blob",
+      });
+      return response.data;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || "Failed to export PDF";
+      throw new Error(errorMessage);
+    }
+  },
+
+  /**
+   * Export to CSV
+   */
+  exportCsv: async () => {
+    const endpoint = `/cash-advance-setup/export-csv`;
+    try {
+      const response = await apiRequest("get", endpoint, null, {
+        useAuth: true,
+        useBranchId: true,
+        responseType: "blob",
+      });
+      return response.data;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || "Failed to export CSV";
+      throw new Error(errorMessage);
+    }
   },
 };
 

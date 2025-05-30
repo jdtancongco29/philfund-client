@@ -10,7 +10,6 @@ import { DataTable, type ColumnDefinition, type FilterDefinition } from "@/compo
 import { DdeleteDialog } from "./DeleteCOADialog"
 import { AddEditAccountDialog } from "./AddAccountDialog"
 
-
 interface Branch {
   uid: string
   code: string
@@ -214,217 +213,47 @@ export default function ChartOfAccounts() {
     }
   }, [getAuthHeaders, downloadFile, generateCsvFromData, accounts])
 
-  const generatePdfFromData = useCallback(async () => {
-    const printWindow = window.open("", "_blank")
-    if (!printWindow) {
-      throw new Error("Could not open print window")
+  const exportPdf = async (): Promise<Blob> => {
+    const endpoint = `/coa/export-pdf` // adjust endpoint if needed
+    try {
+      const response = await apiRequest<Blob>("get", endpoint, null, {
+        useAuth: true,
+        useBranchId: true,
+        responseType: "blob",
+      })
+      return response.data
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Failed to export PDF"
+      throw new Error(errorMessage)
     }
-
-    const currentDate = new Date().toLocaleDateString()
-
-    const assetAccounts = accounts.filter((account) => account.major_classification.name === "Asset").length
-    const liabilityAccounts = accounts.filter((account) => account.major_classification.name === "Liabilities").length
-    const equityAccounts = accounts.filter((account) => account.major_classification.name === "Equity").length
-
-    const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>Chart of Accounts Report</title>
-        <style>
-          body { 
-            font-family: Arial, sans-serif; 
-            margin: 20px; 
-            color: #333;
-            line-height: 1.4;
-          }
-          h1 { 
-            color: #333; 
-            text-align: center; 
-            border-bottom: 3px solid #007bff;
-            padding-bottom: 10px;
-            margin-bottom: 5px;
-          }
-          .header { 
-            text-align: center; 
-            margin-bottom: 30px; 
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
-          }
-          .summary {
-            display: flex;
-            justify-content: space-around;
-            margin: 20px 0;
-            background: #e9ecef;
-            padding: 15px;
-            border-radius: 5px;
-          }
-          .summary-item {
-            text-align: center;
-          }
-          table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin-top: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-          }
-          th, td { 
-            border: 1px solid #ddd; 
-            padding: 8px 6px; 
-            text-align: left; 
-            font-size: 11px;
-          }
-          th { 
-            background-color: #007bff; 
-            color: white;
-            font-weight: bold; 
-            text-align: center;
-          }
-          .classification-asset { 
-            background-color: #e3f2fd; 
-          }
-          .classification-liability { 
-            background-color: #ffebee; 
-          }
-          .classification-equity { 
-            background-color: #e8f5e8; 
-          }
-          .contra-yes { 
-            color: #dc3545; 
-            font-weight: bold; 
-          }
-          .contra-no { 
-            color: #28a745; 
-          }
-          .footer {
-            margin-top: 30px;
-            text-align: center;
-            font-size: 10px;
-            color: #666;
-          }
-          @media print {
-            body { margin: 0; }
-            .header { page-break-inside: avoid; }
-            @page { margin: 1cm; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>Chart of Accounts Report</h1>
-          <p><strong>Generated on:</strong> ${currentDate}</p>
-        </div>
-        <div class="summary">
-          <div class="summary-item">
-            <h3>${accounts.length}</h3>
-            <p>Total Accounts</p>
-          </div>
-          <div class="summary-item">
-            <h3>${assetAccounts}</h3>
-            <p>Asset Accounts</p>
-          </div>
-          <div class="summary-item">
-            <h3>${liabilityAccounts}</h3>
-            <p>Liability Accounts</p>
-          </div>
-          <div class="summary-item">
-            <h3>${equityAccounts}</h3>
-            <p>Equity Accounts</p>
-          </div>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Code</th>
-              <th>Account Name</th>
-              <th>Classification</th>
-              <th>Sub-Grouping</th>
-              <th>Normal Balance</th>
-              <th>Contra</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${accounts
-              .map(
-                (account) => `
-              <tr class="classification-${account.major_classification.name.toLowerCase()}">
-                <td>${account.code}</td>
-                <td>${account.name}</td>
-                <td>${account.major_classification.name}</td>
-                <td>${account.category}</td>
-                <td>${account.normal_balance.charAt(0).toUpperCase() + account.normal_balance.slice(1)}</td>
-                <td class="${account.is_contra ? "contra-yes" : "contra-no"}">
-                  ${account.is_contra ? "Yes" : "No"}
-                </td>
-              </tr>
-            `,
-              )
-              .join("")}
-          </tbody>
-        </table>
-        <div class="footer">
-          <p>This report was generated automatically from the Chart of Accounts system.</p>
-        </div>
-      </body>
-    </html>
-  `
-
-    printWindow.document.write(htmlContent)
-    printWindow.document.close()
-
-    printWindow.onload = () => {
-      setTimeout(() => {
-        printWindow.print()
-        printWindow.close()
-      }, 250)
-    }
-
-    toast.success("PDF Export Initiated", {
-      description: "PDF print dialog has been opened.",
-      icon: <Download className="h-5 w-5" />,
-      duration: 3000,
-    })
-  }, [accounts])
-
+  }
   const handlePdfExport = useCallback(async () => {
     setIsExporting(true)
     try {
-      const headers = getAuthHeaders()
-      const response = await fetch("/coa/export-pdf", {
-        method: "GET",
-        headers,
-      })
+      const blob = await exportPdf()
+      const url = window.URL.createObjectURL(blob)
 
-      if (response.ok) {
-        const blob = await response.blob()
-        const currentDate = new Date().toISOString().split("T")[0]
-        downloadFile(blob, `chart-of-accounts-${currentDate}.pdf`)
-
-        toast.success("PDF Export Successful", {
-          description: "Chart of Accounts have been exported to PDF successfully.",
-          icon: <Download className="h-5 w-5" />,
-          duration: 5000,
-        })
+      const newTab = window.open(url, "_blank")
+      if (newTab) {
+        newTab.focus()
       } else {
-        throw new Error(`API endpoint returned status: ${response.status}`)
+        const link = document.createElement("a")
+        link.href = url
+        link.download = `general-journal-${new Date().toISOString().split("T")[0]}.pdf`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
       }
-    } catch (error) {
-      console.warn("API PDF export failed, using fallback:", error)
 
-      try {
-        await generatePdfFromData()
-      } catch (fallbackError) {
-        console.error("Fallback PDF generation failed:", fallbackError)
-        toast.error("PDF Export Failed", {
-          description: "Failed to export Chart of Accounts to PDF. Please try again.",
-          duration: 5000,
-        })
-      }
+      toast.success("PDF opened in new tab")
+    } catch (error: any) {
+      toast.error("PDF Export Failed", {
+        description: error.message || "Could not export General Journal PDF.",
+      })
     } finally {
       setIsExporting(false)
     }
-  }, [getAuthHeaders, downloadFile, generatePdfFromData])
+  }, [])
 
   const fetchAccounts = async () => {
     setLoading(true)
@@ -525,55 +354,42 @@ export default function ChartOfAccounts() {
       header: "Contra",
       accessorKey: "is_contra",
       enableSorting: true,
-      cell: (account) => (
-        <Badge variant={account.is_contra ? "destructive" : "outline"}>{account.is_contra ? "Yes" : "No"}</Badge>
-      ),
+
+      cell: (account) => <div className="font-medium">{account.is_contra ? "Yes" : "No"}</div>,
     },
     {
       id: "branches",
       header: "Branch",
       accessorKey: "branches",
       enableSorting: false,
-      cell: (account) =>
-        account.branches && account.branches.length > 0
-          ? account.branches.map((branch) => (
-              <Badge key={branch.uid} variant="secondary" className="mr-1">
-                {branch.name}
-              </Badge>
-            ))
-          : "-",
+       cell: (item) => (
+        <div>
+          <div>{item.major_classification.name}</div>
+        </div>
+      ),
     },
   ]
-
   const filters: FilterDefinition[] = [
     {
-      id: "major_classification",
-      label: "Classification",
+      id: "accountType",
+      label: "Filter by Classification",
       type: "select",
       options: [
-        { label: "Asset", value: "Asset" },
-        { label: "Liabilities", value: "Liabilities" },
-        { label: "Equity", value: "Equity" },
-        { label: "Revenue", value: "Revenue" },
-        { label: "Expense", value: "Expense" },
-      ],
-    },
-    {
-      id: "normal_balance",
-      label: "Normal Balance",
-      type: "select",
-      options: [
-        { label: "Debit", value: "debit" },
-        { label: "Credit", value: "credit" },
-      ],
-    },
-    {
-      id: "is_contra",
-      label: "Contra Account",
-      type: "select",
-      options: [
-        { label: "Yes", value: "true" },
-        { label: "No", value: "false" },
+        { label: "Regular account", value: "regular account" },
+        { label: "Cash account", value: "cash account" },
+        { label: "Cash in bank account", value: "cash in bank account" },
+        { label: "Receivable account", value: "receivable account" },
+        { label: "Payable account", value: "payable account" },
+        { label: "Allowance for bad debts", value: "allowance for bad debts" },
+        { label: "Properties and equipment", value: "properties and equipment" },
+        { label: "Accumulated depreciation", value: "accumulated depreciation" },
+        { label: "Accumulated amortization", value: "accumulated amortization" },
+        { label: "Cost of sales", value: "cost of sales" },
+        { label: "Sales debits", value: "sales debits" },
+        { label: "Sales", value: "sales" },
+        { label: "Sales discount", value: "sales discount" },
+        { label: "Other income", value: "other income" },
+        { label: "Retained income", value: "retained income" },
       ],
     },
   ]
@@ -606,16 +422,10 @@ export default function ChartOfAccounts() {
       }
     } catch (err: any) {
       console.error("Error adding account:", err)
-      if (err.response && err.response.data && err.response.data.errors) {
-        const errorMessages = Object.values(err.response.data.errors).flat().join(", ")
-        toast.error("Failed to add account", {
-          description: errorMessages,
-        })
-      } else {
-        toast.error("Failed to add account", {
-          description: err.message || "An error occurred while adding the account",
-        })
-      }
+
+      // Re-throw the error so the dialog component can handle it
+      // Don't show toast here as the dialog will display the errors
+      throw err
     }
   }
 
@@ -649,14 +459,13 @@ export default function ChartOfAccounts() {
         setAccountToEdit(null)
       } else {
         throw new Error(response.data.message || "Failed to update account")
-          
       }
     } catch (err: any) {
       console.error("Error updating account:", err)
-      toast.error("Failed to update account", {
-        description: err.message || "An error occurred while updating the account",
-      })
-            setIsEditDialogOpen(true)
+
+      // Let the dialog component handle the error display
+      // Don't close the dialog here - let it stay open to show errors
+      throw err // Re-throw the error so the dialog can handle it
     }
   }
 

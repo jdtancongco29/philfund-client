@@ -62,7 +62,7 @@ export function SchoolFormDialog({ open, isEditing, item, onOpenChange, onCancel
   })
 
   // Fetch districts for the dropdown, filtered by division if selected
-  const { data: districtsData } = useQuery({
+  const { data: districtsData, isLoading: isLoadingDistricts, isFetching: isFetchingDistricts } = useQuery({
     queryKey: ["districts-for-school", selectedDivisionId],
     queryFn: () => DistrictSetupService.getAllDistricts(),
     staleTime: Number.POSITIVE_INFINITY,
@@ -85,10 +85,8 @@ export function SchoolFormDialog({ open, isEditing, item, onOpenChange, onCancel
         code: item.code,
         name: item.name,
         division_id: item.division.id,
-        district_id: item.district_id,
+        district_id: item.district.id,
       })
-      console.log(item.division.id);
-      setSelectedDivisionId(item.division.id)
     } else {
       form.reset({
         code: "",
@@ -98,7 +96,7 @@ export function SchoolFormDialog({ open, isEditing, item, onOpenChange, onCancel
       })
       setSelectedDivisionId("")
     }
-  }, [item, form])
+  }, [item, form, isFetchingDistricts])
 
   // Handle division change to filter districts
   const handleDivisionChange = (divisionId: string) => {
@@ -232,29 +230,29 @@ export function SchoolFormDialog({ open, isEditing, item, onOpenChange, onCancel
             />
 
             <FormField
-              disabled={creationHandler.isPending || editingHandler.isPending || !selectedDivisionId}
+              disabled={filteredDistricts?.length == 0 || creationHandler.isPending || editingHandler.isPending || !selectedDivisionId || isFetchingDistricts || isLoadingDistricts}
               control={form.control}
               name="district_id"
               render={({ field }) => (
-                <FormItem>
+                <FormItem key={field.name}>
                   <FormLabel className="text-base font-medium">
                     District Code <span className="text-destructive">*</span>
                   </FormLabel>
                   <Select
-                    disabled={creationHandler.isPending || editingHandler.isPending || !selectedDivisionId}
+                    disabled={filteredDistricts?.length == 0 || creationHandler.isPending || editingHandler.isPending || isFetchingDistricts || !selectedDivisionId || isLoadingDistricts}
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                     value={field.value}
                   >
                     <FormControl>
                       <SelectTrigger className="px-3 py-[9px] w-full">
-                        <SelectValue placeholder={selectedDivisionId ? "Select..." : "Select a division first"} />
+                        <SelectValue placeholder={selectedDivisionId ? isFetchingDistricts ? "Fetching districts..." : filteredDistricts?.length == 0 ? "No districts found" : "Select..." : "Select a division first"} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {filteredDistricts?.map((district) => (
                         <SelectItem key={district.id} value={district.id}>
-                          {district.code || district.name}
+                          {district.code}
                         </SelectItem>
                       ))}
                     </SelectContent>

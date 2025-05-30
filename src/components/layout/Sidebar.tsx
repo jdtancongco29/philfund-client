@@ -152,16 +152,12 @@ const menuConfig = [
             path: "/maintenance-and-security/lending-setup/salary-loan-setup",
           },
           {
-            label: "Salary Loan CA Setup",
-            path: "/maintenance-and-security/lending-setup/salary-loan-ca-setup",
-          },
-          {
             label: "Bonus Loan Setup",
             path: "/maintenance-and-security/lending-setup/bonus-loan-setup",
           },
           {
-            label: "Bonus Loan CA Setup",
-            path: "/maintenance-and-security/lending-setup/bonus-loan-ca-setup",
+            label: "Cash Advance Setup",
+            path: "/maintenance-and-security/lending-setup/ca-setup",
           },
         ],
       },

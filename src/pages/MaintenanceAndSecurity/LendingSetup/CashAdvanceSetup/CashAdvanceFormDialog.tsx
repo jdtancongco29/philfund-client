@@ -34,8 +34,8 @@ const formSchema = z
       required_error: "Loan type is required",
     }),
     loan_code: z.string().min(1, "Loan code is required"),
-    interest_rate: z.number().min(0, "Interest rate must be positive"),
-    surcharge_rate: z.number().min(0, "Surcharge rate must be positive"),
+    interest_rate: z.number().min(1, "Interest rate must be positive"),
+    surcharge_rate: z.number().min(1, "Surcharge rate must be positive"),
     max_amt: z.number().min(0, "Maximum amount must be positive").optional().nullable(),
     max_rate: z.number().min(0, "Maximum rate must be positive").optional().nullable(),
 
@@ -49,10 +49,10 @@ const formSchema = z
     coa_garnished: z.string().min(1, "Garnished expense is required"),
 
     // Optional COA fields
-    coa_unearned_interest: z.string().optional(),
-    coa_other_income_penalty: z.string().optional(),
-    coa_allowance_doubtful: z.string().optional(),
-    coa_bad_dept_expense: z.string().optional(),
+    coa_unearned_interest: z.string().min(1, "Unearned interest is required"),
+    coa_other_income_penalty: z.string().min(1, "Other income penalty is required"),
+    coa_allowance_doubtful: z.string().min(1, "Allowance doubtful is required"),
+    coa_bad_dept_expense: z.string().min(1, "Bad dept expense is required"),
   })
   .refine(
     (data) => {
@@ -100,6 +100,29 @@ export function CashAdvanceFormDialog({
 }: CashAdvanceFormDialogProps) {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState("basic-info")
+
+  const basicInfoFields = [
+    "code",
+    "name",
+    "type",
+    "loan_code",
+    "interest_rate",
+    "surcharge_rate",
+    "max_amt",
+    "max_rate",
+    "eligible_class"
+  ];
+
+  // const coaFields = [
+  //   "coa_loan_receivable",
+  //   "coa_interest_receivable",
+  //   "coa_interest_income",
+  //   "coa_garnished",
+  //   "coa_unearned_interest",
+  //   "coa_other_income_penalty",
+  //   "coa_allowance_doubtful",
+  //   "coa_bad_dept_expense"
+  // ];
 
   const editingHandler = useMutation({
     mutationFn: (newCashAdvance: UpdateCashAdvanceSetupPayload) => {
@@ -152,7 +175,7 @@ export function CashAdvanceFormDialog({
     defaultValues: {
       code: "",
       name: "",
-      type: "salary loan",
+      type: "bonus loan",
       loan_code: "",
       interest_rate: 0,
       surcharge_rate: 0,
@@ -192,6 +215,14 @@ export function CashAdvanceFormDialog({
     return coaData.data.chartOfAccounts.filter((account) => !usedValues.includes(account.id))
   }
 
+  const getCoaFieldCode = (id: string) => {
+    const coa = coaData?.data.chartOfAccounts.filter((coa) => coa.id == id)
+    if (coa?.length != 0 || false) {
+      return coa![0].code
+    }
+    return ""
+  }
+
   // Check if form should be disabled (loading or pending operations)
   const isFormDisabled = creationHandler.isPending || editingHandler.isPending || (isEditing && isLoadingDetail)
 
@@ -202,7 +233,7 @@ export function CashAdvanceFormDialog({
         code: detail.code,
         name: detail.name,
         type: detail.type,
-        loan_code: detail.loan!.id,
+        loan_code: detail.loan?.id ?? "",
         interest_rate: Number.parseFloat(detail.interest_rate),
         surcharge_rate: Number.parseFloat(detail.surcharge_rate),
         max_amt: detail.max_amt ? Number.parseFloat(detail.max_amt) : null,
@@ -218,27 +249,25 @@ export function CashAdvanceFormDialog({
         coa_garnished: detail.coa_garnished?.id || "",
       })
     } else {
-      form.reset(
-        {
-          code: "",
-          name: "",
-          type: "salary loan",
-          loan_code: "",
-          interest_rate: 0,
-          surcharge_rate: 0,
-          max_amt: null,
-          max_rate: null,
-          eligible_class: [],
-          coa_loan_receivable: "",
-          coa_interest_receivable: "",
-          coa_unearned_interest: "",
-          coa_interest_income: "",
-          coa_other_income_penalty: "",
-          coa_allowance_doubtful: "",
-          coa_bad_dept_expense: "",
-          coa_garnished: "",
-        }
-      )
+      form.reset({
+        code: "",
+        name: "",
+        type: "bonus loan",
+        loan_code: "",
+        interest_rate: 0,
+        surcharge_rate: 0,
+        max_amt: null,
+        max_rate: null,
+        eligible_class: [],
+        coa_loan_receivable: "",
+        coa_interest_receivable: "",
+        coa_unearned_interest: "",
+        coa_interest_income: "",
+        coa_other_income_penalty: "",
+        coa_allowance_doubtful: "",
+        coa_bad_dept_expense: "",
+        coa_garnished: "",
+      })
     }
   }, [isEditing, cashAdvanceDetail, form, bonusLoansData, salaryLoansData])
 
@@ -257,37 +286,34 @@ export function CashAdvanceFormDialog({
       await creationHandler.mutateAsync(payload)
       queryClient.invalidateQueries({ queryKey: ["cash-advance-table"] })
       onSubmit()
-      form.reset(
-        {
-          code: "",
-          name: "",
-          type: "salary loan",
-          loan_code: "",
-          interest_rate: 0,
-          surcharge_rate: 0,
-          max_amt: null,
-          max_rate: null,
-          eligible_class: [],
-          coa_loan_receivable: "",
-          coa_interest_receivable: "",
-          coa_unearned_interest: "",
-          coa_interest_income: "",
-          coa_other_income_penalty: "",
-          coa_allowance_doubtful: "",
-          coa_bad_dept_expense: "",
-          coa_garnished: "",
-        }
-      )
+      form.reset({
+        code: "",
+        name: "",
+        type: "bonus loan",
+        loan_code: "",
+        interest_rate: 0,
+        surcharge_rate: 0,
+        max_amt: null,
+        max_rate: null,
+        eligible_class: [],
+        coa_loan_receivable: "",
+        coa_interest_receivable: "",
+        coa_unearned_interest: "",
+        coa_interest_income: "",
+        coa_other_income_penalty: "",
+        coa_allowance_doubtful: "",
+        coa_bad_dept_expense: "",
+        coa_garnished: "",
+      })
     } catch (errorData: unknown) {
       if (errorData instanceof AxiosError) {
         Object.entries(errorData.response?.data.errors).forEach(([field, messages]) => {
-          const errorMsg = messages as string[];
+          const errorMsg = messages as string[]
           form.setError(field as any, {
-            type: 'manual',
-            message: errorMsg[0]
-          });
-        }
-        )
+            type: "manual",
+            message: errorMsg[0],
+          })
+        })
       }
     }
   }
@@ -307,37 +333,34 @@ export function CashAdvanceFormDialog({
       await editingHandler.mutateAsync(payload)
       queryClient.invalidateQueries({ queryKey: ["cash-advance-table"] })
       onSubmit()
-      form.reset(
-        {
-          code: "",
-          name: "",
-          type: "salary loan",
-          loan_code: "",
-          interest_rate: 0,
-          surcharge_rate: 0,
-          max_amt: null,
-          max_rate: null,
-          eligible_class: [],
-          coa_loan_receivable: "",
-          coa_interest_receivable: "",
-          coa_unearned_interest: "",
-          coa_interest_income: "",
-          coa_other_income_penalty: "",
-          coa_allowance_doubtful: "",
-          coa_bad_dept_expense: "",
-          coa_garnished: "",
-        }
-      )
+      form.reset({
+        code: "",
+        name: "",
+        type: "bonus loan",
+        loan_code: "",
+        interest_rate: 0,
+        surcharge_rate: 0,
+        max_amt: null,
+        max_rate: null,
+        eligible_class: [],
+        coa_loan_receivable: "",
+        coa_interest_receivable: "",
+        coa_unearned_interest: "",
+        coa_interest_income: "",
+        coa_other_income_penalty: "",
+        coa_allowance_doubtful: "",
+        coa_bad_dept_expense: "",
+        coa_garnished: "",
+      })
     } catch (errorData: unknown) {
       if (errorData instanceof AxiosError) {
         Object.entries(errorData.response?.data.errors).forEach(([field, messages]) => {
-          const errorMsg = messages as string[];
+          const errorMsg = messages as string[]
           form.setError(field as any, {
-            type: 'manual',
-            message: errorMsg[0]
-          });
-        }
-        )
+            type: "manual",
+            message: errorMsg[0],
+          })
+        })
       }
     }
   }
@@ -348,7 +371,6 @@ export function CashAdvanceFormDialog({
       setActiveTab("chart-of-accounts")
       return
     }
-
     const branch_id = getBranchId()
     if (branch_id) {
       if (isEditing) {
@@ -370,8 +392,7 @@ export function CashAdvanceFormDialog({
 
   // Get dialog title based on type
   const getDialogTitle = () => {
-    const typeText = watchedType === "bonus loan" ? "Bonus Loan" : "Salary Loan"
-    return `${isEditing ? "Edit" : "Add New"} ${typeText} Cash Advance`
+    return `${isEditing ? "Edit" : "Add New"} Cash Advance`
   }
 
   return (
@@ -380,8 +401,8 @@ export function CashAdvanceFormDialog({
       onOpenChange={(open) => {
         onOpenChange(open)
         if (!open) {
-          form.reset()
           setActiveTab("basic-info")
+          form.reset()
         }
       }}
     >
@@ -399,7 +420,29 @@ export function CashAdvanceFormDialog({
         )}
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onFormSubmit)} className="flex flex-col h-full">
+          <form
+            onSubmit={form.handleSubmit(
+              (data) => {
+                // Valid submission
+                onFormSubmit(data);
+              },
+              (errors) => {
+                // This is called AFTER validation fails
+                const errorKeys = Object.keys(errors);
+                for (const key of errorKeys) {
+                  if (basicInfoFields.includes(key)) {
+                    setActiveTab("basic-info");
+                    return;
+                  }
+                }
+                if (activeTab != "chart-of-accounts") {
+                  // If no specific match, default tab
+                  form.clearErrors()
+                  setActiveTab("chart-of-accounts");
+                }
+              }
+            )}
+            className="flex flex-col h-full">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
               <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="basic-info" className="text-base">
@@ -420,7 +463,7 @@ export function CashAdvanceFormDialog({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-base font-medium">
-                            {watchedType === "bonus loan" ? "Bonus Loan" : "Salary Loan"} CA Code{" "}
+                            {"CA Code"}
                             <span className="text-red-500">*</span>
                           </FormLabel>
                           <FormControl>
@@ -442,7 +485,7 @@ export function CashAdvanceFormDialog({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-base font-medium">
-                            {watchedType === "bonus loan" ? "Bonus Loan" : "Salary Loan"} CA Name{" "}
+                            CA Name
                             <span className="text-red-500">*</span>
                           </FormLabel>
                           <FormControl>
@@ -462,19 +505,22 @@ export function CashAdvanceFormDialog({
                       control={form.control}
                       name="type"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem key={field.name}>
                           <FormLabel className="text-base font-medium">
                             Loan Type <span className="text-red-500">*</span>
                           </FormLabel>
-                          <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
+                          <Select disabled={isFormDisabled} onValueChange={(value) => {
+                            field.onChange(value)
+                            form.setValue("loan_code", "")
+                          }} value={field.value}>
                             <FormControl>
-                              <SelectTrigger className="h-11 w-full" disabled>
+                              <SelectTrigger className="h-11 w-full" >
                                 <SelectValue placeholder="Select loan type..." />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="salary loan">Salary Loan</SelectItem>
                               <SelectItem value="bonus loan">Bonus Loan</SelectItem>
+                              <SelectItem value="salary loan">Salary Loan</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -486,29 +532,31 @@ export function CashAdvanceFormDialog({
                       disabled={isFormDisabled}
                       control={form.control}
                       name="loan_code"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            {watchedType === "bonus loan" ? "Bonus Loan" : "Salary Loan"} Code{" "}
-                            <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="h-11 w-full">
-                                <SelectValue placeholder="Select..." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {getAvailableLoans().map((loan) => (
-                                <SelectItem key={loan.id} value={loan.id}>
-                                  {loan.code} - {loan.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      render={({ field }) => {
+                        return (
+                          <FormItem key={field.value}>
+                            <FormLabel className="text-base font-medium">
+                              Code
+                              <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="h-11 w-full">
+                                  <SelectValue placeholder="Select..." />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {getAvailableLoans().map((loan) => (
+                                  <SelectItem key={loan.id} value={loan.id}>
+                                    {loan.code}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )
+                      }}
                     />
 
                     <div className="grid grid-cols-2 gap-6">
@@ -526,8 +574,16 @@ export function CashAdvanceFormDialog({
                                 type="number"
                                 step="0.01"
                                 placeholder="Enter interest rate"
-                                {...field}
-                                onChange={(e) => field.onChange(Number.parseFloat(e.target.value) || 0)}
+                                value={field.value === 0 ? "" : field.value.toString()}
+                                onChange={(e) => {
+                                  const value = e.target.value
+                                  if (value === "") {
+                                    field.onChange(0)
+                                  } else {
+                                    const numValue = Number.parseFloat(value)
+                                    field.onChange(isNaN(numValue) ? 0 : numValue)
+                                  }
+                                }}
                                 className="h-11"
                               />
                             </FormControl>
@@ -549,10 +605,17 @@ export function CashAdvanceFormDialog({
                               <Input
                                 type="number"
                                 step="0.01"
-                                placeholder="5%"
-                                {...field}
-                                onChange={(e) => field.onChange(Number.parseFloat(e.target.value) || 0)}
-                                value={field.value ?? ""}
+                                placeholder="Enter surcharge rate"
+                                value={field.value === 0 ? "" : field.value.toString()}
+                                onChange={(e) => {
+                                  const value = e.target.value
+                                  if (value === "") {
+                                    field.onChange(0)
+                                  } else {
+                                    const numValue = Number.parseFloat(value)
+                                    field.onChange(isNaN(numValue) ? 0 : numValue)
+                                  }
+                                }}
                                 className="h-11"
                               />
                             </FormControl>
@@ -575,9 +638,17 @@ export function CashAdvanceFormDialog({
                                 type="number"
                                 step="0.01"
                                 placeholder="Enter maximum amount"
-                                {...field}
+                                value={field.value === null || field.value === undefined ? "" : field.value.toString()}
+                                onChange={(e) => {
+                                  const value = e.target.value
+                                  if (value === "") {
+                                    field.onChange(null)
+                                  } else {
+                                    const numValue = Number.parseFloat(value)
+                                    field.onChange(isNaN(numValue) ? null : numValue)
+                                  }
+                                }}
                                 className="h-11"
-                                value={field.value ?? ""}
                               />
                             </FormControl>
                             <FormMessage />
@@ -597,8 +668,16 @@ export function CashAdvanceFormDialog({
                                 type="number"
                                 step="0.01"
                                 placeholder="Enter maximum rate"
-                                {...field}
-                                value={field.value ?? ""}
+                                value={field.value === null || field.value === undefined ? "" : field.value.toString()}
+                                onChange={(e) => {
+                                  const value = e.target.value
+                                  if (value === "") {
+                                    field.onChange(null)
+                                  } else {
+                                    const numValue = Number.parseFloat(value)
+                                    field.onChange(isNaN(numValue) ? null : numValue)
+                                  }
+                                }}
                                 className="h-11"
                               />
                             </FormControl>
@@ -681,7 +760,12 @@ export function CashAdvanceFormDialog({
                             Loans Receivable <span className="text-red-500">*</span>
                           </FormLabel>
                           <div className="grid grid-cols-2 gap-4">
-                            <Input placeholder="Account Code" className="h-11" readOnly />
+                            <Input
+                              value={getCoaFieldCode(field.value)}
+                              placeholder="Account Code"
+                              className="h-11"
+                              readOnly
+                            />
                             <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="h-11 w-full">
@@ -712,7 +796,12 @@ export function CashAdvanceFormDialog({
                             Interest Receivable <span className="text-red-500">*</span>
                           </FormLabel>
                           <div className="grid grid-cols-2 gap-4">
-                            <Input placeholder="Account Code" className="h-11" readOnly />
+                            <Input
+                              value={getCoaFieldCode(field.value)}
+                              placeholder="Account Code"
+                              className="h-11"
+                              readOnly
+                            />
                             <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="h-11 w-full">
@@ -743,7 +832,12 @@ export function CashAdvanceFormDialog({
                             Interest Income <span className="text-red-500">*</span>
                           </FormLabel>
                           <div className="grid grid-cols-2 gap-4">
-                            <Input placeholder="Account Code" className="h-11" readOnly />
+                            <Input
+                              value={getCoaFieldCode(field.value)}
+                              placeholder="Account Code"
+                              className="h-11"
+                              readOnly
+                            />
                             <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="h-11 w-full">
@@ -774,7 +868,12 @@ export function CashAdvanceFormDialog({
                             Garnished Expense <span className="text-red-500">*</span>
                           </FormLabel>
                           <div className="grid grid-cols-2 gap-4">
-                            <Input placeholder="Account Code" className="h-11" readOnly />
+                            <Input
+                              value={getCoaFieldCode(field.value)}
+                              placeholder="Account Code"
+                              className="h-11"
+                              readOnly
+                            />
                             <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="h-11 w-full">
@@ -804,7 +903,12 @@ export function CashAdvanceFormDialog({
                         <FormItem>
                           <FormLabel className="text-base font-medium">Unearned Interest</FormLabel>
                           <div className="grid grid-cols-2 gap-4">
-                            <Input placeholder="Account Code" className="h-11" readOnly />
+                            <Input
+                              value={getCoaFieldCode(field.value ?? "")}
+                              placeholder="Account Code"
+                              className="h-11"
+                              readOnly
+                            />
                             <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="h-11 w-full">
@@ -833,7 +937,12 @@ export function CashAdvanceFormDialog({
                         <FormItem>
                           <FormLabel className="text-base font-medium">Other Income Penalty</FormLabel>
                           <div className="grid grid-cols-2 gap-4">
-                            <Input placeholder="Account Code" className="h-11" readOnly />
+                            <Input
+                              value={getCoaFieldCode(field.value ?? "")}
+                              placeholder="Account Code"
+                              className="h-11"
+                              readOnly
+                            />
                             <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="h-11 w-full">
@@ -862,7 +971,12 @@ export function CashAdvanceFormDialog({
                         <FormItem>
                           <FormLabel className="text-base font-medium">Allowance for Doubtful Account</FormLabel>
                           <div className="grid grid-cols-2 gap-4">
-                            <Input placeholder="Account Code" className="h-11" readOnly />
+                            <Input
+                              value={getCoaFieldCode(field.value ?? "")}
+                              placeholder="Account Code"
+                              className="h-11"
+                              readOnly
+                            />
                             <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="h-11 w-full">
@@ -891,7 +1005,12 @@ export function CashAdvanceFormDialog({
                         <FormItem>
                           <FormLabel className="text-base font-medium">Bad Debt Expense</FormLabel>
                           <div className="grid grid-cols-2 gap-4">
-                            <Input placeholder="Account Code" className="h-11" readOnly />
+                            <Input
+                              value={getCoaFieldCode(field.value ?? "")}
+                              placeholder="Account Code"
+                              className="h-11"
+                              readOnly
+                            />
                             <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="h-11 w-full">
@@ -924,6 +1043,7 @@ export function CashAdvanceFormDialog({
                 onClick={() => {
                   onCancel()
                   onOpenChange(false)
+                  setActiveTab("basic-info")
                   form.reset()
                 }}
                 className="px-6"

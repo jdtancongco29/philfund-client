@@ -8,6 +8,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import GroupSetupService from "./Service/GroupSetupService"
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog"
 import { DataTableV2 } from "@/components/data-table/data-table-v2"
+import { downloadFile } from "@/lib/utils"
+import { toast } from "sonner"
 
 export function BorrowerGroupTable() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -29,6 +31,49 @@ export function BorrowerGroupTable() {
   const deletionHandler = useMutation({
     mutationFn: (uuid: string) => {
       return GroupSetupService.deleteGroup(uuid);
+    },
+  })
+
+
+  // Export mutations
+  const exportPdfMutation = useMutation({
+    mutationFn: GroupSetupService.exportPdf,
+    onSuccess: (blob) => {
+      const url = window.URL.createObjectURL(blob)
+      // Open PDF in new tab for preview
+      const newTab = window.open(url, "_blank")
+      if (newTab) {
+        newTab.focus()
+      } else {
+        // Fallback if popup is blocked
+        const link = document.createElement("a")
+        link.href = url
+        link.download = `borrower-groups-${new Date().toISOString().split("T")[0]}.pdf`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      }
+      toast.success("PDF opened in new tab")
+    },
+    onError: () => {
+      toast.error("Failed to export PDF")
+    },
+  })
+
+  const exportCsvMutation = useMutation({
+    mutationFn: GroupSetupService.exportCsv,
+    onSuccess: (csvData: Blob) => {
+      try {
+        const currentDate = new Date().toISOString().split("T")[0]
+        downloadFile(csvData, `borrower-groups-${currentDate}.csv`)
+        toast.success("CSV generated successfully")
+      } catch (error: unknown) {
+        console.error(error);
+        toast.error("Failed to process CSV data")
+      }
+    },
+    onError: () => {
+      toast.error("Failed to export CSV")
     },
   })
 
@@ -130,6 +175,12 @@ export function BorrowerGroupTable() {
         onNew={handleNew}
         idField="id"
         enableNew={true}
+        onPdfExport={async () => {
+          exportPdfMutation.mutate()
+        }}
+        onCsvExport={async () => {
+          exportCsvMutation.mutate()
+        }}
         enablePdfExport={true}
         enableCsvExport={true}
         enableFilter={false}

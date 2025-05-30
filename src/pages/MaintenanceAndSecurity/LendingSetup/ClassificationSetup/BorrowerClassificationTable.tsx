@@ -8,6 +8,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import ClassificationSetupService from "./Service/ClassificationSetupService"
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog"
 import { DataTableV2 } from "@/components/data-table/data-table-v2"
+import { toast } from "sonner"
+import { downloadFile } from "@/lib/utils"
+import GroupSetupService from "../GroupSetup/Service/GroupSetupService"
 
 export function BorrowerClassificationTable() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -36,7 +39,51 @@ export function BorrowerClassificationTable() {
     },
   })
 
+  // Export mutations
+  const exportPdfMutation = useMutation({
+    mutationFn: GroupSetupService.exportPdf,
+    onSuccess: (blob) => {
+      const url = window.URL.createObjectURL(blob)
+      // Open PDF in new tab for preview
+      const newTab = window.open(url, "_blank")
+      if (newTab) {
+        newTab.focus()
+      } else {
+        // Fallback if popup is blocked
+        const link = document.createElement("a")
+        link.href = url
+        link.download = `borrower-classifications-${new Date().toISOString().split("T")[0]}.pdf`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      }
+      toast.success("PDF opened in new tab")
+    },
+    onError: () => {
+      toast.error("Failed to export PDF")
+    },
+  })
+
+  const exportCsvMutation = useMutation({
+    mutationFn: ClassificationSetupService.exportCsv,
+    onSuccess: (csvData: Blob) => {
+      try {
+        const currentDate = new Date().toISOString().split("T")[0]
+        downloadFile(csvData, `borrower-classifications-${currentDate}.csv`)
+        toast.success("CSV generated successfully")
+      } catch (error: unknown) {
+        console.error(error);
+        toast.error("Failed to process CSV data")
+      }
+    },
+    onError: () => {
+      toast.error("Failed to export CSV")
+    },
+  })
+
   if (error) return "An error has occurred: " + error.message
+
+
 
   // Define columns
   const columns: ColumnDefinition<BorrowerClassification>[] = [
@@ -194,6 +241,8 @@ export function BorrowerClassificationTable() {
         enableNew={true}
         enablePdfExport={true}
         enableCsvExport={true}
+        onPdfExport={exportPdfMutation.mutate}
+        onCsvExport={exportCsvMutation.mutate}
         enableFilter={false}
         onResetTable={resetTable}
         onSearchChange={onSearchChange}

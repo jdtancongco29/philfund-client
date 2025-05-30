@@ -1,3 +1,5 @@
+"use client"
+
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
@@ -34,16 +36,24 @@ const formSchema = z
       required_error: "Loan type is required",
     }),
     loan_code: z.string().min(1, "Loan code is required"),
-    interest_rate: z.number().min(1, "Interest rate must be positive")
+    interest_rate: z
+      .number()
+      .min(1, "Interest rate must be positive")
       .refine((val) => Number(val) <= 100, {
         message: "Interest rate must not exceed 100%",
       }),
-    surcharge_rate: z.number().min(1, "Surcharge rate must be positive")
+    surcharge_rate: z
+      .number()
+      .min(1, "Surcharge rate must be positive")
       .refine((val) => Number(val) <= 100, {
         message: "Surcharge rate must not exceed 100%",
       }),
     max_amt: z.number().min(0, "Maximum amount must be positive").optional().nullable(),
-    max_rate: z.number().min(0, "Maximum rate must be positive").optional().nullable()
+    max_rate: z
+      .number()
+      .min(0, "Maximum rate must be positive")
+      .optional()
+      .nullable()
       .refine((val) => Number(val) <= 100, {
         message: "Max rate must not exceed 100%",
       }),
@@ -119,8 +129,8 @@ export function CashAdvanceFormDialog({
     "surcharge_rate",
     "max_amt",
     "max_rate",
-    "eligible_class"
-  ];
+    "eligible_class",
+  ]
 
   // const coaFields = [
   //   "coa_loan_receivable",
@@ -433,32 +443,38 @@ export function CashAdvanceFormDialog({
             onSubmit={form.handleSubmit(
               (data) => {
                 // Valid submission
-                onFormSubmit(data);
+                onFormSubmit(data)
               },
               (errors) => {
                 // This is called AFTER validation fails
-                const errorKeys = Object.keys(errors);
+                const errorKeys = Object.keys(errors)
                 for (const key of errorKeys) {
                   if (basicInfoFields.includes(key)) {
-                    setActiveTab("basic-info");
-                    return;
+                    setActiveTab("basic-info")
+                    return
                   }
                 }
                 if (activeTab != "chart-of-accounts") {
                   // If no specific match, default tab
                   form.clearErrors()
-                  setActiveTab("chart-of-accounts");
+                  setActiveTab("chart-of-accounts")
                 }
-              }
+              },
             )}
-            className="flex flex-col h-full">
+            className="flex flex-col h-full"
+          >
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger disabled={isFormDisabled} value="basic-info"
-                  className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-blue-500 data-[state=active]:shadow-none px-4 py-2">
+              <TabsList className="border-b w-full justify-start rounded-none h-auto p-0 mb-6">
+                <TabsTrigger
+                  disabled={isFormDisabled}
+                  value="basic-info"
+                  className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-blue-500 data-[state=active]:shadow-none px-4 py-2"
+                >
                   Basic Info
                 </TabsTrigger>
-                <TabsTrigger disabled={isFormDisabled} value="chart-of-accounts"
+                <TabsTrigger
+                  disabled={isFormDisabled}
+                  value="chart-of-accounts"
                   className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-blue-500 data-[state=active]:shadow-none px-4 py-2"
                 >
                   Chart of Accounts
@@ -468,73 +484,91 @@ export function CashAdvanceFormDialog({
               <div className="flex-1 overflow-y-auto">
                 <TabsContent value="basic-info" className="space-y-6 mt-0">
                   <div className="space-y-6">
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="code"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            {"CA Code"}
-                            <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder={`Enter ${watchedType === "bonus loan" ? "Bonus Loan" : "Salary Loan"} CA Code`}
-                              {...field}
-                              className="h-11"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div className="grid grid-cols-2 gap-6">
+                      <FormField
+                        disabled={isFormDisabled}
+                        control={form.control}
+                        name="code"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-base font-medium">
+                              Cash Advance Code
+                              <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter cash advance code" {...field} className="h-11" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            CA Name
-                            <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder={`Enter ${watchedType === "bonus loan" ? "Bonus Loan" : "Salary Loan"} CA Name`}
-                              {...field}
-                              className="h-11"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                      <FormField
+                        disabled={isFormDisabled}
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-base font-medium">
+                              Cash Advance Name
+                              <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter cash advance name" {...field} className="h-11" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
                     <FormField
                       disabled={isFormDisabled}
                       control={form.control}
                       name="type"
                       render={({ field }) => (
-                        <FormItem key={field.name}>
+                        <FormItem>
                           <FormLabel className="text-base font-medium">
                             Loan Type <span className="text-red-500">*</span>
                           </FormLabel>
-                          <Select disabled={isFormDisabled} onValueChange={(value) => {
-                            field.onChange(value)
-                            form.setValue("loan_code", "")
-                          }} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="h-11 w-full" >
-                                <SelectValue placeholder="Select loan type..." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="bonus loan">Bonus Loan</SelectItem>
-                              <SelectItem value="salary loan">Salary Loan</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <FormControl>
+                            <div className="flex gap-6">
+                              <div className="flex items-center space-x-2">
+                                <input
+                                  type="radio"
+                                  id="bonus-loan"
+                                  value="bonus loan"
+                                  checked={field.value === "bonus loan"}
+                                  onChange={() => {
+                                    field.onChange("bonus loan")
+                                    form.setValue("loan_code", "")
+                                  }}
+                                  disabled={isFormDisabled}
+                                  className="w-4 h-4"
+                                />
+                                <label htmlFor="bonus-loan" className="text-sm font-medium">
+                                  Bonus Loan
+                                </label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <input
+                                  type="radio"
+                                  id="salary-loan"
+                                  value="salary loan"
+                                  checked={field.value === "salary loan"}
+                                  onChange={() => {
+                                    field.onChange("salary loan")
+                                    form.setValue("loan_code", "")
+                                  }}
+                                  disabled={isFormDisabled}
+                                  className="w-4 h-4"
+                                />
+                                <label htmlFor="salary-loan" className="text-sm font-medium">
+                                  Salary Loan
+                                </label>
+                              </div>
+                            </div>
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -548,7 +582,7 @@ export function CashAdvanceFormDialog({
                         return (
                           <FormItem key={field.value}>
                             <FormLabel className="text-base font-medium">
-                              Code
+                              Loan Code
                               <span className="text-red-500">*</span>
                             </FormLabel>
                             <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
@@ -585,7 +619,7 @@ export function CashAdvanceFormDialog({
                               <Input
                                 type="number"
                                 step="0.01"
-                                placeholder="Enter interest rate"
+                                placeholder="0.00"
                                 value={field.value === 0 ? "" : field.value.toString()}
                                 onChange={(e) => {
                                   const value = e.target.value
@@ -617,7 +651,7 @@ export function CashAdvanceFormDialog({
                               <Input
                                 type="number"
                                 step="0.01"
-                                placeholder="Enter surcharge rate"
+                                placeholder="0.00"
                                 value={field.value === 0 ? "" : field.value.toString()}
                                 onChange={(e) => {
                                   const value = e.target.value
@@ -680,7 +714,7 @@ export function CashAdvanceFormDialog({
                               <Input
                                 type="number"
                                 step="0.01"
-                                placeholder="Enter maximum rate"
+                                placeholder="0.00"
                                 value={field.value === null || field.value === undefined ? "" : field.value.toString()}
                                 onChange={(e) => {
                                   const value = e.target.value
@@ -773,27 +807,32 @@ export function CashAdvanceFormDialog({
                           <FormLabel className="text-base font-medium">
                             Loans Receivable <span className="text-red-500">*</span>
                           </FormLabel>
-                          <div className="grid grid-cols-2 gap-4">
-                            <Input
-                              value={getCoaFieldCode(field.value)}
-                              placeholder="Account Code"
-                              className="h-11"
-                              readOnly
-                            />
-                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="h-11 w-full">
-                                  <SelectValue placeholder="Select..." />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {getAvailableCoaOptions(field.value).map((account) => (
-                                  <SelectItem key={account.id} value={account.id}>
-                                    {account.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                          <div className="grid grid-cols-5 gap-4">
+                            <div className="col-span-2">
+                              <Input
+                                value={getCoaFieldCode(field.value)}
+                                placeholder="Account Code"
+                                className="h-11"
+                                readOnly
+                              />
+                            </div>
+                            <div className="col-span-3">
+                              <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger className="h-11 w-full">
+                                    <SelectValue placeholder="Select..." />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+
+                                  {getAvailableCoaOptions(field.value).map((account) => (
+                                    <SelectItem key={account.id} value={account.id}>
+                                      {account.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
                           <FormMessage />
                         </FormItem>
@@ -809,27 +848,32 @@ export function CashAdvanceFormDialog({
                           <FormLabel className="text-base font-medium">
                             Interest Receivable <span className="text-red-500">*</span>
                           </FormLabel>
-                          <div className="grid grid-cols-2 gap-4">
-                            <Input
-                              value={getCoaFieldCode(field.value)}
-                              placeholder="Account Code"
-                              className="h-11"
-                              readOnly
-                            />
-                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="h-11 w-full">
-                                  <SelectValue placeholder="Select..." />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {getAvailableCoaOptions(field.value).map((account) => (
-                                  <SelectItem key={account.id} value={account.id}>
-                                    {account.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                          <div className="grid grid-cols-5 gap-4">
+                            <div className="col-span-2">
+                              <Input
+                                value={getCoaFieldCode(field.value)}
+                                placeholder="Account Code"
+                                className="h-11"
+                                readOnly
+                              />
+                            </div>
+                            <div className="col-span-3">
+                              <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger className="h-11 w-full">
+                                    <SelectValue placeholder="Select..." />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+
+                                  {getAvailableCoaOptions(field.value).map((account) => (
+                                    <SelectItem key={account.id} value={account.id}>
+                                      {account.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
                           <FormMessage />
                         </FormItem>
@@ -845,27 +889,32 @@ export function CashAdvanceFormDialog({
                           <FormLabel className="text-base font-medium">
                             Interest Income <span className="text-red-500">*</span>
                           </FormLabel>
-                          <div className="grid grid-cols-2 gap-4">
-                            <Input
-                              value={getCoaFieldCode(field.value)}
-                              placeholder="Account Code"
-                              className="h-11"
-                              readOnly
-                            />
-                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="h-11 w-full">
-                                  <SelectValue placeholder="Select..." />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {getAvailableCoaOptions(field.value).map((account) => (
-                                  <SelectItem key={account.id} value={account.id}>
-                                    {account.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                          <div className="grid grid-cols-5 gap-4">
+                            <div className="col-span-2">
+                              <Input
+                                value={getCoaFieldCode(field.value)}
+                                placeholder="Account Code"
+                                className="h-11"
+                                readOnly
+                              />
+                            </div>
+                            <div className="col-span-3">
+                              <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger className="h-11 w-full">
+                                    <SelectValue placeholder="Select..." />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+
+                                  {getAvailableCoaOptions(field.value).map((account) => (
+                                    <SelectItem key={account.id} value={account.id}>
+                                      {account.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
                           <FormMessage />
                         </FormItem>
@@ -881,27 +930,32 @@ export function CashAdvanceFormDialog({
                           <FormLabel className="text-base font-medium">
                             Garnished Expense <span className="text-red-500">*</span>
                           </FormLabel>
-                          <div className="grid grid-cols-2 gap-4">
-                            <Input
-                              value={getCoaFieldCode(field.value)}
-                              placeholder="Account Code"
-                              className="h-11"
-                              readOnly
-                            />
-                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="h-11 w-full">
-                                  <SelectValue placeholder="Select..." />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {getAvailableCoaOptions(field.value).map((account) => (
-                                  <SelectItem key={account.id} value={account.id}>
-                                    {account.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                          <div className="grid grid-cols-5 gap-4">
+                            <div className="col-span-2">
+                              <Input
+                                value={getCoaFieldCode(field.value)}
+                                placeholder="Account Code"
+                                className="h-11"
+                                readOnly
+                              />
+                            </div>
+                            <div className="col-span-3">
+                              <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger className="h-11 w-full">
+                                    <SelectValue placeholder="Select..." />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+
+                                  {getAvailableCoaOptions(field.value).map((account) => (
+                                    <SelectItem key={account.id} value={account.id}>
+                                      {account.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
                           <FormMessage />
                         </FormItem>
@@ -916,27 +970,32 @@ export function CashAdvanceFormDialog({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-base font-medium">Unearned Interest</FormLabel>
-                          <div className="grid grid-cols-2 gap-4">
-                            <Input
-                              value={getCoaFieldCode(field.value ?? "")}
-                              placeholder="Account Code"
-                              className="h-11"
-                              readOnly
-                            />
-                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="h-11 w-full">
-                                  <SelectValue placeholder="Select..." />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {getAvailableCoaOptions(field!.value!).map((account) => (
-                                  <SelectItem key={account.id} value={account.id}>
-                                    {account.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                          <div className="grid grid-cols-5 gap-4">
+                            <div className="col-span-2">
+                              <Input
+                                value={getCoaFieldCode(field.value ?? "")}
+                                placeholder="Account Code"
+                                className="h-11"
+                                readOnly
+                              />
+                            </div>
+                            <div className="col-span-3">
+                              <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger className="h-11 w-full">
+                                    <SelectValue placeholder="Select..." />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+
+                                  {getAvailableCoaOptions(field!.value!).map((account) => (
+                                    <SelectItem key={account.id} value={account.id}>
+                                      {account.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
                           <FormMessage />
                         </FormItem>
@@ -950,27 +1009,32 @@ export function CashAdvanceFormDialog({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-base font-medium">Other Income Penalty</FormLabel>
-                          <div className="grid grid-cols-2 gap-4">
-                            <Input
-                              value={getCoaFieldCode(field.value ?? "")}
-                              placeholder="Account Code"
-                              className="h-11"
-                              readOnly
-                            />
-                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="h-11 w-full">
-                                  <SelectValue placeholder="Select..." />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {getAvailableCoaOptions(field!.value!).map((account) => (
-                                  <SelectItem key={account.id} value={account.id}>
-                                    {account.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                          <div className="grid grid-cols-5 gap-4">
+                            <div className="col-span-2">
+                              <Input
+                                value={getCoaFieldCode(field.value ?? "")}
+                                placeholder="Account Code"
+                                className="h-11"
+                                readOnly
+                              />
+                            </div>
+                            <div className="col-span-3">
+                              <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger className="h-11 w-full">
+                                    <SelectValue placeholder="Select..." />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+
+                                  {getAvailableCoaOptions(field!.value!).map((account) => (
+                                    <SelectItem key={account.id} value={account.id}>
+                                      {account.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
                           <FormMessage />
                         </FormItem>
@@ -984,27 +1048,32 @@ export function CashAdvanceFormDialog({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-base font-medium">Allowance for Doubtful Account</FormLabel>
-                          <div className="grid grid-cols-2 gap-4">
-                            <Input
-                              value={getCoaFieldCode(field.value ?? "")}
-                              placeholder="Account Code"
-                              className="h-11"
-                              readOnly
-                            />
-                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="h-11 w-full">
-                                  <SelectValue placeholder="Select..." />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {getAvailableCoaOptions(field!.value!).map((account) => (
-                                  <SelectItem key={account.id} value={account.id}>
-                                    {account.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                          <div className="grid grid-cols-5 gap-4">
+                            <div className="col-span-2">
+                              <Input
+                                value={getCoaFieldCode(field.value ?? "")}
+                                placeholder="Account Code"
+                                className="h-11"
+                                readOnly
+                              />
+                            </div>
+                            <div className="col-span-3">
+                              <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger className="h-11 w-full">
+                                    <SelectValue placeholder="Select..." />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+
+                                  {getAvailableCoaOptions(field!.value!).map((account) => (
+                                    <SelectItem key={account.id} value={account.id}>
+                                      {account.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
                           <FormMessage />
                         </FormItem>
@@ -1018,27 +1087,32 @@ export function CashAdvanceFormDialog({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-base font-medium">Bad Debt Expense</FormLabel>
-                          <div className="grid grid-cols-2 gap-4">
-                            <Input
-                              value={getCoaFieldCode(field.value ?? "")}
-                              placeholder="Account Code"
-                              className="h-11"
-                              readOnly
-                            />
-                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="h-11 w-full">
-                                  <SelectValue placeholder="Select..." />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {getAvailableCoaOptions(field!.value!).map((account) => (
-                                  <SelectItem key={account.id} value={account.id}>
-                                    {account.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                          <div className="grid grid-cols-5 gap-4">
+                            <div className="col-span-2">
+                              <Input
+                                value={getCoaFieldCode(field.value ?? "")}
+                                placeholder="Account Code"
+                                className="h-11"
+                                readOnly
+                              />
+                            </div>
+                            <div className="col-span-3">
+                              <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger className="h-11 w-full">
+                                    <SelectValue placeholder="Select..." />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+
+                                  {getAvailableCoaOptions(field!.value!).map((account) => (
+                                    <SelectItem key={account.id} value={account.id}>
+                                      {account.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
                           <FormMessage />
                         </FormItem>
@@ -1066,8 +1140,7 @@ export function CashAdvanceFormDialog({
               </Button>
               <Button disabled={isFormDisabled} type="submit" className="bg-blue-500 hover:bg-blue-600 px-6">
                 {isFormDisabled && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {activeTab === "basic-info" ? "Continue" : isEditing ? "Update" : "Save"}{" "}
-                Cash Advance
+                {activeTab === "basic-info" ? "Continue" : isEditing ? "Update Cash Advance" : "Save Cash Advance"}
               </Button>
             </div>
           </form>

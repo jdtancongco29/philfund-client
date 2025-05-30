@@ -5,12 +5,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { X } from "lucide-react"
+import Select from "react-select"
 import { COADialog } from "./COADialog"
-import { BranchSelectionDialog } from "./BranchSelectionDialog"
-
+import { apiRequest } from "@/lib/api"
+import { MultiValue, ActionMeta } from "react-select";
 interface ChartOfAccount {
   id: string
   code: string
@@ -38,6 +38,11 @@ interface ChartOfAccount {
   }>
 }
 
+interface Department {
+  id: string
+  name: string
+}
+
 interface Branch {
   id: string
   code: string
@@ -47,6 +52,13 @@ interface Branch {
   contact: string
   city: string
   status: boolean
+  departments: Department[]
+}
+
+interface BranchOption {
+  value: string
+  label: string
+  branch: Branch
 }
 
 interface AddEditAccountDialogProps {
@@ -94,15 +106,49 @@ export function AddEditAccountDialog({
   const [isContraAccount, setIsContraAccount] = useState(false)
   const [normalBalance, setNormalBalance] = useState<"debit" | "credit">("debit")
   const [selectedBranches, setSelectedBranches] = useState<Branch[]>([])
-  // Remove hardcoded branch ID - start with empty array
   const [selectedBranchIds, setSelectedBranchIds] = useState<string[]>([])
+  
+  // New states for branch management
+  const [, setBranches] = useState<Branch[]>([])
+  const [branchOptions, setBranchOptions] = useState<BranchOption[]>([])
+  const [isBranchLoading, setIsBranchLoading] = useState(false)
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
   const [showCOADialog, setShowCOADialog] = useState(false)
-  const [showBranchDialog, setShowBranchDialog] = useState(false)
 
   const isEditMode = mode === "edit" && editingAccount
+
+  // Fetch branches when dialog opens
+  useEffect(() => {
+    if (open) {
+      fetchBranches()
+    }
+  }, [open])
+
+  const fetchBranches = async () => {
+    setIsBranchLoading(true)
+    try {
+      const response = await apiRequest<{ data: { branches: Branch[] } }>("get", "/branch", null, {
+        useAuth: true,
+        useBranchId: true,
+      })
+      const branchData = response.data.data.branches
+      setBranches(branchData)
+      
+      // Convert branches to react-select options
+      const options: BranchOption[] = branchData.map((branch) => ({
+        value: branch.id,
+        label: `${branch.name} (${branch.code}) - ${branch.city}`,
+        branch: branch,
+      }))
+      setBranchOptions(options)
+    } catch (error) {
+      console.error("Error fetching branches:", error)
+    } finally {
+      setIsBranchLoading(false)
+    }
+  }
 
   // Reset form when dialog opens/closes or mode changes
   useEffect(() => {
@@ -151,6 +197,7 @@ export function AddEditAccountDialog({
             contact: "",
             city: "",
             status: true,
+            departments: [],
           }))
           setSelectedBranches(branches)
         } else {
@@ -177,7 +224,6 @@ export function AddEditAccountDialog({
     setIsContraAccount(false)
     setNormalBalance("debit")
     setSelectedBranches([])
-    // Reset to empty array instead of hardcoded ID
     setSelectedBranchIds([])
     setErrors({})
   }
@@ -199,16 +245,25 @@ export function AddEditAccountDialog({
     return newErrors
   }
 
-  const handleBranchSelection = (branches: Branch[]) => {
-    setSelectedBranches(branches)
-    // Use the actual selected branch IDs from the dialog
-    setSelectedBranchIds(branches.map((branch) => branch.id))
+  const handleBranchSelection = (
+  selectedOptions: MultiValue<BranchOption>,
+  _actionMeta: ActionMeta<BranchOption>
+) => {
+  if (selectedOptions && selectedOptions.length > 0) {
+    const branches = selectedOptions.map(option => option.branch);
+    const branchIds = selectedOptions.map(option => option.value);
+
+    setSelectedBranches(branches);
+    setSelectedBranchIds(branchIds);
+  } else {
+    setSelectedBranches([]);
+    setSelectedBranchIds([]);
   }
+};
 
   const removeBranch = (branchId: string) => {
     const updatedBranches = selectedBranches.filter((branch) => branch.id !== branchId)
     setSelectedBranches(updatedBranches)
-    // Update the branch IDs array to match the updated branches
     setSelectedBranchIds(updatedBranches.map((branch) => branch.id))
   }
 
@@ -228,7 +283,6 @@ export function AddEditAccountDialog({
       is_contra: isContraAccount,
       normal_balance: normalBalance,
       special_classification: specialClassification.trim(),
-      // Use the actual selected branch IDs from the dialog
       branches: selectedBranchIds,
     }
 
@@ -279,6 +333,11 @@ export function AddEditAccountDialog({
   const dialogTitle = isEditMode ? "Edit Account" : "Add New Account"
   const submitButtonText = isEditMode ? (isLoading ? "Updating..." : "Update") : isLoading ? "Adding..." : "Add Account"
 
+  // Get selected branch options for react-select
+  const selectedBranchOptions = branchOptions.filter(option => 
+    selectedBranchIds.includes(option.value)
+  )
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -298,7 +357,7 @@ export function AddEditAccountDialog({
                   setMajorClassification(e.target.value)
                   setCategory("")
                 }}
-                className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${errors.major_classification ? "border-red-500" : ""}`}
+                className={`mt-2 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${errors.major_classification ? "border-red-500" : ""}`}
               >
                 <option value="">Select...</option>
                 {classificationOptions.map((opt) => (
@@ -317,7 +376,7 @@ export function AddEditAccountDialog({
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${errors.category ? "border-red-500" : ""}`}
+                className={`mt-2 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${errors.category ? "border-red-500" : ""}`}
                 disabled={!majorClassification}
               >
                 <option value="">Select...</option>
@@ -434,7 +493,7 @@ export function AddEditAccountDialog({
             </div>
 
             <div>
-              <Label className={errors.code ? "text-red-500" : undefined}>
+              <Label className={`${errors.code ? "text-red-500" : ""} mb-2`}>
                 Account Code <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -447,7 +506,7 @@ export function AddEditAccountDialog({
             </div>
 
             <div>
-              <Label className={errors.name ? "text-red-500" : undefined}>
+              <Label className={`${errors.name ? "text-red-500" : ""} mb-2`}>
                 Account Name <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -460,7 +519,7 @@ export function AddEditAccountDialog({
             </div>
 
             <div>
-              <Label className={errors.description ? "text-red-500" : undefined}>
+              <Label className={`${errors.description ? "text-red-500" : ""} mb-2`}>
                 Description <span className="text-red-500">*</span>
               </Label>
               <textarea
@@ -473,7 +532,13 @@ export function AddEditAccountDialog({
             </div>
 
             <div className="flex items-start space-x-2">
-              <Switch id="contra-account" checked={isContraAccount} onCheckedChange={setIsContraAccount} />
+              <input
+                type="checkbox"
+                id="contra-account"
+                checked={isContraAccount}
+                onChange={(e) => setIsContraAccount(e.target.checked)}
+                className="h-4 w-4 mt-1"
+              />
               <div>
                 <Label htmlFor="contra-account">Contra Account</Label>
                 <p className="text-sm text-muted-foreground">
@@ -483,7 +548,7 @@ export function AddEditAccountDialog({
             </div>
 
             <div>
-              <Label className={errors.special_classification ? "text-red-500" : undefined}>
+              <Label className={`${errors.special_classification ? "text-red-500" : ""} mb-2`}>
                 Special Classification <span className="text-red-500">*</span>
               </Label>
               <select
@@ -513,7 +578,7 @@ export function AddEditAccountDialog({
             </div>
 
             <div>
-              <Label className={errors.branches ? "text-red-500" : undefined}>
+              <Label className={`${errors.branches ? "text-red-500" : ""} mb-2`}>
                 Branch <span className="text-red-500">*</span>
               </Label>
               <div className="space-y-2">
@@ -531,14 +596,27 @@ export function AddEditAccountDialog({
                   </div>
                 )}
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowBranchDialog(true)}
-                  className="w-full justify-start text-muted-foreground"
-                >
-                  Select special classifications...
-                </Button>
+                <Select
+                isMulti
+                options={branchOptions}
+                value={selectedBranchOptions}
+                onChange={handleBranchSelection}
+                placeholder="Select branches..."
+                isLoading={isBranchLoading}
+                isSearchable
+                className={`${errors.branches ? "border-red-500" : ""}`}
+                classNamePrefix="react-select"
+                styles={{
+                  control: (provided, ) => ({
+                    ...provided,
+                    borderColor: errors.branches ? "#ef4444" : provided.borderColor,
+                    "&:hover": {
+                      borderColor: errors.branches ? "#ef4444" : provided.borderColor,
+                    },
+                  }),
+                }}
+              />
+
 
                 {errors.branches && <p className="text-sm text-red-600">{errors.branches}</p>}
               </div>
@@ -570,14 +648,6 @@ export function AddEditAccountDialog({
           setSelectedHeader({ id: coa.id, code: coa.code, name: coa.name })
           setShowCOADialog(false)
         }}
-      />
-
-      <BranchSelectionDialog
-        open={showBranchDialog}
-        onClose={() => setShowBranchDialog(false)}
-        onSelect={handleBranchSelection}
-        selectedBranchIds={selectedBranchIds}
-        multiple={true}
       />
     </>
   )

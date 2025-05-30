@@ -399,7 +399,7 @@ export function DataTable<T>({
                         {
                             enableFilter && (
                                 <div className="flex gap-2 items-end">
-                                    <Button variant="outline" size="default" onClick={() => setIsFilterDialogOpen(true)} className="cursor-pointer">
+                                    <Button variant="outline" size="default" onClick={() => setIsFilterDialogOpen(false)} className="cursor-pointer">
                                         <FilterIcon className="h-4 w-4" />
                                         <span className="">Filter</span>
                                     </Button>

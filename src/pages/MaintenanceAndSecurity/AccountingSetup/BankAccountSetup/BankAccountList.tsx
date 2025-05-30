@@ -386,33 +386,33 @@ export default function BankAccountsTable() {
     }
   }, [getAuthHeaders, downloadFile, generateCsvFromData, item])
 
- const exportPdf = async (): Promise<Blob> => {
+const exportPdf = async (): Promise<string> => {
   const endpoint = `/bank/export-pdf` // adjust endpoint if needed
   try {
-    const response = await apiRequest<Blob>("get", endpoint, null, {
+    const response = await apiRequest<{ url: string }>("get", endpoint, null, {
       useAuth: true,
       useBranchId: true,
-      responseType: "blob",
     })
-    return response.data
+    return response.data.url
   } catch (error: any) {
     const errorMessage = error.response?.data?.message || "Failed to export PDF"
     throw new Error(errorMessage)
   }
 }
+
 const handlePdfExport = useCallback(async () => {
   setIsExporting(true)
   try {
-    const blob = await exportPdf()
-    const url = window.URL.createObjectURL(blob)
+    const url = await exportPdf()
     
     const newTab = window.open(url, "_blank")
     if (newTab) {
       newTab.focus()
     } else {
+      // fallback for popup blockers
       const link = document.createElement("a")
       link.href = url
-      link.download = `general-journal-${new Date().toISOString().split("T")[0]}.pdf`
+      link.target = "_blank"
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)

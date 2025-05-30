@@ -218,14 +218,14 @@ export function SalaryLoanFormDialog({
   })
 
   // Fetch groups for the checkbox list
-  const { data: groupsData } = useQuery({
+  const { data: groupsData, isLoading: isLoadingGroups } = useQuery({
     queryKey: ["groups-for-salary-loan"],
     queryFn: () => GroupSetupService.getAllGroups(),
     staleTime: Number.POSITIVE_INFINITY,
   })
 
   // Fetch COA for the dropdowns
-  const { data: coaData } = useQuery({
+  const { data: coaData, isLoading: isLoadingCOA } = useQuery({
     queryKey: ["coa-for-salary-loan", item],
     queryFn: () => SalaryLoanSetupService.getAllCOA(),
     staleTime: Number.POSITIVE_INFINITY,
@@ -374,7 +374,7 @@ export function SalaryLoanFormDialog({
   }, [isEditing, salaryLoanDetail, form, open])
 
   // Check if form should be disabled (loading or pending operations)
-  const isFormDisabled = creationHandler.isPending || editingHandler.isPending || (isEditing && isLoadingDetail)
+  const isFormDisabled = creationHandler.isPending || editingHandler.isPending || (isEditing && isLoadingDetail) || isLoadingCOA || isLoadingGroups
 
   // Update the create function to ensure proper number conversion
   const create = async (values: FormValues) => {

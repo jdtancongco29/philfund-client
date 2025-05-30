@@ -116,36 +116,36 @@ const formSchema = z
     // Groups - at least one required
     eligible_groups: z.array(z.string()).min(1, "At least one group must be selected"),
   })
-  .refine(
-    (data) => {
-      // Validate that client visible fees total equals PGA fees + branch other charges
-      const clientVisibleTotal =
-        Number(data.vis_service || 0) +
-        Number(data.vis_insurance || 0) +
-        Number(data.vis_notarial || 0) +
-        Number(data.vis_gross_reciept || 0) +
-        Number(data.vis_computer || 0)
+  // .refine(
+  //   (data) => {
+  //     // Validate that client visible fees total equals PGA fees + branch other charges
+  //     const clientVisibleTotal =
+  //       Number(data.vis_service || 0) +
+  //       Number(data.vis_insurance || 0) +
+  //       Number(data.vis_notarial || 0) +
+  //       Number(data.vis_gross_reciept || 0) +
+  //       Number(data.vis_computer || 0)
 
-      const pgaFeesTotal =
-        Number(data.pga_service_charge || 0) +
-        Number(data.pga_insurance || 0) +
-        Number(data.pga_notarial || 0) +
-        Number(data.pga_gross_reciept || 0)
+  //     const pgaFeesTotal =
+  //       Number(data.pga_service_charge || 0) +
+  //       Number(data.pga_insurance || 0) +
+  //       Number(data.pga_notarial || 0) +
+  //       Number(data.pga_gross_reciept || 0)
 
-      const branchChargesTotal =
-        Number(data.def_interest || 0) + Number(data.def_charge || 0) + Number(data.def_computer || 0)
+  //     const branchChargesTotal =
+  //       Number(data.def_interest || 0) + Number(data.def_charge || 0) + Number(data.def_computer || 0)
 
-      const expectedTotal = pgaFeesTotal + branchChargesTotal
+  //     const expectedTotal = pgaFeesTotal + branchChargesTotal
 
-      console.log(clientVisibleTotal, expectedTotal);
+  //     console.log(clientVisibleTotal, expectedTotal);
 
-      return Math.abs(clientVisibleTotal - expectedTotal) < 0.01 // Allow for small floating point differences
-    },
-    {
-      message: "Client visible fees total must equal PGA fees & surcharge + branch other charges",
-      path: ["vis_other_charges"], // Show error on the last client visible fee field
-    },
-  )
+  //     return Math.abs(clientVisibleTotal - expectedTotal) < 0.01 // Allow for small floating point differences
+  //   },
+  //   {
+  //     message: "Client visible fees total must equal PGA fees & surcharge + branch other charges",
+  //     path: ["vis_other_charges"], // Show error on the last client visible fee field
+  //   },
+  // )
   .refine(
     (data) => {
       // Validate that all COA values are unique
@@ -287,6 +287,38 @@ export function SalaryLoanFormDialog({
     "coa_sl_bad_dept_expense",
     "coa_sl_garnished",
   ])
+
+  const nonCOAFields = [
+    // Basic Info
+    "code",
+    "name",
+    "interest_rate",
+    "surcharge_rate",
+    "min_amount",
+    "max_amount",
+
+    // Client-Visible Fees
+    "vis_service",
+    "vis_insurance",
+    "vis_notarial",
+    "vis_gross_reciept",
+    "vis_computer",
+    "vis_other_charges",
+
+    // PGA Fees & Surcharge
+    "pga_service_charge",
+    "pga_insurance",
+    "pga_notarial",
+    "pga_gross_reciept",
+
+    // Branch other charges
+    "def_interest",
+    "def_charge",
+    "def_computer",
+
+    // Groups
+    "eligible_groups"
+  ];
 
   // Get available COA options for each field (excluding already selected values)
   const getAvailableCoaOptions = (currentFieldValue: string) => {
@@ -529,7 +561,27 @@ export function SalaryLoanFormDialog({
         )}
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(
+            (data) => {
+              // Valid submission
+              onFormSubmit(data);
+            },
+            (errors) => {
+              // This is called AFTER validation fails
+              const errorKeys = Object.keys(errors);
+              for (const key of errorKeys) {
+                if (nonCOAFields.includes(key)) {
+                  setActiveTab("basic-info");
+                  return;
+                }
+              }
+              if (activeTab != "chart-of-accounts") {
+                // If no specific match, default tab
+                form.clearErrors()
+                setActiveTab("chart-of-accounts");
+              }
+            }
+          )} className="space-y-6">
             <Tabs defaultValue="basic-info" value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="border-b w-full justify-start rounded-none h-auto p-0 mb-6">
                 <TabsTrigger

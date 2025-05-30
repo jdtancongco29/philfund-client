@@ -721,17 +721,36 @@ export function UserDialog({
                                 styles={{
                                   control: (provided, state) => ({
                                     ...provided,
+                                    minHeight: "36px",
                                     border: fieldState.invalid
                                       ? "1px solid red"
                                       : state.isFocused
                                         ? "1px solid #3b82f6"
                                         : "1px solid #cbd5e0",
                                     borderRadius: "8px",
-                                    padding: "2px",
+                                    padding: "0 6px",
                                     boxShadow: state.isFocused ? "0 0 0 1px #3b82f6" : "none",
+                                    backgroundColor: state.isFocused ? "#fff" : "#fff",
                                     "&:hover": {
+                                      backgroundColor: "#f3f4f6", // bg-gray-100
                                       borderColor: fieldState.invalid ? "red" : "#9ca3af",
                                     },
+                                    "&:active": {
+                                      backgroundColor: "#f3f4f6", // bg-gray-100
+                                    },
+                                    fontSize: "14px",
+                                  }),
+                                  placeholder: (provided) => ({
+                                    ...provided,
+                                    fontSize: "14px",
+                                  }),
+                                  option: (provided, state) => ({
+                                    ...provided,
+                                    fontSize: "14px",
+                                    backgroundColor: state.isFocused || state.isSelected ? "#f3f4f6" : "#fff",
+                                    color: "#111827",
+                                    cursor: "pointer",
+                                    fontWeight: "400"
                                   }),
                                   multiValue: (provided) => ({
                                     ...provided,

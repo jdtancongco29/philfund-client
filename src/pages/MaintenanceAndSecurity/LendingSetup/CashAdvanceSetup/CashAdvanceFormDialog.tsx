@@ -454,10 +454,13 @@ export function CashAdvanceFormDialog({
             className="flex flex-col h-full">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
               <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="basic-info" className="text-base">
+                <TabsTrigger disabled={isFormDisabled} value="basic-info"
+                  className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-blue-500 data-[state=active]:shadow-none px-4 py-2">
                   Basic Info
                 </TabsTrigger>
-                <TabsTrigger value="chart-of-accounts" className="text-base">
+                <TabsTrigger disabled={isFormDisabled} value="chart-of-accounts"
+                  className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-blue-500 data-[state=active]:shadow-none px-4 py-2"
+                >
                   Chart of Accounts
                 </TabsTrigger>
               </TabsList>

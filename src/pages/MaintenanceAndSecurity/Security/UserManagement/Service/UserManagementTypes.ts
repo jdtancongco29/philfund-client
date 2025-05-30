@@ -35,6 +35,7 @@ export interface UserManagement {
   status: boolean
   branches: BranchItems[]
   permissions: Permissions
+  last_pass_date?: string
   access_schedules: Schedules[]
 }
 
@@ -77,7 +78,7 @@ export interface GetAllBranchResponse {
 export interface UserDevice {
   id: string
   name: string
-  last_login: string
+  last_login: string | null
   ip_address: string
   browser: string
 }

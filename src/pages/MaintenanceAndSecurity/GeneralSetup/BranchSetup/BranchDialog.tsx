@@ -361,6 +361,12 @@ export function BranchDialog({ item, open, isEditing, onOpenChange, onSuccess }:
                               maxHeight: "250px",
                               overflowY: "auto",
                             },
+                            option: {
+                              fontSize: "14px",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            },
                           }}
                         />
                         <FormDescription>Select the departments that will be available in this branch</FormDescription>

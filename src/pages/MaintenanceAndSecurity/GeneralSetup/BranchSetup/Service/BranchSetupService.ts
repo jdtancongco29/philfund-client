@@ -29,11 +29,15 @@ export const BranchSetupService = {
     page?: number,
     limit?: number,
     search?: string | null,
+    order_by?: string | null,
+    sort?: string | null
   ): Promise<ApiResponse<GetAllBranchResponse>> => {
     const params = new URLSearchParams()
     if (page) params.append("page", page.toString())
     if (limit) params.append("per_page", limit.toString())
     if (search) params.append("search", search)
+    if (order_by) params.append("order_by", order_by)
+    if (sort) params.append("sort", sort)
 
     const endpoint = `/branch${params.toString() ? `?${params.toString()}` : ""}`
     const response = await apiRequest<ApiResponse<GetAllBranchResponse>>("get", endpoint, null, {
@@ -169,13 +173,12 @@ export const BranchSetupService = {
   /**
    * Export branches to PDF
    */
-  exportPdf: async (): Promise<Blob> => {
+  exportPdf: async () => {
     const endpoint = `/branch/export-pdf`
     try {
-      const response = await apiRequest<Blob>("get", endpoint, null, {
+      const response = await apiRequest("get", endpoint, null, {
         useAuth: true,
         useBranchId: true,
-        responseType: "blob",
       })
       return response.data
     } catch (error: any) {

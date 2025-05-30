@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { useEffect, useMemo, useState } from "react"
-import { Clock, Info, TrashIcon, X } from "lucide-react"
+import { Clock, Info, TrashIcon } from "lucide-react"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,13 +13,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import Multiselect from "multiselect-react-dropdown"
 import type { UserManagement, UserDevice } from "./Service/UserManagementTypes"
 import UserManagementService from "./Service/UserManagementService"
 import { toast } from "sonner"
 import { DataTableV2 } from "@/components/data-table/data-table-v2"
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog"
 import type { ColumnDefinition } from "@/components/data-table/data-table"
+import { format, parseISO } from "date-fns"
+import ReactSelect from "react-select"
 
 // Define the form schema with Zod
 const formSchema = (isEditing: boolean) =>
@@ -51,37 +52,22 @@ const formSchema = (isEditing: boolean) =>
     })
     .refine(
       (data) => {
-        // For new users, password is required
-        if (!isEditing) {
-          if (!data.password || data.password.length < 8) {
-            return false
-          }
-          if (!data.password_confirmation) {
-            return false
-          }
-        }
-
-        // If password is provided (for both new and edit), confirmation must match
+        // Only check password confirmation match if password exists
         if (data.password && data.password_confirmation) {
           return data.password === data.password_confirmation
-        }
-
-        // If editing and no password provided, that's fine
-        if (isEditing && !data.password && !data.password_confirmation) {
-          return true
         }
 
         return true
       },
       {
-        message: !isEditing ? "Password is required and must be at least 8 characters" : "Passwords don't match",
-        path: ["password"],
+        message: "Passwords do not match",
+        path: ["password_confirmation"],
       },
     )
     .refine(
       (data) => {
-        // For new users, password confirmation is required
-        if (!isEditing && !data.password_confirmation) {
+        // Require password confirmation if creating a user and password is present
+        if (!isEditing && data.password && !data.password_confirmation) {
           return false
         }
 
@@ -100,11 +86,20 @@ interface UserDialogProps {
   open: boolean
   isEditing: boolean
   focusPassword?: boolean
+  activeTabOnOpen?: string
   onOpenChange: (open: boolean) => void
   onSuccess?: () => void
 }
 
-export function UserDialog({ item, open, isEditing, focusPassword = false, onOpenChange, onSuccess }: UserDialogProps) {
+export function UserDialog({
+  item,
+  open,
+  isEditing,
+  focusPassword = false,
+  activeTabOnOpen = "basic-info",
+  onOpenChange,
+  onSuccess,
+}: UserDialogProps) {
   const [activeTab, setActiveTab] = useState("basic-info")
   const [branchesData, setBranchesData] = useState<{ id: string; name: string }[]>([])
   const [devicesData, setDevicesData] = useState<UserDevice[]>([])
@@ -142,7 +137,12 @@ export function UserDialog({ item, open, isEditing, focusPassword = false, onOpe
   const { mutate: fetchUserDevices, isPending: isLoadingDevices } = useMutation({
     mutationFn: (userId: string) => UserManagementService.getUserDevices(userId),
     onSuccess: (data) => {
-      setDevicesData(data.data.devices || [])
+      const users = data?.data?.devices ?? []
+      const formattedUsers = users.map((user) => ({
+        ...user,
+        last_login: user.last_login ? format(parseISO(user.last_login), "yyyy-MM-dd HH:mm") : null,
+      }))
+      setDevicesData(formattedUsers)
     },
     onError: (error) => {
       toast.error("Failed to fetch user devices")
@@ -183,8 +183,7 @@ export function UserDialog({ item, open, isEditing, focusPassword = false, onOpe
     mutationFn: UserManagementService.deleteUserDevice,
     onSuccess: () => {
       toast.success("Device removed successfully")
-      setOpenDeleteModal(false)
-      setSelectedDevice(null)
+      handleCloseDeleteModal()
       if (item?.id) {
         fetchUserDevices(item.id)
       }
@@ -221,6 +220,7 @@ export function UserDialog({ item, open, isEditing, focusPassword = false, onOpe
   // Effect to handle dialog opening and data fetching
   useEffect(() => {
     if (open) {
+      setActiveTab(activeTabOnOpen)
       fetchBranches()
 
       if (isEditing && item) {
@@ -293,7 +293,7 @@ export function UserDialog({ item, open, isEditing, focusPassword = false, onOpe
         })
       }
     }
-  }, [open, isEditing, item])
+  }, [open, isEditing, item, activeTabOnOpen])
 
   // Effect to update code field when generated code is available
   useEffect(() => {
@@ -314,6 +314,16 @@ export function UserDialog({ item, open, isEditing, focusPassword = false, onOpe
       }, 300)
     }
   }, [open, focusPassword])
+
+  // Reset tab when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setActiveTab("basic-info") // Reset to basic-info when dialog closes
+      // Also reset delete modal state when main dialog closes
+      setOpenDeleteModal(false)
+      setSelectedDevice(null)
+    }
+  }, [open])
 
   const branches = useMemo(() => {
     return branchesData ?? []
@@ -353,13 +363,16 @@ export function UserDialog({ item, open, isEditing, focusPassword = false, onOpe
     }
   }
 
-  // Generate time options in 30-minute intervals
+  // Generate time options in 30-minute intervals with 12-hour display format
   const generateTimeOptions = () => {
     const times = []
     for (let hour = 0; hour < 24; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
         const timeString = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}:00`
-        const displayTime = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`
+        // Convert to 12-hour format for display
+        const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour
+        const ampm = hour >= 12 ? "PM" : "AM"
+        const displayTime = `${displayHour}:${minute.toString().padStart(2, "0")} ${ampm}`
         times.push({ value: timeString, label: displayTime })
       }
     }
@@ -480,10 +493,29 @@ export function UserDialog({ item, open, isEditing, focusPassword = false, onOpe
     )
   }
 
+  // Improved delete modal handlers
+  const handleCloseDeleteModal = () => {
+    setOpenDeleteModal(false)
+    setSelectedDevice(null)
+  }
+
+  const handleOpenDeleteModal = (device: UserDevice) => {
+    setSelectedDevice(device)
+    setOpenDeleteModal(true)
+  }
+
   // Handle device delete
-  const handleDeviceDelete = async () => {
+  const handleDeviceDelete = () => {
     if (selectedDevice) {
       deleteDeviceMutation.mutate(selectedDevice.id)
+    }
+  }
+
+  // Prevent main dialog from closing when delete modal is open
+  const handleMainDialogOpenChange = (open: boolean) => {
+    // Only allow closing the main dialog if the delete modal is not open
+    if (!openDeleteModal) {
+      onOpenChange(open)
     }
   }
 
@@ -524,40 +556,48 @@ export function UserDialog({ item, open, isEditing, focusPassword = false, onOpe
     {
       label: "Delete",
       icon: <TrashIcon className="h-4 w-4 text-destructive" />,
-      onClick: (device: UserDevice) => {
-        setSelectedDevice(device)
-        setOpenDeleteModal(true)
-      },
+      onClick: handleOpenDeleteModal,
     },
   ]
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[768px] h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader>
+      <Dialog open={open} onOpenChange={handleMainDialogOpenChange}>
+        <DialogContent className="sm:max-w-[768px] h-[90vh] overflow-hidden flex flex-col p-0">
+          <DialogHeader className="px-6 pt-6">
             <DialogTitle className="text-xl font-bold">{isEditing ? "Edit User" : "Add New User"}</DialogTitle>
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full overflow-y-auto">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="basic-info">Basic Information</TabsTrigger>
-              <TabsTrigger value="devices" disabled={!isEditing}>
+            <TabsList className="flex justify-start border-b border-gray-200 bg-transparent rounded-none p-0 w-full">
+              <TabsTrigger
+                value="basic-info"
+                className="ml-6 shadow-transparent mb-[-3px] relative flex-none border-none rounded-none bg-transparent px-4 py-2 text-sm font-medium text-black data-[state=active]:text-black data-[state=active]:after:absolute data-[state=active]:after:left-0 data-[state=active]:after:bottom-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-blue-600"
+              >
+                Basic Information
+              </TabsTrigger>
+              <TabsTrigger
+                value="devices"
+                disabled={!isEditing}
+                className={`shadow-transparent mb-[-3px] relative flex-none border-none rounded-none bg-transparent px-4 py-2 text-sm font-medium text-gray-500 data-[state=active]:text-black data-[state=active]:after:absolute data-[state=active]:after:left-0 data-[state=active]:after:bottom-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-blue-600 ${
+                  !isEditing ? "hidden" : ""
+                }`}
+              >
                 Devices
               </TabsTrigger>
             </TabsList>
 
-            <div className="overflow-y-auto">
+            <div className="overflow-y-auto px-6">
               <TabsContent value="basic-info" className="space-y-6 pt-4">
                 <h3 className="text-lg font-semibold">User Basic Information</h3>
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-2 overflow-y-auto">
-                    <div className="grid grid-cols-2 gap-4">
+                  <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-2 overflow-y-auto px-1">
+                    <div className="flex gap-4">
                       <FormField
                         control={form.control}
                         name="code"
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="flex flex-col flex-1 space-y-1">
                             <FormLabel className="text-sm">
                               User ID <span className="text-red-500">*</span>
                             </FormLabel>
@@ -572,7 +612,7 @@ export function UserDialog({ item, open, isEditing, focusPassword = false, onOpe
                         control={form.control}
                         name="username"
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="flex flex-col flex-1 space-y-1">
                             <FormLabel className="text-sm">
                               Username<span className="text-red-500">*</span>
                             </FormLabel>
@@ -601,34 +641,44 @@ export function UserDialog({ item, open, isEditing, focusPassword = false, onOpe
                       )}
                     />
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="flex gap-4">
                       <FormField
                         control={form.control}
                         name="position"
-                        render={({ field }) => (
-                          <FormItem>
+                        render={({ field, fieldState }) => (
+                          <FormItem className="flex flex-col flex-1 space-y-1">
                             <FormLabel className="text-sm">
                               Position <span className="text-red-500">*</span>
                             </FormLabel>
                             <FormControl>
                               <Select onValueChange={field.onChange} value={field.value}>
-                                <SelectTrigger className="w-full">
+                                <SelectTrigger
+                                  className={`w-full ${
+                                    fieldState.invalid ? "border border-red-500 focus:ring-red-500" : ""
+                                  }`}
+                                >
                                   <SelectValue placeholder="Select..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="Internal Cashier">Internal Cashier</SelectItem>
-                                  <SelectItem value="Disbursing Officer">Disbursing Officer</SelectItem>
-                                  <SelectItem value="Head Cashier">Head Cashier</SelectItem>
-                                  <SelectItem value="Accounting Clerk">Accounting Clerk</SelectItem>
-                                  <SelectItem value="Loan Officer">Loan Officer</SelectItem>
-                                  <SelectItem value="Assistant Branch Manager">Assistant Branch Manager</SelectItem>
-                                  <SelectItem value="Branch Manager Executive">Branch Manager Executive</SelectItem>
-                                  <SelectItem value="Loans Executive">Loans Executive</SelectItem>
-                                  <SelectItem value="Auditor">Auditor</SelectItem>
-                                  <SelectItem value="Audit Manager">Audit Manager</SelectItem>
-                                  <SelectItem value="Super Admin">Super Admin</SelectItem>
-                                  <SelectItem value="HR Manager">HR Manager</SelectItem>
-                                  <SelectItem value="Finance">Finance</SelectItem>
+                                  {[
+                                    "Internal Cashier",
+                                    "Disbursing Officer",
+                                    "Head Cashier",
+                                    "Accounting Clerk",
+                                    "Loan Officer",
+                                    "Assistant Branch Manager",
+                                    "Branch Manager Executive",
+                                    "Loans Executive",
+                                    "Auditor",
+                                    "Audit Manager",
+                                    "Super Admin",
+                                    "HR Manager",
+                                    "Finance",
+                                  ].map((role) => (
+                                    <SelectItem key={role} value={role} className="cursor-pointer hover:bg-gray-100">
+                                      {role}
+                                    </SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
                             </FormControl>
@@ -640,54 +690,86 @@ export function UserDialog({ item, open, isEditing, focusPassword = false, onOpe
                       <FormField
                         control={form.control}
                         name="branches"
-                        render={({ field }) => (
-                          <FormItem>
+                        render={({ field, fieldState }) => (
+                          <FormItem className="flex flex-col flex-1 space-y-1">
                             <FormLabel className="text-sm">
                               Branch <span className="text-red-500">*</span>
                             </FormLabel>
-                            <Multiselect
-                              options={branches}
-                              selectedValues={field.value}
-                              onSelect={field.onChange}
-                              onRemove={field.onChange}
-                              displayValue="name"
-                              showCheckbox
-                              placeholder="Select Branch"
-                              customCloseIcon={<X className="ml-1 w-4 h-4 cursor-pointer" />}
-                              style={{
-                                chips: {
-                                  background: "var(--secondary)",
-                                  color: "var(--foreground)",
-                                  fontSize: "14px",
-                                  margin: "0px",
-                                  borderRadius: "5px",
-                                },
-                                searchBox: {
-                                  display: "flex",
-                                  gap: "5px",
-                                  border: "1px solid #cbd5e0",
-                                  borderRadius: "8px",
-                                  padding: "6px 12px",
-                                  fontSize: "14px",
-                                  flexWrap: "wrap",
-                                },
-                                inputField: {
-                                  margin: "0px",
-                                },
-                              }}
-                            />
+                            <FormControl>
+                              <ReactSelect
+                                isMulti
+                                options={branches.map((branch) => ({
+                                  value: branch.id,
+                                  label: branch.name,
+                                  data: branch,
+                                }))}
+                                value={field.value.map((branch) => ({
+                                  value: branch.id,
+                                  label: branch.name,
+                                  data: branch,
+                                }))}
+                                onChange={(selectedOptions) => {
+                                  const selectedBranches = selectedOptions.map((option) => ({
+                                    id: option.value,
+                                    name: option.label,
+                                  }))
+                                  field.onChange(selectedBranches)
+                                }}
+                                placeholder="Select branches..."
+                                classNamePrefix="react-select"
+                                className={fieldState.invalid ? "border-red-500" : ""}
+                                styles={{
+                                  control: (provided, state) => ({
+                                    ...provided,
+                                    border: fieldState.invalid
+                                      ? "1px solid red"
+                                      : state.isFocused
+                                        ? "1px solid #3b82f6"
+                                        : "1px solid #cbd5e0",
+                                    borderRadius: "8px",
+                                    padding: "2px",
+                                    boxShadow: state.isFocused ? "0 0 0 1px #3b82f6" : "none",
+                                    "&:hover": {
+                                      borderColor: fieldState.invalid ? "red" : "#9ca3af",
+                                    },
+                                  }),
+                                  multiValue: (provided) => ({
+                                    ...provided,
+                                    backgroundColor: "#f3f4f6",
+                                    borderRadius: "4px",
+                                  }),
+                                  multiValueLabel: (provided) => ({
+                                    ...provided,
+                                    fontSize: "14px",
+                                    color: "#374151",
+                                  }),
+                                  multiValueRemove: (provided) => ({
+                                    ...provided,
+                                    color: "#6b7280",
+                                    "&:hover": {
+                                      backgroundColor: "#e5e7eb",
+                                      color: "#1f2937",
+                                    },
+                                  }),
+                                  menu: (provided) => ({
+                                    ...provided,
+                                    zIndex: 9999,
+                                  }),
+                                }}
+                              />
+                            </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="flex gap-4">
                       <FormField
                         control={form.control}
                         name="email"
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="flex flex-col flex-1 space-y-1">
                             <FormLabel className="text-sm">
                               Email <span className="text-red-500">*</span>
                             </FormLabel>
@@ -705,8 +787,9 @@ export function UserDialog({ item, open, isEditing, focusPassword = false, onOpe
                       <FormField
                         control={form.control}
                         name="mobile"
+                        rules={{ pattern: /^[0-9]+$/, required: "Contact number is required" }}
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="flex flex-col flex-1 space-y-1">
                             <FormLabel className="text-sm">
                               Mobile Number <span className="text-red-500">*</span>
                             </FormLabel>
@@ -714,6 +797,10 @@ export function UserDialog({ item, open, isEditing, focusPassword = false, onOpe
                               <Input
                                 placeholder="Add mobile number"
                                 {...field}
+                                onChange={(e) => {
+                                  const digitsOnly = e.target.value.replace(/\D/g, "")
+                                  field.onChange(digitsOnly)
+                                }}
                                 className="focus-visible:outline-none"
                               />
                             </FormControl>
@@ -731,21 +818,24 @@ export function UserDialog({ item, open, isEditing, focusPassword = false, onOpe
                       {isEditing && (
                         <div className="rounded-md bg-blue-50 p-3 text-sm">
                           <div className="flex items-start gap-2">
-                            <Info className="mt-0.5 h-4 w-4 text-blue-500" />
+                            <Info className="mt-1.5 h-4 w-4 text-blue-500" />
                             <div>
-                              <p className="font-medium text-blue-600">Password Update</p>
-                              <p>Leave password fields empty to keep the current password unchanged.</p>
+                              <p className="font-medium text-blue-600">Last Password Reset</p>
+                              <p>
+                                This user last changed their password on{" "}
+                                <span className="font-medium text-blue-600">{item?.last_pass_date}</span>{" "}
+                              </p>
                             </div>
                           </div>
                         </div>
                       )}
 
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="flex gap-4">
                         <FormField
                           control={form.control}
                           name="password"
                           render={({ field }) => (
-                            <FormItem>
+                            <FormItem className="flex flex-col flex-1 space-y-1">
                               <FormLabel className="text-sm">
                                 Password {!isEditing && <span className="text-red-500">*</span>}
                               </FormLabel>
@@ -765,7 +855,7 @@ export function UserDialog({ item, open, isEditing, focusPassword = false, onOpe
                           control={form.control}
                           name="password_confirmation"
                           render={({ field }) => (
-                            <FormItem>
+                            <FormItem className="flex flex-col flex-1 space-y-1">
                               <FormLabel className="text-sm">
                                 Confirm Password {!isEditing && <span className="text-red-500">*</span>}
                               </FormLabel>
@@ -846,9 +936,7 @@ export function UserDialog({ item, open, isEditing, focusPassword = false, onOpe
                             render={({ field }) => (
                               <FormItem className="flex flex-row items-center justify-between w-full">
                                 <div className="space-y-0.5">
-                                  <FormLabel className="text-sm">
-                                    Transaction Approver <span className="text-red-500">*</span>
-                                  </FormLabel>
+                                  <FormLabel className="text-sm">Transaction Approver</FormLabel>
                                   <FormDescription>
                                     This user is capable of approving special transactions.
                                   </FormDescription>
@@ -871,9 +959,7 @@ export function UserDialog({ item, open, isEditing, focusPassword = false, onOpe
                             render={({ field }) => (
                               <FormItem className="flex flex-row items-center justify-between w-full">
                                 <div className="space-y-0.5">
-                                  <FormLabel className="text-sm">
-                                    Loan Approver <span className="text-red-500">*</span>
-                                  </FormLabel>
+                                  <FormLabel className="text-sm">Loan Approver</FormLabel>
                                   <FormDescription>This user is capable of approving special loans.</FormDescription>
                                 </div>
                                 <FormControl>
@@ -895,9 +981,7 @@ export function UserDialog({ item, open, isEditing, focusPassword = false, onOpe
                             render={({ field }) => (
                               <FormItem className="flex flex-row items-center justify-between w-full">
                                 <div className="space-y-0.5">
-                                  <FormLabel className="text-sm">
-                                    Disbursements Approver <span className="text-red-500">*</span>
-                                  </FormLabel>
+                                  <FormLabel className="text-sm">Disbursements Approver</FormLabel>
                                   <FormDescription>
                                     This user is capable of approving special disbursements.
                                   </FormDescription>
@@ -920,9 +1004,7 @@ export function UserDialog({ item, open, isEditing, focusPassword = false, onOpe
                             render={({ field }) => (
                               <FormItem className="flex flex-row items-center justify-between w-full">
                                 <div className="space-y-0.5">
-                                  <FormLabel className="text-sm">
-                                    Branch Opener <span className="text-red-500">*</span>
-                                  </FormLabel>
+                                  <FormLabel className="text-sm">Branch Opener</FormLabel>
                                   <FormDescription>This user is capable of approving branch opener.</FormDescription>
                                 </div>
                                 <FormControl>
@@ -943,9 +1025,7 @@ export function UserDialog({ item, open, isEditing, focusPassword = false, onOpe
                             render={({ field }) => (
                               <FormItem className="flex flex-row items-center justify-between w-full">
                                 <div className="space-y-0.5">
-                                  <FormLabel className="text-sm">
-                                    New Client Approver <span className="text-red-500">*</span>
-                                  </FormLabel>
+                                  <FormLabel className="text-sm">New Client Approver</FormLabel>
                                   <FormDescription>This user is capable of approving the new clients.</FormDescription>
                                 </div>
                                 <FormControl>
@@ -967,7 +1047,7 @@ export function UserDialog({ item, open, isEditing, focusPassword = false, onOpe
                       <div className="space-y-0 border mt-4 rounded-md">{daysOfWeek.map(renderDayRow)}</div>
                     </div>
 
-                    <DialogFooter className="pt-4">
+                    <DialogFooter className="py-6">
                       <Button variant="outline" onClick={() => onOpenChange(false)} type="button">
                         Cancel
                       </Button>
@@ -989,8 +1069,8 @@ export function UserDialog({ item, open, isEditing, focusPassword = false, onOpe
 
               <TabsContent value="devices" className="space-y-6 pt-4">
                 <DataTableV2
-                  totalCount={devicesData.length}
-                  perPage={devicesData.length}
+                  totalCount={devicesData.length || 1}
+                  perPage={10}
                   pageNumber={1}
                   onPaginationChange={() => {}}
                   onRowCountChange={() => {}}
@@ -1018,16 +1098,12 @@ export function UserDialog({ item, open, isEditing, focusPassword = false, onOpe
 
       <DeleteConfirmationDialog
         isOpen={openDeleteModal}
-        onClose={() => {
-          setSelectedDevice(null)
-          setOpenDeleteModal(false)
-        }}
+        onClose={handleCloseDeleteModal}
         onConfirm={handleDeviceDelete}
         title="Remove Device?"
-        description="This action will remove the selected device from the user's record. It won’t affect current login sessions."
+        description="This action will remove the selected device from the user's record. It won't affect current login sessions."
         itemName={selectedDevice?.name ?? "No Device Selected"}
         confirm="Yes, Remove Device"
-        // isLoading={deleteDeviceMutation.isPending}
       />
     </>
   )

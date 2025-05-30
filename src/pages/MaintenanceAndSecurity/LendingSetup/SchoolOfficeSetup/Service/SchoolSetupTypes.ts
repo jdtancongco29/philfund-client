@@ -1,3 +1,5 @@
+import { District } from "../../DistrictSetup/Service/DistrictSetupTypes";
+
 // Common Types
 export type ApiResponse<T> = {
   status: string;
@@ -15,6 +17,7 @@ export interface Division {
 export interface School {
   id: string;
   code: string;
+  district: District;
   division: Division;
   district_id: string;
   district_name: string;

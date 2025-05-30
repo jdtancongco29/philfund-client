@@ -91,6 +91,7 @@ export function SchoolOfficeTable() {
     {
       id: "district",
       header: "District Code",
+      cell: (item) => item.district.code,
       accessorKey: "name",
       enableSorting: true,
     },

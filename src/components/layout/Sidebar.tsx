@@ -62,7 +62,7 @@ const menuConfig = [
         value: "security",
         links: [
           {
-            label: "User Managements",
+            label: "User Management",
             path: "/maintenance-and-security/security/user-management",
           },
           {

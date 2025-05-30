@@ -18,6 +18,8 @@ interface DeleteConfirmationDialogProps {
   title: string
   description: string
   itemName: string
+  cancel?: string
+  confirm?: string
 }
 
 export function DeleteConfirmationDialog({
@@ -27,18 +29,21 @@ export function DeleteConfirmationDialog({
   title,
   description,
   itemName,
+  cancel="Cancel",
+  confirm="Delete"
 }: DeleteConfirmationDialogProps) {
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription>{description.replace("{name}", itemName)}</AlertDialogDescription>
+          <AlertDialogTitle className="text-2xl font-semibold">{title}</AlertDialogTitle>
+          <AlertDialogDescription className="text-[16px] font-normal">{description.replace("{name}", itemName)}</AlertDialogDescription>
         </AlertDialogHeader>
+        <div className="text-[16px] font-medium">Are you sure you want to continue?</div>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{cancel}</AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm} className="bg-[var(--destructive)] hover:bg-red-500 text-white">
-            Delete
+            {confirm}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

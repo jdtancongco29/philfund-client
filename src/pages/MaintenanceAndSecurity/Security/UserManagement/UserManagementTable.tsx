@@ -128,7 +128,7 @@ export function UserManagementTable() {
     },
     {
       id: "username",
-      header: "User Name",
+      header: "Username",
       accessorKey: "username",
       enableSorting: true,
     },
@@ -340,7 +340,7 @@ export function UserManagementTable() {
         onPaginationChange={onPaginationChange}
         onRowCountChange={onRowCountChange}
         title="User Management"
-        subtitle="Manage system users and their permissions"
+        subtitle=""
         data={users?.data.users ?? []}
         columns={columns}
         filters={filters}

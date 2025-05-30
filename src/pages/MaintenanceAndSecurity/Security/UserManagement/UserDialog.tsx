@@ -32,7 +32,7 @@ const formSchema = (isEditing: boolean) =>
       branches: z.array(z.object({ id: z.string(), name: z.string() })).min(1, "At least one branch is required"),
       email: z.string().email("Invalid email address"),
       mobile: z.string().min(11, "Mobile number is required"),
-      password: isEditing ? z.string().optional() : z.string().min(8, "Password must be at least 8 characters"),
+      password: isEditing ? z.string().optional() : z.string().min(16, "Password must be at least 16 characters"),
       password_confirmation: z.string().optional(),
       status: z.boolean(),
       inactive_period: z.string().optional(),
@@ -574,7 +574,7 @@ export function UserDialog({ item, open, isEditing, focusPassword = false, onOpe
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-sm">
-                              User Name<span className="text-red-500">*</span>
+                              Username<span className="text-red-500">*</span>
                             </FormLabel>
                             <FormControl>
                               <Input placeholder="Enter Username" {...field} className="focus-visible:outline-none" />
@@ -1023,9 +1023,10 @@ export function UserDialog({ item, open, isEditing, focusPassword = false, onOpe
           setOpenDeleteModal(false)
         }}
         onConfirm={handleDeviceDelete}
-        title="Delete Device"
-        description={`Are you sure you want to remove the device '${selectedDevice?.name}'? This action cannot be undone.`}
+        title="Remove Device?"
+        description="This action will remove the selected device from the user's record. It won’t affect current login sessions."
         itemName={selectedDevice?.name ?? "No Device Selected"}
+        confirm="Yes, Remove Device"
         // isLoading={deleteDeviceMutation.isPending}
       />
     </>

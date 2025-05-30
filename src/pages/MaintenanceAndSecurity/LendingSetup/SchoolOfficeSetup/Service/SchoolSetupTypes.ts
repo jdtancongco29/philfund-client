@@ -11,6 +11,7 @@ export type ApiResponse<T> = {
 export interface Division {
   id: string;
   name: string;
+  code: string;
 }
 
 // School Types

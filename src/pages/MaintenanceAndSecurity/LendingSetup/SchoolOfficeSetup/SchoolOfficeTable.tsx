@@ -86,6 +86,7 @@ export function SchoolOfficeTable() {
       id: "division",
       header: "Division Code",
       accessorKey: "code",
+      cell: (item) => item.division.code,
       enableSorting: true,
     },
     {

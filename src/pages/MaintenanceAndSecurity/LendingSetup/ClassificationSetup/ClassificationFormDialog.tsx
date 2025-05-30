@@ -323,7 +323,7 @@ export function ClassificationDialogForm({
                 type="submit"
                 className="bg-blue-500 hover:bg-blue-600"
               >
-                {isEditing ? "Save" : "Ad Classification"}{" "}
+                {isEditing ? "Save" : "Add Classification"}{" "}
                 {(creationHandler.isPending || editingHandler.isPending) && (
                   <span>
                     <Loader2 className="animate-spin" />

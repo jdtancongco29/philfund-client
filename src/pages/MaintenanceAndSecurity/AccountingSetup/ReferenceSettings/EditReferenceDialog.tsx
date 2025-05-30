@@ -198,28 +198,31 @@ export function EditReferenceDialog({
           )}
 
           {/* Reference Code Field */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium leading-none">
-              Reference Code <span className="text-red-500">*</span>
-            </label>
-            <Input
-              placeholder="Enter 2-character reference code"
-              maxLength={2}
-              value={formValues.code}
-              onChange={(e) => handleInputChange("code", e.target.value)}
-              className={errors.code ? "border-red-500" : ""}
-            />
-            <p className="text-sm text-gray-600">
-              A unique code to identify this reference
-            </p>
-            {errors.code && (
-              <p className="text-sm text-red-600">{errors.code}</p>
-            )}
-          </div>
+         <div className="space-y-1">
+  <label className="block text-sm font-medium leading-none mb-3">
+    Reference Code <span className="text-red-500">*</span>
+  </label>
+  <Input
+    placeholder="Enter 2-character reference code"
+    maxLength={2}
+    value={formValues.code}
+    onChange={(e) => handleInputChange("code", e.target.value)}
+    className={`block w-full rounded border px-3 py-2 focus:outline-none focus:ring ${
+      errors.code ? "border-red-500" : "border-gray-300"
+    }`}
+  />
+  <p className="text-xs text-gray-600 mt-1">
+    A unique code to identify this reference
+  </p>
+  {errors.code && (
+    <p className="text-xs text-red-600 mt-1">{errors.code}</p>
+  )}
+</div>
+
 
           {/* Reference Name Field */}
           <div className="space-y-2">
-            <label className="text-sm font-medium leading-none">
+ <label className="block text-sm font-medium leading-none mb-3">
               Reference Name <span className="text-red-500">*</span>
             </label>
             <Input
@@ -228,7 +231,7 @@ export function EditReferenceDialog({
               onChange={(e) => handleInputChange("name", e.target.value)}
               className={errors.name ? "border-red-500" : ""}
             />
-            <p className="text-sm text-gray-600">
+           <p className="text-xs text-gray-600 mt-1">
               The full name of the reference
             </p>
             {errors.name && (
@@ -238,7 +241,7 @@ export function EditReferenceDialog({
 
           {/* Module Dropdown */}
             <div className="space-y-2">
-            <label className="text-sm font-medium leading-none">
+             <label className="block text-sm font-medium leading-none mb-3">
               Module <span className="text-red-500">*</span>
             </label>
             <Select<{ value: string; label: string }>

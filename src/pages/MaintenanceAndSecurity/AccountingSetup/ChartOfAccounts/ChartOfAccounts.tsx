@@ -357,17 +357,21 @@ export default function ChartOfAccounts() {
 
       cell: (account) => <div className="font-medium">{account.is_contra ? "Yes" : "No"}</div>,
     },
-    {
-      id: "branches",
-      header: "Branch",
-      accessorKey: "branches",
-      enableSorting: false,
-       cell: (item) => (
-        <div>
-          <div>{item.major_classification.name}</div>
-        </div>
-      ),
-    },
+   {
+  id: "branches",
+  header: "Branch",
+  accessorKey: "branches",
+  enableSorting: false,
+  cell: (item) => (
+    <div>
+      {item.branches && item.branches.length > 0 ? (
+        <div>{item.branches[0].name}</div>
+      ) : (
+        <div className="text-gray-400">No branch</div>
+      )}
+    </div>
+  ),
+}
   ]
   const filters: FilterDefinition[] = [
     {

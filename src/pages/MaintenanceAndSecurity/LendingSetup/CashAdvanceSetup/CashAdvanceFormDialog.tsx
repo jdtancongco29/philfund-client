@@ -787,7 +787,7 @@ export function CashAdvanceFormDialog({
                                                       field.onChange(current.filter((id) => id !== classification.id))
                                                     }
                                                   }}
-                                                  className="w-5 h-5 mr-2"
+                                                  className="mr-22 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                                                 />
                                               </FormControl>
                                             </FormItem>

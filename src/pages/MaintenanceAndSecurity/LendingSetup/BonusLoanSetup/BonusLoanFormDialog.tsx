@@ -16,7 +16,7 @@ import type { BonusLoan, CreateBonusLoanPayload, UpdateBonusLoanPayload } from "
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import BonusLoanSetupService from "./Service/BonusLoanSetupService"
 import ClassificationSetupService from "../ClassificationSetup/Service/ClassificationSetupService"
-import { Loader2 } from "lucide-react"
+import { Loader2 } from 'lucide-react'
 import { AxiosError } from "axios"
 
 // Define the form schema with comprehensive validation
@@ -145,6 +145,14 @@ export function BonusLoanFormDialog({
     queryFn: () => BonusLoanSetupService.getAllCOA(),
     staleTime: Number.POSITIVE_INFINITY,
   })
+
+  const getCoaFieldCode = (id: string) => {
+    const coa = coaData?.data.chartOfAccounts.filter((coa) => coa.id == id)
+    if (coa?.length != 0 || false) {
+      return coa![0].code
+    }
+    return ""
+  }
 
   // Initialize the form
   const form = useForm<FormValues>({
@@ -639,23 +647,31 @@ export function BonusLoanFormDialog({
                       name="coa_interest_receivable"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="block mb-2">
+                          <FormLabel className="text-base font-medium">
                             Loan Interest Receivable <span className="text-red-500">*</span>
                           </FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select..." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {getAvailableCoaOptions(field.value).map((account) => (
-                                <SelectItem key={account.id} value={account.id}>
-                                  {account.code} - {account.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <div className="grid grid-cols-2 gap-4">
+                            <Input
+                              value={getCoaFieldCode(field.value)}
+                              placeholder="Account Code"
+                              className="h-11"
+                              readOnly
+                            />
+                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="h-11 w-full">
+                                  <SelectValue placeholder="Select..." />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {getAvailableCoaOptions(field.value).map((account) => (
+                                  <SelectItem key={account.id} value={account.id}>
+                                    {account.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -666,23 +682,31 @@ export function BonusLoanFormDialog({
                       name="coa_loan_receivable"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="block mb-2">
+                          <FormLabel className="text-base font-medium">
                             Loan Receivable <span className="text-red-500">*</span>
                           </FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select..." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {getAvailableCoaOptions(field.value).map((account) => (
-                                <SelectItem key={account.id} value={account.id}>
-                                  {account.code} - {account.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <div className="grid grid-cols-2 gap-4">
+                            <Input
+                              value={getCoaFieldCode(field.value)}
+                              placeholder="Account Code"
+                              className="h-11"
+                              readOnly
+                            />
+                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="h-11 w-full">
+                                  <SelectValue placeholder="Select..." />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {getAvailableCoaOptions(field.value).map((account) => (
+                                  <SelectItem key={account.id} value={account.id}>
+                                    {account.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -693,23 +717,31 @@ export function BonusLoanFormDialog({
                       name="coa_interest_income"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="block mb-2">
+                          <FormLabel className="text-base font-medium">
                             Interest Income <span className="text-red-500">*</span>
                           </FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select..." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {getAvailableCoaOptions(field.value).map((account) => (
-                                <SelectItem key={account.id} value={account.id}>
-                                  {account.code} - {account.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <div className="grid grid-cols-2 gap-4">
+                            <Input
+                              value={getCoaFieldCode(field.value)}
+                              placeholder="Account Code"
+                              className="h-11"
+                              readOnly
+                            />
+                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="h-11 w-full">
+                                  <SelectValue placeholder="Select..." />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {getAvailableCoaOptions(field.value).map((account) => (
+                                  <SelectItem key={account.id} value={account.id}>
+                                    {account.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -721,23 +753,31 @@ export function BonusLoanFormDialog({
                       name="coa_garnished_expense"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="block mb-2">
+                          <FormLabel className="text-base font-medium">
                             Garnished Expense <span className="text-red-500">*</span>
                           </FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select..." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {getAvailableCoaOptions(field.value).map((account) => (
-                                <SelectItem key={account.id} value={account.id}>
-                                  {account.code} - {account.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <div className="grid grid-cols-2 gap-4">
+                            <Input
+                              value={getCoaFieldCode(field.value)}
+                              placeholder="Account Code"
+                              className="h-11"
+                              readOnly
+                            />
+                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="h-11 w-full">
+                                  <SelectValue placeholder="Select..." />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {getAvailableCoaOptions(field.value).map((account) => (
+                                  <SelectItem key={account.id} value={account.id}>
+                                    {account.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -749,23 +789,31 @@ export function BonusLoanFormDialog({
                       name="coa_unearned_interest"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="block mb-2">
+                          <FormLabel className="text-base font-medium">
                             Unearned Interest <span className="text-red-500">*</span>
                           </FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select..." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {getAvailableCoaOptions(field.value).map((account) => (
-                                <SelectItem key={account.id} value={account.id}>
-                                  {account.code} - {account.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <div className="grid grid-cols-2 gap-4">
+                            <Input
+                              value={getCoaFieldCode(field.value)}
+                              placeholder="Account Code"
+                              className="h-11"
+                              readOnly
+                            />
+                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="h-11 w-full">
+                                  <SelectValue placeholder="Select..." />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {getAvailableCoaOptions(field.value).map((account) => (
+                                  <SelectItem key={account.id} value={account.id}>
+                                    {account.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -777,23 +825,31 @@ export function BonusLoanFormDialog({
                       name="coa_other_income_penalty"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="block mb-2">
+                          <FormLabel className="text-base font-medium">
                             Other Income Penalty <span className="text-red-500">*</span>
                           </FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select..." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {getAvailableCoaOptions(field.value).map((account) => (
-                                <SelectItem key={account.id} value={account.id}>
-                                  {account.code} - {account.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <div className="grid grid-cols-2 gap-4">
+                            <Input
+                              value={getCoaFieldCode(field.value)}
+                              placeholder="Account Code"
+                              className="h-11"
+                              readOnly
+                            />
+                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="h-11 w-full">
+                                  <SelectValue placeholder="Select..." />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {getAvailableCoaOptions(field.value).map((account) => (
+                                  <SelectItem key={account.id} value={account.id}>
+                                    {account.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -805,23 +861,31 @@ export function BonusLoanFormDialog({
                       name="coa_allowance_doubtful_account"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="block mb-2">
+                          <FormLabel className="text-base font-medium">
                             Allowance for Doubtful Account <span className="text-red-500">*</span>
                           </FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select..." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {getAvailableCoaOptions(field.value).map((account) => (
-                                <SelectItem key={account.id} value={account.id}>
-                                  {account.code} - {account.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <div className="grid grid-cols-2 gap-4">
+                            <Input
+                              value={getCoaFieldCode(field.value)}
+                              placeholder="Account Code"
+                              className="h-11"
+                              readOnly
+                            />
+                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="h-11 w-full">
+                                  <SelectValue placeholder="Select..." />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {getAvailableCoaOptions(field.value).map((account) => (
+                                  <SelectItem key={account.id} value={account.id}>
+                                    {account.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -833,23 +897,31 @@ export function BonusLoanFormDialog({
                       name="coa_bad_dept_expense"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="block mb-2">
+                          <FormLabel className="text-base font-medium">
                             Bad Debt Expense <span className="text-red-500">*</span>
                           </FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select..." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {getAvailableCoaOptions(field.value).map((account) => (
-                                <SelectItem key={account.id} value={account.id}>
-                                  {account.code} - {account.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <div className="grid grid-cols-2 gap-4">
+                            <Input
+                              value={getCoaFieldCode(field.value)}
+                              placeholder="Account Code"
+                              className="h-11"
+                              readOnly
+                            />
+                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="h-11 w-full">
+                                  <SelectValue placeholder="Select..." />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {getAvailableCoaOptions(field.value).map((account) => (
+                                  <SelectItem key={account.id} value={account.id}>
+                                    {account.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}

@@ -34,10 +34,19 @@ const formSchema = z
       required_error: "Loan type is required",
     }),
     loan_code: z.string().min(1, "Loan code is required"),
-    interest_rate: z.number().min(1, "Interest rate must be positive"),
-    surcharge_rate: z.number().min(1, "Surcharge rate must be positive"),
+    interest_rate: z.number().min(1, "Interest rate must be positive")
+      .refine((val) => Number(val) <= 100, {
+        message: "Interest rate must not exceed 100%",
+      }),
+    surcharge_rate: z.number().min(1, "Surcharge rate must be positive")
+      .refine((val) => Number(val) <= 100, {
+        message: "Surcharge rate must not exceed 100%",
+      }),
     max_amt: z.number().min(0, "Maximum amount must be positive").optional().nullable(),
-    max_rate: z.number().min(0, "Maximum rate must be positive").optional().nullable(),
+    max_rate: z.number().min(0, "Maximum rate must be positive").optional().nullable()
+      .refine((val) => Number(val) <= 100, {
+        message: "Max rate must not exceed 100%",
+      }),
 
     // Classifications - at least one required
     eligible_class: z.array(z.string()).min(1, "At least one classification must be selected"),
@@ -627,7 +636,7 @@ export function CashAdvanceFormDialog({
 
                     <div className="grid grid-cols-2 gap-6">
                       <FormField
-                        disabled={isFormDisabled}
+                        disabled={isFormDisabled || form.watch("max_rate") != null}
                         control={form.control}
                         name="max_amt"
                         render={({ field }) => (
@@ -648,6 +657,7 @@ export function CashAdvanceFormDialog({
                                     field.onChange(isNaN(numValue) ? null : numValue)
                                   }
                                 }}
+                                disabled={isFormDisabled || form.watch("max_rate") != null}
                                 className="h-11"
                               />
                             </FormControl>
@@ -678,6 +688,7 @@ export function CashAdvanceFormDialog({
                                     field.onChange(isNaN(numValue) ? null : numValue)
                                   }
                                 }}
+                                disabled={isFormDisabled || form.watch("max_amt") != null}
                                 className="h-11"
                               />
                             </FormControl>
@@ -1053,7 +1064,7 @@ export function CashAdvanceFormDialog({
               <Button disabled={isFormDisabled} type="submit" className="bg-blue-500 hover:bg-blue-600 px-6">
                 {isFormDisabled && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {activeTab === "basic-info" ? "Continue" : isEditing ? "Update" : "Save"}{" "}
-                {watchedType === "bonus loan" ? "Bonus" : "Salary"} Loan
+                Cash Advance
               </Button>
             </div>
           </form>

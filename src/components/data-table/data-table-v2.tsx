@@ -113,6 +113,7 @@ export type DataTableProps<T> = {
   actionButtons?: ActionButton<T>[]
   bulkActionButtons?: BulkActionButton<T>[] // New: bulk action buttons
   selectedItems?: T[] // New: externally controlled selection
+  onSort?: (column: string, sort: string) => void
 }
 
 export function DataTableV2<T>({
@@ -145,6 +146,7 @@ export function DataTableV2<T>({
   actionButtons = [],
   bulkActionButtons = [],
   selectedItems: externalSelectedItems,
+  onSort,
 }: DataTableProps<T>) {
   // State for search, sorting, pagination, and filters
   const [searchQuery, setSearchQuery] = useState("")
@@ -204,13 +206,15 @@ export function DataTableV2<T>({
 
   // Handle sorting
   const handleSort = (columnId: string) => {
-    if (sortColumn === columnId) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc")
-    } else {
-      setSortColumn(columnId)
-      setSortDirection("asc")
-    }
+  if (sortColumn === columnId) {
+    onSort?.(columnId, sortDirection === "asc" ? "desc" : "asc")
+    setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+  } else {
+    setSortColumn(columnId)
+    onSort?.(columnId, "asc")
+    setSortDirection("asc")
   }
+}
 
   // Selection handlers
   const handleSelectAll = (checked: boolean) => {

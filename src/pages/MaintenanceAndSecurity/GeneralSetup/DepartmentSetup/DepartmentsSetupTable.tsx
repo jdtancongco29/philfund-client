@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useCallback, useState } from "react"
 import type { SearchDefinition, ColumnDefinition, FilterDefinition } from "@/components/data-table/data-table"
 import type { DepartmentSetup } from "./Service/DepartmentSetupTypes"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import DepartmentSetupService from "./Service/DepartmentSetupService"
 import { DataTableV2 } from "@/components/data-table/data-table-v2"
 import { DepartmentDialog } from "./DepartmentDialog"
@@ -20,18 +20,36 @@ export function DepartmentSetupTable() {
   const [currentPage, setCurrentPage] = useState(1)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [searchQuery, setSearchQuery] = useState<string | null>(null)
-  const [resetTable, setResetTable] = useState(false)
+  const [columnSort, setColumnSort] = useState<string | null>(null)
+  const [sortQuery, setSortQuery] = useState<string | null>(null)
 
   const queryClient = useQueryClient()
 
+  const onPaginationChange = useCallback((page: number) => {
+    setCurrentPage(page)
+  }, [])
+
+  const onRowCountChange = useCallback((row: number) => {
+    setRowsPerPage(row)
+    setCurrentPage(1) // Reset to first page when changing row count
+  }, [])
+
+  const onSearchChange = useCallback((search: string) => {
+    setSearchQuery(search || null)
+    setCurrentPage(1) // Reset to first page when searching
+  }, [])
+  
   const {
     isPending,
     error,
+    isFetching,
     data: departments,
   } = useQuery({
-    queryKey: ["department-setup-table", currentPage, rowsPerPage, searchQuery],
-    queryFn: () => DepartmentSetupService.getAllDepartments(currentPage, rowsPerPage, searchQuery),
+    queryKey: ["department-setup-table", currentPage, rowsPerPage, searchQuery, columnSort, sortQuery],
+    queryFn: () => DepartmentSetupService.getAllDepartments(currentPage, rowsPerPage, searchQuery, columnSort, sortQuery),
     staleTime: Number.POSITIVE_INFINITY,
+    placeholderData: keepPreviousData, // Use the newer placeholderData with keepPreviousData
+    refetchOnWindowFocus: false,
   })
 
   const deletionHandler = useMutation({
@@ -40,11 +58,25 @@ export function DepartmentSetupTable() {
     },
     onSuccess: () => {
       toast.success("Department deleted successfully")
-      queryClient.invalidateQueries({ queryKey: ["department-setup-table"] })
-      setOpenDeleteModal(false)
-      setSelectedItem(null)
-      if (departments?.data.departments.length === 1 && currentPage > 1) {
-        setCurrentPage(currentPage - 1)
+      const shouldGoToPreviousPage = departments?.data.departments.length === 1 && currentPage > 1
+      
+      
+      if (shouldGoToPreviousPage) {
+        // Update the page first, then invalidate queries
+        setCurrentPage((prev) => prev - 1)
+        // Invalidate with the new page number
+        setTimeout(() => {
+          queryClient.invalidateQueries({
+            queryKey: ["department-setup-table"],
+            exact: false,
+          })
+        }, 0)
+      } else {
+        // Just invalidate the current query
+        queryClient.invalidateQueries({
+          queryKey: ["department-setup-table", currentPage, rowsPerPage, searchQuery],
+          exact: true,
+        })
       }
     },
     onError: (error: any) => {
@@ -55,41 +87,13 @@ export function DepartmentSetupTable() {
   // Export mutations
   const exportPdfMutation = useMutation({
     mutationFn: DepartmentSetupService.exportPdf,
-    onSuccess: (response) => {
-      try {
-        // Ensure we have a proper Blob
-        let blob: Blob
-
-        if (response instanceof Blob) {
-          blob = response
-        } else {
-          // If response is not a Blob, create one
-          blob = new Blob([response], { type: "application/pdf" })
-        }
-
-        const url = window.URL.createObjectURL(blob)
-
-        // Open PDF in new tab for preview
-        const newTab = window.open(url, "_blank")
-        if (newTab) {
-          newTab.focus()
-          // Clean up the URL after a delay to allow the tab to load
-          setTimeout(() => {
-            window.URL.revokeObjectURL(url)
-          }, 1000)
-        } else {
-          // Fallback if popup is blocked
-          const link = document.createElement("a")
-          link.href = url
-          link.download = `departments-${new Date().toISOString().split("T")[0]}.pdf`
-          document.body.appendChild(link)
-          link.click()
-          document.body.removeChild(link)
-          window.URL.revokeObjectURL(url)
-        }
+    onSuccess: (data) => {
+      // Open PDF in new tab for preview
+      const newTab = window.open(data.url, "_blank")
+      if (newTab) {
+        newTab.focus()
         toast.success("PDF opened in new tab")
-      } catch (error) {
-        console.error("Error creating PDF URL:", error)
+      }else{
         toast.error("Failed to open PDF. Please try again.")
       }
     },
@@ -171,7 +175,6 @@ export function DepartmentSetupTable() {
   const handleDelete = async () => {
     if (selectedItem) {
       deletionHandler.mutate(selectedItem.id)
-      setResetTable(true)
     }
   }
 
@@ -191,20 +194,6 @@ export function DepartmentSetupTable() {
     exportCsvMutation.mutate()
   }
 
-  const onPaginationChange = (page: number) => {
-    setCurrentPage(page)
-  }
-
-  const onRowCountChange = (row: number) => {
-    setRowsPerPage(row)
-    setCurrentPage(1) // Reset to first page when changing row count
-  }
-
-  const onSearchChange = (search: string) => {
-    setSearchQuery(search || null)
-    setCurrentPage(1) // Reset to first page when searching
-  }
-
   // Define action buttons
   const actionButtons = [
     {
@@ -222,6 +211,11 @@ export function DepartmentSetupTable() {
     },
   ]
 
+  const handleSort = (column: string, sort: string) => {
+    setColumnSort(column)
+    setSortQuery(sort)
+  }
+
   return (
     <>
       <DataTableV2
@@ -237,17 +231,18 @@ export function DepartmentSetupTable() {
         filters={filters}
         search={search}
         actionButtons={actionButtons}
-        onLoading={isPending || deletionHandler.isPending}
+        onLoading={isPending || isFetching || deletionHandler.isPending}
         onNew={handleNew}
         idField="id"
         enableNew={true}
         enablePdfExport={true}
         enableCsvExport={true}
         enableFilter={false}
-        onResetTable={resetTable}
+        onResetTable={false}
         onSearchChange={onSearchChange}
         onPdfExport={handlePdfExport}
         onCsvExport={handleCsvExport}
+        onSort={handleSort}
       />
 
       <DeleteConfirmationDialog
@@ -257,7 +252,7 @@ export function DepartmentSetupTable() {
           setOpenDeleteModal(false)
         }}
         onConfirm={handleDelete}
-        title="Delete Department"
+        title="Delete Department?"
         description={`Are you sure you want to delete the department '${selectedItem?.name}'? This action cannot be undone.`}
         itemName={selectedItem?.name ?? "No Department Selected"}
       />
@@ -277,6 +272,12 @@ export function DepartmentSetupTable() {
           setSelectedItem(null)
           setIsDialogOpen(false)
           setIsEditing(false)
+
+          // Refresh the current page data
+          queryClient.invalidateQueries({
+            queryKey: ["branch-setup-table", currentPage, rowsPerPage, searchQuery],
+            exact: true,
+          })
         }}
       />
     </>

@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import type { SearchDefinition, ColumnDefinition, FilterDefinition } from "@/components/data-table/data-table"
 import type { UserManagement } from "./Service/UserManagementTypes"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query"
 import UserManagementService from "./Service/UserManagementService"
 import { DataTableV2 } from "@/components/data-table/data-table-v2"
 import { UserDialog } from "./UserDialog"
@@ -11,6 +11,7 @@ import { KeyRound, MonitorSmartphone, PencilIcon, TrashIcon } from "lucide-react
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog"
 import { toast } from "sonner"
 import { downloadFile } from "@/lib/utils"
+import { format, parseISO } from "date-fns"
 
 export function UserManagementTable() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -20,19 +21,54 @@ export function UserManagementTable() {
   const [currentPage, setCurrentPage] = useState(1)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [searchQuery, setSearchQuery] = useState<string | null>(null)
-  const [resetTable, setResetTable] = useState(false)
+  const [columnSort, setColumnSort] = useState<string | null>(null)
+  const [sortQuery, setSortQuery] = useState<string | null>(null)
   const [focusPassword, setFocusPassword] = useState(false)
+  const [activeTabOnOpen, setActiveTabOnOpen] = useState("basic-info")
 
   const queryClient = useQueryClient()
+
+  const onPaginationChange = useCallback((page: number) => {
+    setCurrentPage(page)
+  }, [])
+
+  const onRowCountChange = useCallback((row: number) => {
+    setRowsPerPage(row)
+    setCurrentPage(1) // Reset to first page when changing row count
+  }, [])
+
+  const onSearchChange = useCallback((search: string) => {
+    setSearchQuery(search || null)
+    setCurrentPage(1) // Reset to first page when searching
+  }, [])
 
   const {
     isPending,
     error,
     data: users,
+    isFetching,
   } = useQuery({
-    queryKey: ["user-management-table", currentPage, rowsPerPage, searchQuery],
-    queryFn: () => UserManagementService.getAllUsers(currentPage, rowsPerPage, searchQuery),
-    staleTime: Number.POSITIVE_INFINITY,
+    queryKey: ["user-management-table", currentPage, rowsPerPage, searchQuery, columnSort, sortQuery],
+    queryFn: () => UserManagementService.getAllUsers(currentPage, rowsPerPage, searchQuery, columnSort, sortQuery),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    placeholderData: keepPreviousData, // Use the newer placeholderData with keepPreviousData
+    refetchOnWindowFocus: false,
+  })
+
+  const { mutate: fetchUserById } = useMutation({
+    mutationFn: (userId: string) => UserManagementService.getUserById(userId),
+    onSuccess: (res) => {
+      const user = res?.data ?? []
+      const formattedUser = {
+        ...user,
+        last_pass_date: user.last_pass_date ? format(parseISO(user?.last_pass_date), "MMMM d, yyyy 'at' h:mm a") : "",
+      }
+      setSelectedItem(formattedUser)
+    },
+    onError: (error) => {
+      toast.error("Failed to fetch user details")
+      console.error(error)
+    },
   })
 
   const deletionHandler = useMutation({
@@ -41,12 +77,30 @@ export function UserManagementTable() {
     },
     onSuccess: () => {
       toast.success("User deleted successfully")
-      queryClient.invalidateQueries({ queryKey: ["user-management-table"] })
+
+      // Check if we need to go back a page after deletion
+      const shouldGoToPreviousPage = users?.data.users.length === 1 && currentPage > 1
+
+      if (shouldGoToPreviousPage) {
+        // Update the page first, then invalidate queries
+        setCurrentPage((prev) => prev - 1)
+        // Invalidate with the new page number
+        setTimeout(() => {
+          queryClient.invalidateQueries({
+            queryKey: ["user-management-table"],
+            exact: false,
+          })
+        }, 0)
+      } else {
+        // Just invalidate the current query
+        queryClient.invalidateQueries({
+          queryKey: ["user-management-table", currentPage, rowsPerPage, searchQuery],
+          exact: true,
+        })
+      }
+
       setOpenDeleteModal(false)
       setSelectedItem(null)
-      if (users?.data.users.length === 1 && currentPage > 1) {
-        setCurrentPage(currentPage - 1)
-      }
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to delete user")
@@ -56,41 +110,12 @@ export function UserManagementTable() {
   // Export mutations
   const exportPdfMutation = useMutation({
     mutationFn: UserManagementService.exportPdf,
-    onSuccess: (response) => {
-      try {
-        // Ensure we have a proper Blob
-        let blob: Blob
-
-        if (response instanceof Blob) {
-          blob = response
-        } else {
-          // If response is not a Blob, create one
-          blob = new Blob([response], { type: "application/pdf" })
-        }
-
-        const url = window.URL.createObjectURL(blob)
-
-        // Open PDF in new tab for preview
-        const newTab = window.open(url, "_blank")
-        if (newTab) {
-          newTab.focus()
-          // Clean up the URL after a delay to allow the tab to load
-          setTimeout(() => {
-            window.URL.revokeObjectURL(url)
-          }, 1000)
-        } else {
-          // Fallback if popup is blocked
-          const link = document.createElement("a")
-          link.href = url
-          link.download = `user-management-${new Date().toISOString().split("T")[0]}.pdf`
-          document.body.appendChild(link)
-          link.click()
-          document.body.removeChild(link)
-          window.URL.revokeObjectURL(url)
-        }
+    onSuccess: (data) => {
+      const newTab = window.open(data.url, "_blank")
+      if (newTab) {
+        newTab.focus()
         toast.success("PDF opened in new tab")
-      } catch (error) {
-        console.error("Error creating PDF URL:", error)
+      }else{
         toast.error("Failed to open PDF. Please try again.")
       }
     },
@@ -115,7 +140,7 @@ export function UserManagementTable() {
       toast.error(error.message || "Failed to export CSV")
     },
   })
-  
+
   if (error) return "An error has occurred: " + error.message
 
   // Define columns
@@ -148,22 +173,20 @@ export function UserManagementTable() {
       id: "branches",
       header: "Branch",
       accessorKey: "branches",
-      enableSorting: true,
+      enableSorting: false,
       cell: (row) => {
-        const branchesRaw: { id: string; name: string }[] = row.branches ?? [];
+        const branchesRaw: { id: string; name: string }[] = row.branches ?? []
 
-        if (branchesRaw.length === 0) return null;
+        if (branchesRaw.length === 0) return null
 
-        const firstBranch = branchesRaw[0].name;
-        const remainingBranches = branchesRaw.slice(1);
-        const remainingBranchCount = remainingBranches.length;
-        const remainingBranchNames = remainingBranches.map((b) => b.name).join(", ");
+        const firstBranch = branchesRaw[0].name
+        const remainingBranches = branchesRaw.slice(1)
+        const remainingBranchCount = remainingBranches.length
+        const remainingBranchNames = remainingBranches.map((b) => b.name).join(", ")
 
         return (
           <div className="flex items-center gap-2">
-            <span className="border border-[#D0D5DD] rounded-full px-4 py-1 text-sm text-black">
-              {firstBranch}
-            </span>
+            <span className="border border-[#D0D5DD] rounded-full px-4 py-1 text-sm text-black">{firstBranch}</span>
             {remainingBranchCount > 0 && (
               <span
                 className="border border-[#D0D5DD] rounded-full px-3 py-1 text-sm text-black cursor-help"
@@ -180,7 +203,7 @@ export function UserManagementTable() {
       id: "permissions",
       header: "Permissions",
       accessorKey: "permissions",
-      enableSorting: true,
+      enableSorting: false,
       cell: (row) => {
         const permissions: string[] = row.permissions ?? []
 
@@ -236,8 +259,9 @@ export function UserManagementTable() {
 
   // Handle edit
   const handleEdit = (item: UserManagement) => {
-    setSelectedItem(item)
     setIsEditing(true)
+    setActiveTabOnOpen("basic-info")
+    fetchUserById(item.id)
     setIsDialogOpen(true)
   }
 
@@ -245,7 +269,6 @@ export function UserManagementTable() {
   const handleDelete = async () => {
     if (selectedItem) {
       deletionHandler.mutate(selectedItem.id)
-      setResetTable(true);
     }
   }
 
@@ -253,6 +276,7 @@ export function UserManagementTable() {
   const handleChangePassword = (item: UserManagement) => {
     setSelectedItem(item)
     setIsEditing(true)
+    setActiveTabOnOpen("basic-info")
     setIsDialogOpen(true)
     // Set a flag to focus on password after dialog opens
     setTimeout(() => {
@@ -264,36 +288,19 @@ export function UserManagementTable() {
   const handleDevices = (item: UserManagement) => {
     setSelectedItem(item)
     setIsEditing(true)
+    setActiveTabOnOpen("devices")
     setIsDialogOpen(true)
-    // Switch to devices tab after opening
-    setTimeout(() => {
-      const devicesTab = document.querySelector('[data-value="devices"]') as HTMLElement
-      if (devicesTab) {
-        devicesTab.click()
-      }
-    }, 100)
   }
 
   // Handle new
   const handleNew = () => {
     setSelectedItem(null)
     setIsEditing(false)
+    setActiveTabOnOpen("basic-info")
     setIsDialogOpen(true)
   }
 
-  const onPaginationChange = (page: number) => {
-    setCurrentPage(page)
-  }
-
-  const onRowCountChange = (row: number) => {
-    setRowsPerPage(row)
-    setCurrentPage(1) // Reset to first page when changing row count
-  }
-
-  const onSearchChange = (search: string) => {
-    setSearchQuery(search || null)
-    setCurrentPage(1) // Reset to first page when searching
-  }
+  // Use useCallback to prevent unnecessary re-renders
 
   // Define action buttons
   const actionButtons = [
@@ -331,6 +338,11 @@ export function UserManagementTable() {
     exportCsvMutation.mutate()
   }
 
+  const handleSort = (column: string, sort: string) => {
+    setColumnSort(column)
+    setSortQuery(sort)
+  }
+
   return (
     <>
       <DataTableV2
@@ -346,17 +358,18 @@ export function UserManagementTable() {
         filters={filters}
         search={search}
         actionButtons={actionButtons}
-        onLoading={isPending || deletionHandler.isPending}
+        onLoading={isPending || isFetching || deletionHandler.isPending}
         onNew={handleNew}
         idField="id"
         enableNew={true}
         enablePdfExport={true}
         enableCsvExport={true}
         enableFilter={false}
-        onResetTable={resetTable}
+        onResetTable={false}
         onSearchChange={onSearchChange}
         onPdfExport={handlePdfExport}
         onCsvExport={handleCsvExport}
+        onSort={handleSort}
       />
 
       <DeleteConfirmationDialog
@@ -366,7 +379,7 @@ export function UserManagementTable() {
           setOpenDeleteModal(false)
         }}
         onConfirm={handleDelete}
-        title="Delete User"
+        title="Delete User?"
         description={`Are you sure you want to delete the user '${selectedItem?.username}'? This action cannot be undone.`}
         itemName={selectedItem?.username ?? "No User Selected"}
         // isLoading={deletionHandler.isPending}
@@ -377,12 +390,14 @@ export function UserManagementTable() {
         open={isDialogOpen}
         isEditing={isEditing}
         focusPassword={focusPassword}
+        activeTabOnOpen={activeTabOnOpen}
         onOpenChange={(open) => {
           setIsDialogOpen(open)
           if (!open) {
             setSelectedItem(null)
             setIsEditing(false)
             setFocusPassword(false)
+            setActiveTabOnOpen("basic-info")
           }
         }}
         onSuccess={() => {
@@ -390,6 +405,12 @@ export function UserManagementTable() {
           setIsDialogOpen(false)
           setIsEditing(false)
           setFocusPassword(false)
+          setActiveTabOnOpen("basic-info")
+          // Refresh the current page data
+          queryClient.invalidateQueries({
+            queryKey: ["user-management-table", currentPage, rowsPerPage, searchQuery],
+            exact: true,
+          })
         }}
       />
     </>

@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useCallback, useState } from "react"
 import type { SearchDefinition, ColumnDefinition, FilterDefinition } from "@/components/data-table/data-table"
 import type { BranchSetup } from "./Service/BranchSetupTypes"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import BranchSetupService from "./Service/BranchSetupService"
 import { DataTableV2 } from "@/components/data-table/data-table-v2"
 import { BranchDialog } from "./BranchDialog"
@@ -20,18 +20,36 @@ export function BranchSetupTable() {
   const [currentPage, setCurrentPage] = useState(1)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [searchQuery, setSearchQuery] = useState<string | null>(null)
-  const [resetTable, setResetTable] = useState(false)
+  const [columnSort, setColumnSort] = useState<string | null>(null)
+  const [sortQuery, setSortQuery] = useState<string | null>(null)
 
   const queryClient = useQueryClient()
+
+  const onPaginationChange = useCallback((page: number) => {
+    setCurrentPage(page)
+  }, [])
+
+  const onRowCountChange = useCallback((row: number) => {
+    setRowsPerPage(row)
+    setCurrentPage(1) // Reset to first page when changing row count
+  }, [])
+
+  const onSearchChange = useCallback((search: string) => {
+    setSearchQuery(search || null)
+    setCurrentPage(1) // Reset to first page when searching
+  }, [])
 
   const {
     isPending,
     error,
+    isFetching,
     data: branches,
   } = useQuery({
-    queryKey: ["branch-setup-table", currentPage, rowsPerPage, searchQuery],
-    queryFn: () => BranchSetupService.getAllBranches(currentPage, rowsPerPage, searchQuery),
+    queryKey: ["branch-setup-table", currentPage, rowsPerPage, searchQuery, columnSort, sortQuery],
+    queryFn: () => BranchSetupService.getAllBranches(currentPage, rowsPerPage, searchQuery, columnSort, sortQuery),
     staleTime: Number.POSITIVE_INFINITY,
+    placeholderData: keepPreviousData, // Use the newer placeholderData with keepPreviousData
+    refetchOnWindowFocus: false,
   })
 
   const deletionHandler = useMutation({
@@ -40,11 +58,26 @@ export function BranchSetupTable() {
     },
     onSuccess: () => {
       toast.success("Branch deleted successfully")
-      queryClient.invalidateQueries({ queryKey: ["branch-setup-table"] })
-      setOpenDeleteModal(false)
-      setSelectedItem(null)
-      if (branches?.data.branches.length === 1 && currentPage > 1) {
-        setCurrentPage(currentPage - 1)
+      // Check if we need to go back a page after deletion
+      const shouldGoToPreviousPage = branches?.data.branches.length === 1 && currentPage > 1
+      
+      
+      if (shouldGoToPreviousPage) {
+        // Update the page first, then invalidate queries
+        setCurrentPage((prev) => prev - 1)
+        // Invalidate with the new page number
+        setTimeout(() => {
+          queryClient.invalidateQueries({
+            queryKey: ["branch-setup-table"],
+            exact: false,
+          })
+        }, 0)
+      } else {
+        // Just invalidate the current query
+        queryClient.invalidateQueries({
+          queryKey: ["branch-setup-table", currentPage, rowsPerPage, searchQuery],
+          exact: true,
+        })
       }
     },
     onError: (error: any) => {
@@ -55,22 +88,15 @@ export function BranchSetupTable() {
   // Export mutations
   const exportPdfMutation = useMutation({
     mutationFn: BranchSetupService.exportPdf,
-    onSuccess: (blob) => {
-      const url = window.URL.createObjectURL(blob)
+    onSuccess: (data) => {
       // Open PDF in new tab for preview
-      const newTab = window.open(url, "_blank")
+      const newTab = window.open(data.url, "_blank")
       if (newTab) {
         newTab.focus()
-      } else {
-        // Fallback if popup is blocked
-        const link = document.createElement("a")
-        link.href = url
-        link.download = `branches-${new Date().toISOString().split("T")[0]}.pdf`
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
+        toast.success("PDF opened in new tab")
+      }else{
+        toast.error("Failed to open PDF. Please try again.")
       }
-      toast.success("PDF opened in new tab")
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to export PDF")
@@ -119,7 +145,7 @@ export function BranchSetupTable() {
       id: "departments",
       header: "Departments",
       accessorKey: "departments",
-      enableSorting: true,
+      enableSorting: false,
       cell: (row) => {
         const departmentsRaw: { id: string; name: string }[] = row.departments ?? []
 
@@ -185,7 +211,6 @@ export function BranchSetupTable() {
   const handleDelete = async () => {
     if (selectedItem) {
       deletionHandler.mutate(selectedItem.id)
-      setResetTable(true)
     }
   }
 
@@ -205,20 +230,6 @@ export function BranchSetupTable() {
     exportCsvMutation.mutate()
   }
 
-  const onPaginationChange = (page: number) => {
-    setCurrentPage(page)
-  }
-
-  const onRowCountChange = (row: number) => {
-    setRowsPerPage(row)
-    setCurrentPage(1) // Reset to first page when changing row count
-  }
-
-  const onSearchChange = (search: string) => {
-    setSearchQuery(search || null)
-    setCurrentPage(1) // Reset to first page when searching
-  }
-
   // Define action buttons
   const actionButtons = [
     {
@@ -236,6 +247,10 @@ export function BranchSetupTable() {
     },
   ]
 
+  const handleSort = (column: string, sort: string) => {
+    setColumnSort(column)
+    setSortQuery(sort)
+  }
   return (
     <>
       <DataTableV2
@@ -251,17 +266,18 @@ export function BranchSetupTable() {
         filters={filters}
         search={search}
         actionButtons={actionButtons}
-        onLoading={isPending || deletionHandler.isPending}
+        onLoading={isPending || isFetching || deletionHandler.isPending}
         onNew={handleNew}
         idField="id"
         enableNew={true}
         enablePdfExport={true}
         enableCsvExport={true}
         enableFilter={false}
-        onResetTable={resetTable}
+        onResetTable={false}
         onSearchChange={onSearchChange}
         onPdfExport={handlePdfExport}
         onCsvExport={handleCsvExport}
+        onSort={handleSort}
       />
 
       <DeleteConfirmationDialog
@@ -291,6 +307,12 @@ export function BranchSetupTable() {
           setSelectedItem(null)
           setIsDialogOpen(false)
           setIsEditing(false)
+
+          // Refresh the current page data
+          queryClient.invalidateQueries({
+            queryKey: ["branch-setup-table", currentPage, rowsPerPage, searchQuery],
+            exact: true,
+          })
         }}
       />
     </>

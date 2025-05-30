@@ -758,29 +758,29 @@ export default function AddEditEntryDialog({
                 <ErrorMessage errors={getFieldErrors("branch_id")} />
               </div>
 
-              <div className="space-y-2">
+                <div className="space-y-2 col-span-2">
                 <Label>
                   Particulars <span className="text-red-500">*</span>
                 </Label>
                 <textarea
                   value={particulars}
                   onChange={(e) => {
-                    setParticulars(e.target.value)
-                    clearFieldError("particulars")
+                  setParticulars(e.target.value)
+                  clearFieldError("particulars")
                   }}
                   placeholder="Particulars"
                   disabled={isSubmitting}
                   className={`block w-full rounded border px-3 py-2 ${
-                    hasFieldError("particulars") ? "border-red-500" : ""
+                  hasFieldError("particulars") ? "border-red-500" : ""
                   }`}
                   rows={4}
                 />
                 <ErrorMessage errors={getFieldErrors("particulars")} />
-              </div>
+                </div>
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 mt-20">
                 <Label className="text-lg font-semibold">
                   Journal Entry Items <span className="text-red-500">*</span>
                 </Label>
@@ -788,7 +788,7 @@ export default function AddEditEntryDialog({
                   variant="outline"
                   onClick={addItem}
                   disabled={isSubmitting}
-                  className="text-blue-600 border-blue-600"
+                  className="text-black-600 border-black-600"
                 >
                   + Add Entry
                 </Button>
@@ -1089,7 +1089,7 @@ export default function AddEditEntryDialog({
                 !isBalanced(items) // Add balance check to disable button
               }
             >
-              {isSubmitting ? (isEditMode ? "Updating..." : "Creating...") : isEditMode ? "Update Entry" : "Add Entry"}
+              {isSubmitting ? (isEditMode ? "Save" : "Save") : isEditMode ? "Update Entry" : "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -26,11 +26,17 @@ const formSchema = z
     interest_rate: z
       .string()
       .min(1, "Interest rate is required")
-      .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
+      .refine((val) => !isNaN(Number(val)), "Must be a valid number")
+      .refine((val) => Number(val) <= 100, {
+        message: "Interest rate must not exceed 100%",
+      }),
     surcharge_rate: z
       .string()
       .min(1, "Surcharge rate is required")
-      .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
+      .refine((val) => !isNaN(Number(val)), "Must be a valid number")
+      .refine((val) => Number(val) <= 100, {
+        message: "Surcharge rate must not exceed 100%",
+      }),
     min_amount: z
       .string()
       .min(1, "Minimum amount is required")
@@ -44,19 +50,31 @@ const formSchema = z
     vis_service: z
       .string()
       .min(1, "Service charge is required")
+      .refine((val) => Number(val) <= 100, {
+        message: "Service charge must not exceed 100%",
+      })
       .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
     vis_insurance: z
       .string()
       .min(1, "Insurance is required")
-      .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
+      .refine((val) => !isNaN(Number(val)), "Must be a valid number")
+      .refine((val) => Number(val) <= 100, {
+        message: "Insurance must not exceed 100%",
+      }),
     vis_notarial: z
       .string()
       .min(1, "Notarial fee is required")
-      .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
+      .refine((val) => !isNaN(Number(val)), "Must be a valid number")
+      .refine((val) => Number(val) <= 100, {
+        message: "Insurance must not exceed 100%",
+      }),
     vis_gross_reciept: z
       .string()
       .min(1, "GRT is required")
-      .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
+      .refine((val) => !isNaN(Number(val)), "Must be a valid number")
+      .refine((val) => Number(val) <= 100, {
+        message: "Gross Receipt not exceed 100%",
+      }),
     vis_computer: z
       .string()
       .min(1, "Computer charges is required")

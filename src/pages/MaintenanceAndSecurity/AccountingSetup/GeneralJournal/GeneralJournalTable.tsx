@@ -2,16 +2,12 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { apiRequest } from "@/lib/api"
-import {
-  DataTable,
-  type ColumnDefinition,
-  type FilterDefinition,
-  type SearchDefinition,
-} from "@/components/data-table/data-table"
+
 import AddEditEntryDialog from "./AddEditDialog"
 import { DdeleteReferenceDialog } from "./DdeleteDialog"
 import { CircleCheck, Download } from "lucide-react"
 import { toast } from "sonner"
+import { ColumnDefinition, DataTable, FilterDefinition, SearchDefinition } from "@/components/data-table/data-table-general-journal"
 
 interface GeneralJournalEntry {
   id?: string
@@ -414,14 +410,14 @@ export default function GeneralJournalTable() {
   const columns: ColumnDefinition<GeneralJournalEntry>[] = [
     {
       id: "transaction_date",
-      header: "Transaction Date",
+      header: "Datetime",
       accessorKey: "transaction_date",
       enableSorting: true,
       cell: (item) => new Date(item.transaction_date).toLocaleDateString(),
     },
     {
       id: "ref",
-      header: "Reference Number",
+      header: "Reference",
       accessorKey: "ref",
       cell: (item) => `${item.ref.code}-${item.ref.number}`,
       enableSorting: true,
@@ -453,6 +449,8 @@ export default function GeneralJournalTable() {
       cell: (item) => parseFloat(item.trans_amount || '0').toFixed(2),
       enableSorting: true,
     },
+
+    
   ]
 
   const filters: FilterDefinition[] = []
@@ -463,33 +461,33 @@ export default function GeneralJournalTable() {
     enableSearch: true,
   }
 
-  const exportPdf = async (): Promise<Blob> => {
+  const exportPdf = async (): Promise<string> => {
   const endpoint = `/general-journal/export-pdf` // adjust endpoint if needed
   try {
-    const response = await apiRequest<Blob>("get", endpoint, null, {
+    const response = await apiRequest<{ url: string }>("get", endpoint, null, {
       useAuth: true,
       useBranchId: true,
-      responseType: "blob",
     })
-    return response.data
+    return response.data.url
   } catch (error: any) {
     const errorMessage = error.response?.data?.message || "Failed to export PDF"
     throw new Error(errorMessage)
   }
 }
+
 const handlePdfExport = useCallback(async () => {
   setIsExporting(true)
   try {
-    const blob = await exportPdf()
-    const url = window.URL.createObjectURL(blob)
+    const url = await exportPdf()
     
     const newTab = window.open(url, "_blank")
     if (newTab) {
       newTab.focus()
     } else {
+      // fallback for popup blockers
       const link = document.createElement("a")
       link.href = url
-      link.download = `general-journal-${new Date().toISOString().split("T")[0]}.pdf`
+      link.target = "_blank"
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
@@ -504,7 +502,6 @@ const handlePdfExport = useCallback(async () => {
     setIsExporting(false)
   }
 }, [])
-
 
   return (
     <>

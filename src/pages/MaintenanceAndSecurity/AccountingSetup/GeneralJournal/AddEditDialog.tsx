@@ -201,10 +201,7 @@ const ErrorMessage = ({ errors }: { errors: string[] }) => {
 
 // Balance Validation Component
 const BalanceValidationMessage = ({ items }: { items: Item[] }) => {
-
   if (items.length === 0) return null
-
- 
 }
 
 export default function AddEditEntryDialog({
@@ -218,7 +215,7 @@ export default function AddEditEntryDialog({
   const [particulars, setParticulars] = useState("")
   const [refNum, setRefNum] = useState("")
   const [refId, setRefId] = useState("")
-    const [refCode, setRefCode] = useState("")
+  const [refCode, setRefCode] = useState("")
   const [branchId, setBranchId] = useState("")
   const [transactionDate, setTransactionDate] = useState("")
   const [, setTransAmount] = useState("")
@@ -307,7 +304,7 @@ export default function AddEditEntryDialog({
         useAuth: true,
         useBranchId: true,
       })
-      const { ref_num, ref_code,ref_id } = response.data.data
+      const { ref_num, ref_code, ref_id } = response.data.data
       setRefId(ref_id)
       setRefCode(ref_code)
       setRefNum(ref_num.toString())
@@ -345,6 +342,7 @@ export default function AddEditEntryDialog({
           setParticulars(apiEntry.particulars || "")
           setRefNum(apiEntry.ref.number.toString())
           setRefId(apiEntry.ref.id)
+          setRefCode(apiEntry.ref.code || "") // Add this line to set the reference code
           setBranchId(apiEntry.branch.id)
 
           // Format date from API response
@@ -401,6 +399,7 @@ export default function AddEditEntryDialog({
           setParticulars(editingEntry.particulars || "")
           setRefNum(editingEntry.ref.number.toString())
           setRefId(editingEntry.ref.id)
+          setRefCode(editingEntry.ref.code || "") // Add this line to set the reference code
           setBranchId(editingEntry.branch.id || "")
           setTransactionDate(editingEntry.transaction_date || "")
           setTransAmount(editingEntry.trans_amount || "")
@@ -599,16 +598,7 @@ export default function AddEditEntryDialog({
       return
     }
     const formattedTransactionDate = transactionDate?.split("T")[0] || transactionDate
-    if (
-      name &&
-      particulars &&
-      refNum &&
-      refId &&
-      checkedBy &&
-      approvedBy &&
-      preparedBy &&
-      items.length
-    ) {
+    if (name && particulars && refNum && refId && checkedBy && approvedBy && preparedBy && items.length) {
       try {
         const payload = {
           name,
@@ -698,7 +688,7 @@ export default function AddEditEntryDialog({
                       : undefined
                   }
                   placeholder="Reference Number"
-                  disabled={isSubmitting}
+                  disabled={isEditMode || isSubmitting}
                   className={hasFieldError("ref_num") ? "border-red-500" : ""}
                 />
                 <ErrorMessage errors={getFieldErrors("ref_num")} />
@@ -716,7 +706,7 @@ export default function AddEditEntryDialog({
                 <ErrorMessage errors={getFieldErrors("ref_id")} />
               </div>
 
-                <div className="space-y-2">
+              <div className="space-y-2">
                 <Label>
                   Transaction Date <span className="text-red-500">*</span>
                 </Label>
@@ -724,13 +714,14 @@ export default function AddEditEntryDialog({
                   type="date"
                   value={formattedDate || new Date().toISOString().slice(0, 10)}
                   onChange={(e) => {
-                  setTransactionDate(e.target.value)
-                  clearFieldError("transaction_date")
+                    setTransactionDate(e.target.value)
+                    clearFieldError("transaction_date")
                   }}
+                  disabled={isEditMode || isSubmitting}
                   className={hasFieldError("transaction_date") ? "border-red-500" : ""}
                 />
                 <ErrorMessage errors={getFieldErrors("transaction_date")} />
-                </div>
+              </div>
 
               <div className="space-y-2">
                 <Label>
@@ -743,7 +734,7 @@ export default function AddEditEntryDialog({
                     clearFieldError("name")
                   }}
                   placeholder="Entry name"
-                  disabled={isSubmitting}
+                  disabled={isEditMode || isSubmitting}
                   className={hasFieldError("name") ? "border-red-500" : ""}
                 />
                 <ErrorMessage errors={getFieldErrors("name")} />
@@ -758,25 +749,25 @@ export default function AddEditEntryDialog({
                 <ErrorMessage errors={getFieldErrors("branch_id")} />
               </div>
 
-                <div className="space-y-2 col-span-2">
+              <div className="space-y-2 col-span-2">
                 <Label>
                   Particulars <span className="text-red-500">*</span>
                 </Label>
                 <textarea
                   value={particulars}
                   onChange={(e) => {
-                  setParticulars(e.target.value)
-                  clearFieldError("particulars")
+                    setParticulars(e.target.value)
+                    clearFieldError("particulars")
                   }}
                   placeholder="Particulars"
-                  disabled={isSubmitting}
+                  disabled={isEditMode || isSubmitting}
                   className={`block w-full rounded border px-3 py-2 ${
-                  hasFieldError("particulars") ? "border-red-500" : ""
+                    hasFieldError("particulars") ? "border-red-500" : ""
                   }`}
                   rows={4}
                 />
                 <ErrorMessage errors={getFieldErrors("particulars")} />
-                </div>
+              </div>
             </div>
 
             <div>
@@ -787,7 +778,7 @@ export default function AddEditEntryDialog({
                 <Button
                   variant="outline"
                   onClick={addItem}
-                  disabled={isSubmitting}
+                  disabled={isEditMode || isSubmitting}
                   className="text-black-600 border-black-600"
                 >
                   + Add Entry
@@ -857,7 +848,7 @@ export default function AddEditEntryDialog({
                       isLoading={loadingCOA}
                       isClearable
                       classNamePrefix={hasFieldError(`items.${index}.coa_id`) ? "react-select-error" : "react-select"}
-                      isDisabled={isSubmitting}
+                      isDisabled={isEditMode || isSubmitting}
                     />
                     <ErrorMessage errors={getFieldErrors(`items.${index}.coa_id`)} />
                   </div>
@@ -907,7 +898,7 @@ export default function AddEditEntryDialog({
                       isLoading={loadingCOA}
                       isClearable
                       classNamePrefix={hasFieldError(`items.${index}.coa_id`) ? "react-select-error" : "react-select"}
-                      isDisabled={isSubmitting}
+                      isDisabled={isEditMode || isSubmitting}
                     />
                   </div>
 
@@ -919,7 +910,7 @@ export default function AddEditEntryDialog({
                       placeholder="0.00"
                       value={item.debit}
                       onChange={(e) => updateItem(index, "debit", e.target.value)}
-                      disabled={isSubmitting}
+                      disabled={isEditMode || isSubmitting}
                       className="text-center"
                     />
                   </div>
@@ -932,7 +923,7 @@ export default function AddEditEntryDialog({
                       placeholder="0.00"
                       value={item.credit}
                       onChange={(e) => updateItem(index, "credit", e.target.value)}
-                      disabled={isSubmitting}
+                      disabled={isEditMode || isSubmitting}
                       className="text-center"
                     />
                   </div>
@@ -943,7 +934,7 @@ export default function AddEditEntryDialog({
                       variant="ghost"
                       size="sm"
                       onClick={() => removeItem(index)}
-                      disabled={isSubmitting}
+                      disabled={isEditMode || isSubmitting}
                       className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1"
                     >
                       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1004,7 +995,7 @@ export default function AddEditEntryDialog({
                     }))}
                     placeholder="Select..."
                     classNamePrefix={hasFieldError("prepared_by") ? "react-select-error" : "react-select"}
-                    isDisabled={isSubmitting}
+                    isDisabled={isEditMode || isSubmitting}
                   />
                   <p className="text-sm text-gray-500">The user who prepared this journal entry</p>
                   <ErrorMessage errors={getFieldErrors("prepared_by")} />
@@ -1032,7 +1023,7 @@ export default function AddEditEntryDialog({
                     }))}
                     placeholder="Select..."
                     classNamePrefix={hasFieldError("checked_by") ? "react-select-error" : "react-select"}
-                    isDisabled={isSubmitting}
+                    isDisabled={isEditMode || isSubmitting}
                   />
                   <p className="text-sm text-gray-500">The user who checked this journal entry (optional)</p>
                   <ErrorMessage errors={getFieldErrors("checked_by")} />
@@ -1060,7 +1051,7 @@ export default function AddEditEntryDialog({
                     }))}
                     placeholder="Select..."
                     classNamePrefix={hasFieldError("approved_by") ? "react-select-error" : "react-select"}
-                    isDisabled={isSubmitting}
+                    isDisabled={isEditMode || isSubmitting}
                   />
                   <p className="text-sm text-gray-500">The user who approved this journal entry (optional)</p>
                   <ErrorMessage errors={getFieldErrors("approved_by")} />
@@ -1071,26 +1062,27 @@ export default function AddEditEntryDialog({
 
           <DialogFooter className="flex justify-end space-x-2">
             <Button variant="outline" onClick={handleClose} disabled={isSubmitting}>
-              Cancel
+              {isEditMode ? "Close" : "Cancel"}
             </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={
-                isSubmitting ||
-                !name ||
-                !particulars ||
-                !refNum ||
-                !refId ||
-
-                !checkedBy ||
-                !approvedBy ||
-                !preparedBy ||
-                items.length === 0 ||
-                !isBalanced(items) // Add balance check to disable button
-              }
-            >
-              {isSubmitting ? (isEditMode ? "Save" : "Save") : isEditMode ? "Update Entry" : "Save"}
-            </Button>
+            {!isEditMode && (
+              <Button
+                onClick={handleSubmit}
+                disabled={
+                  isSubmitting ||
+                  !name ||
+                  !particulars ||
+                  !refNum ||
+                  !refId ||
+                  !checkedBy ||
+                  !approvedBy ||
+                  !preparedBy ||
+                  items.length === 0 ||
+                  !isBalanced(items)
+                }
+              >
+                {isSubmitting ? "Save" : "Save"}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

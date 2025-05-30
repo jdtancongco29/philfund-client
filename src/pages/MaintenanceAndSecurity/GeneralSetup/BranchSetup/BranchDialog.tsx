@@ -26,7 +26,10 @@ const formSchema = (isEditing: boolean) =>
       .max(50, "Branch name must not exceed 50 characters"),
     email: z.string().email("Invalid email address"),
     address: z.string().min(1, "Address is required"),
-    contact: z.string().min(11, "Contact must be at least 11 digits").regex(/^\d+$/, "Only digits are allowed"),
+    contact: z.string()
+      .min(11, "Contact number must be 11 digits")
+      .max(11, "Contact number must be 11 digits")
+      .regex(/^\d+$/, "Contact number must contain only digits"),
     city: z.string().min(1, "City/Municipality is required"),
     departments: z.array(z.object({ id: z.string(), name: z.string() })).min(1, "At least one department is required"),
     status: isEditing ? z.boolean() : z.boolean(),

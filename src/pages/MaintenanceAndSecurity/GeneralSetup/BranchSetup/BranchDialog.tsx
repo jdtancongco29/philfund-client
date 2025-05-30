@@ -26,7 +26,7 @@ const formSchema = (isEditing: boolean) =>
       .max(50, "Branch name must not exceed 50 characters"),
     email: z.string().email("Invalid email address"),
     address: z.string().min(1, "Address is required"),
-    contact: z.string().min(11, "Contact must be at least 11 digits"),
+    contact: z.string().min(11, "Contact must be at least 11 digits").regex(/^\d+$/, "Only digits are allowed"),
     city: z.string().min(1, "City/Municipality is required"),
     departments: z.array(z.object({ id: z.string(), name: z.string() })).min(1, "At least one department is required"),
     status: isEditing ? z.boolean() : z.boolean(),
@@ -44,7 +44,6 @@ interface BranchDialogProps {
 
 export function BranchDialog({ item, open, isEditing, onOpenChange, onSuccess }: BranchDialogProps) {
   const [departmentsData, setDepartmentsData] = useState<Department[]>([])
-  const [validationErrors, setValidationErrors] = useState<Record<string, string[]>>({})
   const queryClient = useQueryClient()
 
   // Fetch departments mutation
@@ -70,13 +69,11 @@ export function BranchDialog({ item, open, isEditing, onOpenChange, onSuccess }:
     onSuccess: () => {
       toast.success("Branch created successfully")
       queryClient.invalidateQueries({ queryKey: ["branch-setup-table"] })
-      setValidationErrors({})
       onSuccess?.()
       onOpenChange(false)
     },
     onError: (error: any) => {
       if (error.response?.data?.errors) {
-        setValidationErrors(error.response.data.errors)
         // Set form errors for each field
         Object.entries(error.response.data.errors).forEach(([field, messages]) => {
           form.setError(field as any, {
@@ -96,13 +93,11 @@ export function BranchDialog({ item, open, isEditing, onOpenChange, onSuccess }:
     onSuccess: () => {
       toast.success("Branch updated successfully")
       queryClient.invalidateQueries({ queryKey: ["branch-setup-table"] })
-      setValidationErrors({})
       onSuccess?.()
       onOpenChange(false)
     },
     onError: (error: any) => {
       if (error.response?.data?.errors) {
-        setValidationErrors(error.response.data.errors)
         // Set form errors for each field
         Object.entries(error.response.data.errors).forEach(([field, messages]) => {
           form.setError(field as any, {
@@ -135,7 +130,6 @@ export function BranchDialog({ item, open, isEditing, onOpenChange, onSuccess }:
   useEffect(() => {
     if (open) {
       fetchDepartments()
-      setValidationErrors({}) // Clear validation errors when opening dialog
 
       if (isEditing && item) {
         // Populate form with existing data
@@ -207,7 +201,7 @@ export function BranchDialog({ item, open, isEditing, onOpenChange, onSuccess }:
             <div className="space-y-6 pt-4">
               <h3 className="text-lg font-semibold">Branch Information</h3>
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 overflow-y-auto">
+                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 p-1">
                   <FormField
                     control={form.control}
                     name="code"
@@ -217,11 +211,10 @@ export function BranchDialog({ item, open, isEditing, onOpenChange, onSuccess }:
                           Branch Code <span className="text-red-500">*</span>
                         </FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Enter branch code" className="focus-visible:outline-none" />
+                          <Input {...field} placeholder="Enter branch code" className="focus:outline-none focus-visible:outline-none" />
                         </FormControl>
                         <FormDescription>A unique code to identify this branch</FormDescription>
                         <FormMessage />
-                        {validationErrors.code && <p className="text-sm text-red-500">{validationErrors.code[0]}</p>}
                       </FormItem>
                     )}
                   />
@@ -239,7 +232,6 @@ export function BranchDialog({ item, open, isEditing, onOpenChange, onSuccess }:
                         </FormControl>
                         <FormDescription>The full name of the branch</FormDescription>
                         <FormMessage />
-                        {validationErrors.name && <p className="text-sm text-red-500">{validationErrors.name[0]}</p>}
                       </FormItem>
                     )}
                   />
@@ -256,9 +248,6 @@ export function BranchDialog({ item, open, isEditing, onOpenChange, onSuccess }:
                           <Input placeholder="Enter branch address" {...field} className="focus-visible:outline-none" />
                         </FormControl>
                         <FormMessage />
-                        {validationErrors.address && (
-                          <p className="text-sm text-red-500">{validationErrors.address[0]}</p>
-                        )}
                       </FormItem>
                     )}
                   />
@@ -266,6 +255,7 @@ export function BranchDialog({ item, open, isEditing, onOpenChange, onSuccess }:
                   <FormField
                     control={form.control}
                     name="contact"
+                    rules={{ pattern: /^[0-9]+$/, required: "Contact number is required" }}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm">
@@ -274,14 +264,16 @@ export function BranchDialog({ item, open, isEditing, onOpenChange, onSuccess }:
                         <FormControl>
                           <Input
                             placeholder="Enter contact number"
+                            inputMode="numeric"
                             {...field}
                             className="focus-visible:outline-none"
+                            onChange={(e) => {
+                              const digitsOnly = e.target.value.replace(/\D/g, "");
+                              field.onChange(digitsOnly);
+                            }}
                           />
                         </FormControl>
                         <FormMessage />
-                        {validationErrors.contact && (
-                          <p className="text-sm text-red-500">{validationErrors.contact[0]}</p>
-                        )}
                       </FormItem>
                     )}
                   />
@@ -303,9 +295,6 @@ export function BranchDialog({ item, open, isEditing, onOpenChange, onSuccess }:
                           />
                         </FormControl>
                         <FormMessage />
-                        {validationErrors.email && (
-                          <p className="text-sm text-red-500">{validationErrors.email[0]}</p>
-                        )}
                       </FormItem>
                     )}
                   />
@@ -327,7 +316,6 @@ export function BranchDialog({ item, open, isEditing, onOpenChange, onSuccess }:
                         </FormControl>
                         <FormDescription>For legal documents</FormDescription>
                         <FormMessage />
-                        {validationErrors.city && <p className="text-sm text-red-500">{validationErrors.city[0]}</p>}
                       </FormItem>
                     )}
                   />
@@ -369,13 +357,14 @@ export function BranchDialog({ item, open, isEditing, onOpenChange, onSuccess }:
                             inputField: {
                               margin: "0px",
                             },
+                            optionContainer: {
+                              maxHeight: "250px",
+                              overflowY: "auto",
+                            },
                           }}
                         />
                         <FormDescription>Select the departments that will be available in this branch</FormDescription>
                         <FormMessage />
-                        {validationErrors.departments && (
-                          <p className="text-sm text-red-500">{validationErrors.departments[0]}</p>
-                        )}
                       </FormItem>
                     )}
                   />
@@ -408,7 +397,7 @@ export function BranchDialog({ item, open, isEditing, onOpenChange, onSuccess }:
                     </div>
                   </div>
 
-                  <DialogFooter className="pt-4">
+                  <DialogFooter className="pt-4 mb-2">
                     <Button variant="outline" onClick={() => onOpenChange(false)} type="button">
                       Cancel
                     </Button>

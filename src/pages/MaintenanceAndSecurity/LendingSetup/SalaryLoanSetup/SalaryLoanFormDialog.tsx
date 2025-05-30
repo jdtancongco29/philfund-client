@@ -629,12 +629,14 @@ export function SalaryLoanFormDialog({
             <Tabs defaultValue="basic-info" value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="border-b w-full justify-start rounded-none h-auto p-0 mb-6">
                 <TabsTrigger
+                  disabled={isFormDisabled}
                   value="basic-info"
                   className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-blue-500 data-[state=active]:shadow-none px-4 py-2"
                 >
                   Basic Info
                 </TabsTrigger>
                 <TabsTrigger
+                  disabled={isFormDisabled}
                   value="chart-of-accounts"
                   className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-blue-500 data-[state=active]:shadow-none px-4 py-2"
                 >

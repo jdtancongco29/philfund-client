@@ -546,7 +546,7 @@ export function BonusLoanFormDialog({
                           Maximum Amount
                         </FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                          <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ""} />
                         </FormControl>
                         <FormDescription>Maximum loan amount allowed</FormDescription>
                         <FormMessage />

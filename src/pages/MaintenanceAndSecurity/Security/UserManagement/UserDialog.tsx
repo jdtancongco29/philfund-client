@@ -32,7 +32,10 @@ const formSchema = (isEditing: boolean) =>
       position: z.string().min(1, "Position is required"),
       branches: z.array(z.object({ id: z.string(), name: z.string() })).min(1, "At least one branch is required"),
       email: z.string().email("Invalid email address"),
-      mobile: z.string().min(11, "Mobile number is required"),
+      mobile: z.string()
+      .min(11, "Mobile number must be 11 digits")
+      .max(11, "Mobile number must be 11 digits")
+      .regex(/^\d+$/, "Mobile number must contain only digits"),
       password: isEditing ? z.string().optional() : z.string().min(16, "Password must be at least 16 characters"),
       password_confirmation: z.string().optional(),
       status: z.boolean(),

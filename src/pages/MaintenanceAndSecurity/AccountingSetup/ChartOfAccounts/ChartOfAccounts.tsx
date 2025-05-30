@@ -213,47 +213,48 @@ export default function ChartOfAccounts() {
     }
   }, [getAuthHeaders, downloadFile, generateCsvFromData, accounts])
 
-  const exportPdf = async (): Promise<Blob> => {
-    const endpoint = `/coa/export-pdf` // adjust endpoint if needed
-    try {
-      const response = await apiRequest<Blob>("get", endpoint, null, {
-        useAuth: true,
-        useBranchId: true,
-        responseType: "blob",
-      })
-      return response.data
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || "Failed to export PDF"
-      throw new Error(errorMessage)
-    }
+  const exportPdf = async (): Promise<string> => {
+  const endpoint = `/coa/export-pdf` // adjust endpoint if needed
+  try {
+    const response = await apiRequest<{ url: string }>("get", endpoint, null, {
+      useAuth: true,
+      useBranchId: true,
+    })
+    return response.data.url
+  } catch (error: any) {
+    const errorMessage = error.response?.data?.message || "Failed to export PDF"
+    throw new Error(errorMessage)
   }
-  const handlePdfExport = useCallback(async () => {
-    setIsExporting(true)
-    try {
-      const blob = await exportPdf()
-      const url = window.URL.createObjectURL(blob)
+}
 
-      const newTab = window.open(url, "_blank")
-      if (newTab) {
-        newTab.focus()
-      } else {
-        const link = document.createElement("a")
-        link.href = url
-        link.download = `general-journal-${new Date().toISOString().split("T")[0]}.pdf`
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-      }
-
-      toast.success("PDF opened in new tab")
-    } catch (error: any) {
-      toast.error("PDF Export Failed", {
-        description: error.message || "Could not export General Journal PDF.",
-      })
-    } finally {
-      setIsExporting(false)
+const handlePdfExport = useCallback(async () => {
+  setIsExporting(true)
+  try {
+    const url = await exportPdf()
+    
+    const newTab = window.open(url, "_blank")
+    if (newTab) {
+      newTab.focus()
+    } else {
+      // fallback for popup blockers
+      const link = document.createElement("a")
+      link.href = url
+      link.target = "_blank"
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
     }
-  }, [])
+
+    toast.success("PDF opened in new tab")
+  } catch (error: any) {
+    toast.error("PDF Export Failed", {
+      description: error.message || "Could not export General Journal PDF.",
+    })
+  } finally {
+    setIsExporting(false)
+  }
+}, [])
+
 
   const fetchAccounts = async () => {
     setLoading(true)

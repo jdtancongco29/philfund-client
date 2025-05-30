@@ -333,7 +333,6 @@ export default function BorrowersMasterList() {
     setIsBulkUploadOpen(true)
   }
 
-  // Custom action buttons with dropdown
 
 
   return (

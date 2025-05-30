@@ -104,12 +104,6 @@ export function BonusLoanTable() {
   // Define columns
   const columns: ColumnDefinition<BonusLoan>[] = [
     {
-      id: "code",
-      header: "Code",
-      accessorKey: "code",
-      enableSorting: true,
-    },
-    {
       id: "name",
       header: "Type of Bonus",
       accessorKey: "name",
@@ -133,18 +127,13 @@ export function BonusLoanTable() {
       header: "Max Amount",
       accessorKey: "max_amt",
       enableSorting: true,
+      cell: (item) => item.max_amt == null ? "-" : item.max_amt,
     },
     {
       id: "max_rate",
       header: "Max Rate",
       accessorKey: "max_rate",
-      cell: (item) => item.max_rate == null ? 0 : item.max_rate,
-      enableSorting: true,
-    },
-    {
-      id: "surcharge_rate",
-      header: "Surcharge",
-      accessorKey: "surcharge_rate",
+      cell: (item) => item.max_rate == null ? "-" : item.max_rate,
       enableSorting: true,
     },
   ]

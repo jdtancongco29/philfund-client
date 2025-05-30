@@ -28,21 +28,30 @@ const formSchema = z
     interest_rate: z
       .string()
       .min(1, "Interest rate is required")
-      .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
+      .refine((val) =>
+        !isNaN(Number(val)), "Must be a valid number")
+      .refine((val) => Number(val) <= 100, {
+        message: "Interest rate must not exceed 100%",
+      }),
     surcharge_rate: z
       .string()
       .min(1, "Surcharge rate is required")
-      .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
+      .refine((val) => !isNaN(Number(val)), "Must be a valid number")
+      .refine((val) => Number(val) <= 100, {
+        message: "Surcharge rate must not exceed 100%",
+      }),
     release_month: z.string().min(1, "Release month is required"),
     cut_off_date: z.string().min(1, "Cut-off date is required"),
     max_amt: z
       .string()
-      .min(1, "Maximum amount is required")
-      .refine((val) => !isNaN(Number(val)), "Must be a valid number"),
+      .refine((val) => !isNaN(Number(val)), "Must be a valid number").nullable(),
     max_rate: z
       .string()
       .optional()
-      .refine((val) => val === "" || !isNaN(Number(val)), "Must be a valid number"),
+      .refine((val) => val === "" || !isNaN(Number(val)), "Must be a valid number")
+      .refine((val) => Number(val) <= 100, {
+        message: "Maximum rate must not exceed 100%",
+      }),
 
     // Chart of Accounts - all required
     coa_interest_receivable: z.string().min(1, "Loan Interest Receivable account is required"),
@@ -173,6 +182,20 @@ export function BonusLoanFormDialog({
     "coa_bad_dept_expense",
   ])
 
+  const nonCoaFields = [
+    "code",
+    "name",
+    "interest_rate",
+    "surcharge_rate",
+    "release_month",
+    "cut_off_date",
+    "max_amt",
+    "max_rate",
+    "eligible_class"
+  ];
+
+
+
   // Get available COA options for each field (excluding already selected values)
   const getAvailableCoaOptions = (currentFieldValue: string) => {
     if (!coaData?.data.chartOfAccounts) return []
@@ -237,7 +260,7 @@ export function BonusLoanFormDialog({
       surcharge_rate: Number.parseFloat(values.surcharge_rate),
       release_month: Number.parseInt(values.release_month),
       cut_off_date: values.cut_off_date,
-      max_amt: Number.parseFloat(values.max_amt),
+      max_amt: Number.parseFloat(values?.max_amt ?? ""),
       max_rate: values.max_rate ? Number.parseFloat(values.max_rate) : null,
       eligible_class: values.eligible_class,
       coa_loan_receivable: values.coa_loan_receivable,
@@ -276,7 +299,7 @@ export function BonusLoanFormDialog({
       surcharge_rate: Number.parseFloat(values.surcharge_rate),
       release_month: Number.parseInt(values.release_month),
       cut_off_date: values.cut_off_date,
-      max_amt: Number.parseFloat(values.max_amt),
+      max_amt: Number.parseFloat(values?.max_amt ?? ""),
       max_rate: values.max_rate ? Number.parseFloat(values.max_rate) : null,
       eligible_class: values.eligible_class,
       coa_loan_receivable: values.coa_loan_receivable,
@@ -319,6 +342,7 @@ export function BonusLoanFormDialog({
     } else {
       create(values)
     }
+    setActiveTab("basic-info")
   }
 
   return (
@@ -346,7 +370,27 @@ export function BonusLoanFormDialog({
         )}
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(
+            (data) => {
+              // Valid submission
+              onFormSubmit(data);
+            },
+            (errors) => {
+              // This is called AFTER validation fails
+              const errorKeys = Object.keys(errors);
+              for (const key of errorKeys) {
+                if (nonCoaFields.includes(key)) {
+                  setActiveTab("basic-info");
+                  return;
+                }
+              }
+              if (activeTab != "chart-of-accounts") {
+                // If no specific match, default tab
+                form.clearErrors()
+                setActiveTab("chart-of-accounts");
+              }
+            }
+          )} className="space-y-6">
             <Tabs defaultValue="basic-info" value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="border-b w-full justify-start rounded-none h-auto p-0 mb-6">
                 <TabsTrigger
@@ -499,7 +543,7 @@ export function BonusLoanFormDialog({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-base font-medium">
-                          Maximum Amount <span className="text-red-500">*</span>
+                          Maximum Amount
                         </FormLabel>
                         <FormControl>
                           <Input type="number" step="0.01" placeholder="0.00" {...field} />

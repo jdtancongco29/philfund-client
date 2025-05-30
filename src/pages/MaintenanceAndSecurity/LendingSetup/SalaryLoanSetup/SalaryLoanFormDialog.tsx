@@ -124,8 +124,7 @@ const formSchema = z
         Number(data.vis_insurance || 0) +
         Number(data.vis_notarial || 0) +
         Number(data.vis_gross_reciept || 0) +
-        Number(data.vis_computer || 0) +
-        Number(data.vis_other_charges || 0)
+        Number(data.vis_computer || 0)
 
       const pgaFeesTotal =
         Number(data.pga_service_charge || 0) +
@@ -137,6 +136,8 @@ const formSchema = z
         Number(data.def_interest || 0) + Number(data.def_charge || 0) + Number(data.def_computer || 0)
 
       const expectedTotal = pgaFeesTotal + branchChargesTotal
+
+      console.log(clientVisibleTotal, expectedTotal);
 
       return Math.abs(clientVisibleTotal - expectedTotal) < 0.01 // Allow for small floating point differences
     },
@@ -221,7 +222,6 @@ export function SalaryLoanFormDialog({
     queryKey: ["groups-for-salary-loan"],
     queryFn: () => GroupSetupService.getAllGroups(),
     staleTime: Number.POSITIVE_INFINITY,
-    enabled: item != null
   })
 
   // Fetch COA for the dropdowns
@@ -229,7 +229,6 @@ export function SalaryLoanFormDialog({
     queryKey: ["coa-for-salary-loan", item],
     queryFn: () => SalaryLoanSetupService.getAllCOA(),
     staleTime: Number.POSITIVE_INFINITY,
-    enabled: item != null
   })
 
   // Initialize the form
@@ -842,6 +841,7 @@ export function SalaryLoanFormDialog({
                           <FormControl>
                             <Input type="number" step="0.01" placeholder="0.00" {...field} />
                           </FormControl>
+                          <FormDescription className="select-none text-white">This is for layout alignment</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}

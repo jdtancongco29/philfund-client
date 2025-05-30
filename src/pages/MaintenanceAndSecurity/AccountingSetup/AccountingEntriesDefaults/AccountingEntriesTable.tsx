@@ -7,7 +7,7 @@ import {
   type ColumnDefinition,
   type FilterDefinition,
   type SearchDefinition,
-} from "@/components/data-table/data-table"
+} from "@/components/data-table/data-table-general-journal"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 
@@ -168,56 +168,53 @@ export default function AccountEntriesTable() {
   }
 
   const columns: ColumnDefinition<AccountEntry>[] = [
-    {
-      id: "name",
-      header: "Name",
-      accessorKey: "name",
-      enableSorting: true,
-    },
+
     {
       id: "particulars",
       header: "Particulars",
       accessorKey: "particulars",
       enableSorting: true,
     },
-    {
-      id: "transaction_amount",
-      header: "Transaction Amount",
-      accessorKey: "transaction_amount",
+       {
+      id: "name",
+      header: "Name",
+      accessorKey: "name",
       enableSorting: true,
-      cell: (item) =>
-        `₱${Number.parseFloat(item.transaction_amount).toLocaleString("en-US", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })}`,
     },
-    {
-      id: "accounts_count",
-      header: "Accounts",
-      accessorKey: "details",
-      enableSorting: false,
-      cell: (item) => `${item.details?.length || 0} account(s)`,
-    },
-    {
-      id: "status",
-      header: "Status",
-      accessorKey: "status",
-      enableSorting: true,
-      displayCondition: [
-        {
-          value: true,
-          label: "Active",
-          className:
-            "inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20",
-        },
-        {
-          value: false,
-          label: "Inactive",
-          className:
-            "inline-flex items-center rounded-full bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20",
-        },
-      ],
-    },
+
+{
+  id: "debit_amount",
+  header: "Debit Amount",
+  accessorKey: "details",
+  cell: (item) => {
+    const totalDebit = (item.details ?? []).reduce(
+      (sum, d) => sum + parseFloat(d.debit || "0"),
+      0
+    );
+    return `₱${totalDebit.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  },
+  enableSorting: false,
+},
+{
+  id: "credit_amount",
+  header: "Credit Amount",
+  accessorKey: "details",
+  cell: (item) => {
+    const totalCredit = (item.details ?? []).reduce(
+      (sum, d) => sum + parseFloat(d.credit || "0"),
+      0
+    );
+    return `₱${totalCredit.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  },
+  enableSorting: false,
+},
+
   ]
 
   const filters: FilterDefinition[] = [
@@ -378,33 +375,35 @@ export default function AccountEntriesTable() {
     }
   }, [getAuthHeaders, downloadFile, generateCsvFromData, data])
 
- const exportPdf = async (): Promise<Blob> => {
+
+
+   const exportPdf = async (): Promise<string> => {
   const endpoint = `/default-entry/export-pdf` // adjust endpoint if needed
   try {
-    const response = await apiRequest<Blob>("get", endpoint, null, {
+    const response = await apiRequest<{ url: string }>("get", endpoint, null, {
       useAuth: true,
       useBranchId: true,
-      responseType: "blob",
     })
-    return response.data
+    return response.data.url
   } catch (error: any) {
     const errorMessage = error.response?.data?.message || "Failed to export PDF"
     throw new Error(errorMessage)
   }
 }
+
 const handlePdfExport = useCallback(async () => {
   setIsExporting(true)
   try {
-    const blob = await exportPdf()
-    const url = window.URL.createObjectURL(blob)
+    const url = await exportPdf()
     
     const newTab = window.open(url, "_blank")
     if (newTab) {
       newTab.focus()
     } else {
+      // fallback for popup blockers
       const link = document.createElement("a")
       link.href = url
-      link.download = `general-journal-${new Date().toISOString().split("T")[0]}.pdf`
+      link.target = "_blank"
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
@@ -419,6 +418,10 @@ const handlePdfExport = useCallback(async () => {
     setIsExporting(false)
   }
 }, [])
+
+
+
+ 
 
 
   return (

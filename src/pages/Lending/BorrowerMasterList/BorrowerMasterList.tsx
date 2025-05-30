@@ -2,10 +2,15 @@
 
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
-import { Upload } from "lucide-react"
+import { Upload, ChevronDown } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ColumnDefinition, FilterDefinition, SearchDefinition } from "@/components/data-table/data-table"
 import { DataTableV2 } from "@/components/data-table/data-table-v2"
 import { AddBorrowerDialog } from "../BarrowerProfileMaintenance/AddBorrowerDialog"
+import { BulkUploadDialog } from "../BarrowerProfileMaintenance/dialog/BulkUploadDialog"
+import { DataTableV3 } from "@/components/data-table/data-table-v3"
+
 
 
 interface BorrowerData {
@@ -165,6 +170,8 @@ export default function BorrowersMasterList() {
   const [currentPage, setCurrentPage] = useState(1)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false)
+  const [uploadType, setUploadType] = useState<"borrower-profiles" | "beginning-balance">("borrower-profiles")
 
   // Define columns for the DataTableV2
   const columns: ColumnDefinition<BorrowerData>[] = [
@@ -322,24 +329,25 @@ export default function BorrowersMasterList() {
     console.log("Export to CSV")
   }
 
-  const handleBulkImport = () => {
-    console.log("Bulk import")
+  const handleBulkUpload = (type: "borrower-profiles" | "beginning-balance") => {
+    setUploadType(type)
+    setIsBulkUploadOpen(true)
   }
 
-  // Custom action buttons
+  // Custom action buttons with dropdown
   const actionButtons = [
     {
       label: "Bulk Import",
       icon: <Upload className="h-4 w-4" />,
-      onClick: handleBulkImport,
+      onClick: () => {}, // This will be handled by the dropdown
       variant: "outline" as const,
       showInHeader: true,
     },
   ]
 
   return (
-    <div className="w-full max-w-screen-2xl mx-auto p-6">
-      <DataTableV2
+    <div className="w-full p-6">
+      <DataTableV3
         title="Borrowers Master list"
         data={staticBorrowersData}
         columns={columns}
@@ -363,9 +371,29 @@ export default function BorrowersMasterList() {
         pageNumber={currentPage}
         onPaginationChange={setCurrentPage}
         onRowCountChange={setRowsPerPage}
-        actionButtons={actionButtons}
+        actionButtons={[]}
+        customHeaderActions={
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Upload className="h-4 w-4 mr-2" />
+                Bulk Import
+                <ChevronDown className="h-4 w-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => handleBulkUpload("borrower-profiles")}>
+                Borrower's Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => handleBulkUpload("beginning-balance")}>
+                Beginning Balance
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        }
       />
       <AddBorrowerDialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} />
+      <BulkUploadDialog open={isBulkUploadOpen} onOpenChange={setIsBulkUploadOpen} uploadType={uploadType} />
     </div>
   )
 }

@@ -9,8 +9,7 @@ import { AlertCircle, CircleCheck } from "lucide-react"
 import { toast } from "sonner"
 import { apiRequest, getBranchId } from "@/lib/api"
 import { BranchSelectionDialog } from "./BranchSelectionDialog"
-import { BranchUserDialog } from "./BranchUserDialog"
-import { COADialog } from "./COADialog"
+import Select from "react-select"
 
 interface ValidationErrors {
   [key: string]: string[]
@@ -33,6 +32,15 @@ interface ChartOfAccount {
   branch_id: string
   code: string
   name: string
+  description?: string
+  major_classification?: string
+  category?: string
+  is_header?: boolean
+  parent_id?: string | null
+  is_contra?: boolean
+  normal_balance?: string
+  special_classification?: string
+  status?: boolean
 }
 
 interface GeneralJournalEntry {
@@ -55,25 +63,25 @@ interface GeneralJournalEntry {
     id: string
     name: string
   }
-    checked_by: {
+  checked_by: {
     id: string
     name: string
   }
-    approved_by: {
+  approved_by: {
     id: string
     name: string
   }
 
-items?: Array<{
-  id: string
-  coa: {
+  items?: Array<{
     id: string
-    code: string
-    name: string
-  }
-  debit: number
-  credit: number
-}>
+    coa: {
+      id: string
+      code: string
+      name: string
+    }
+    debit: number
+    credit: number
+  }>
 }
 
 // API Response interfaces based on your sample
@@ -193,43 +201,10 @@ const ErrorMessage = ({ errors }: { errors: string[] }) => {
 
 // Balance Validation Component
 const BalanceValidationMessage = ({ items }: { items: Item[] }) => {
-  const totalDebit = calculateTotalDebit(items)
-  const totalCredit = calculateTotalCredit(items)
-  const balanced = isBalanced(items)
 
   if (items.length === 0) return null
 
-  return (
-    <div
-      className={`mt-2 p-3 rounded-md border ${balanced ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}
-    >
-      <div className="flex items-center justify-between text-sm">
-        <div className="flex items-center gap-2">
-          {balanced ? (
-            <CircleCheck className="h-4 w-4 text-green-600" />
-          ) : (
-            <AlertCircle className="h-4 w-4 text-red-600" />
-          )}
-          <span className={balanced ? "text-green-700" : "text-red-700"}>
-            {balanced ? "Balanced" : "Out of Balance"}
-          </span>
-        </div>
-        <div className="flex gap-4 text-xs">
-          <span className="text-gray-600">
-            Total Debit: <span className="font-medium">{totalDebit.toFixed(2)}</span>
-          </span>
-          <span className="text-gray-600">
-            Total Credit: <span className="font-medium">{totalCredit.toFixed(2)}</span>
-          </span>
-          {!balanced && (
-            <span className="text-red-600">
-              Difference: <span className="font-medium">{Math.abs(totalDebit - totalCredit).toFixed(2)}</span>
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
-  )
+ 
 }
 
 export default function AddEditEntryDialog({
@@ -243,20 +218,20 @@ export default function AddEditEntryDialog({
   const [particulars, setParticulars] = useState("")
   const [refNum, setRefNum] = useState("")
   const [refId, setRefId] = useState("")
+    const [refCode, setRefCode] = useState("")
   const [branchId, setBranchId] = useState("")
   const [transactionDate, setTransactionDate] = useState("")
   const [, setTransAmount] = useState("")
   const [items, setItems] = useState<Item[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [branchUsers, setBranchUsers] = useState<BranchUser[]>([])
+  const [chartOfAccounts, setChartOfAccounts] = useState<ChartOfAccount[]>([])
+  const [loadingCOA, setLoadingCOA] = useState(false)
 
   // Error state
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({})
 
-  const [isCOADialogOpen, setIsCOADialogOpen] = useState(false)
-  const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null)
-
   // User selection states
-  const [userDialogOpen, setUserDialogOpen] = useState<"prepared" | "checked" | "approved" | null>(null)
   const [preparedBy, setPreparedBy] = useState<BranchUser | null>(null)
   const [checkedBy, setCheckedBy] = useState<BranchUser | null>(null)
   const [approvedBy, setApprovedBy] = useState<BranchUser | null>(null)
@@ -292,26 +267,38 @@ export default function AddEditEntryDialog({
   const clearBranchSpecificData = () => {
     // Clear all items (COA selections are branch-specific)
     setItems([])
-    
+
     // Clear all user selections (users are branch-specific)
     setPreparedBy(null)
     setCheckedBy(null)
     setApprovedBy(null)
-    
+
     // Clear validation errors related to cleared data
     setValidationErrors((prev) => {
       const newErrors = { ...prev }
       // Remove item-related errors
-      Object.keys(newErrors).forEach(key => {
-        if (key.startsWith('items') || 
-            key === 'prepared_by' || 
-            key === 'checked_by' || 
-            key === 'approved_by') {
+      Object.keys(newErrors).forEach((key) => {
+        if (key.startsWith("items") || key === "prepared_by" || key === "checked_by" || key === "approved_by") {
           delete newErrors[key]
         }
       })
       return newErrors
     })
+  }
+
+  const fetchChartOfAccounts = async () => {
+    setLoadingCOA(true)
+    try {
+      const response = await apiRequest<{ data: { chartOfAccounts: ChartOfAccount[] } }>("get", "/coa", null, {
+        useAuth: true,
+        useBranchId: true,
+      })
+      setChartOfAccounts(response.data.data.chartOfAccounts)
+    } catch (error) {
+      console.error("Error fetching chart of accounts:", error)
+    } finally {
+      setLoadingCOA(false)
+    }
   }
 
   const fetchReferenceNumber = async () => {
@@ -320,11 +307,24 @@ export default function AddEditEntryDialog({
         useAuth: true,
         useBranchId: true,
       })
-      const { ref_id, ref_num } = response.data.data
+      const { ref_num, ref_code,ref_id } = response.data.data
       setRefId(ref_id)
+      setRefCode(ref_code)
       setRefNum(ref_num.toString())
     } catch (error) {
       console.error("Failed to fetch reference number:", error)
+    }
+  }
+
+  const fetchBranchUsers = async () => {
+    try {
+      const response = await apiRequest<{ data: { users: BranchUser[] } }>("get", "/branch/users", null, {
+        useAuth: true,
+        useBranchId: true,
+      })
+      setBranchUsers(response.data.data.users)
+    } catch (error) {
+      console.error("Error fetching branch users:", error)
     }
   }
 
@@ -332,6 +332,8 @@ export default function AddEditEntryDialog({
   useEffect(() => {
     if (isOpen) {
       setValidationErrors({})
+      fetchBranchUsers()
+      fetchChartOfAccounts() // Add this line
 
       // Use apiEntry if available, otherwise use editingEntry
       const entryData = apiEntry || editingEntry
@@ -423,21 +425,21 @@ export default function AddEditEntryDialog({
             setPreparedBy(
               typeof editingEntry.prepared_by === "string"
                 ? { id: editingEntry.prepared_by, name: "Loading..." }
-                : editingEntry.prepared_by
+                : editingEntry.prepared_by,
             )
           }
           if (editingEntry.checked_by) {
             setCheckedBy(
               typeof editingEntry.checked_by === "string"
                 ? { id: editingEntry.checked_by, name: "Loading..." }
-                : editingEntry.checked_by
+                : editingEntry.checked_by,
             )
           }
           if (editingEntry.approved_by) {
             setApprovedBy(
               typeof editingEntry.approved_by === "string"
                 ? { id: editingEntry.approved_by, name: "Loading..." }
-                : editingEntry.approved_by
+                : editingEntry.approved_by,
             )
           }
 
@@ -504,52 +506,17 @@ export default function AddEditEntryDialog({
     }
   }
 
-  const handleSelectCOA = (coa: ChartOfAccount) => {
-    if (selectedItemIndex !== null) {
-      const newItems = [...items]
-      newItems[selectedItemIndex] = {
-        ...newItems[selectedItemIndex],
-        coa_id: coa.id,
-        coa: {
-          id: coa.id,
-          code: coa.code,
-          name: coa.name,
-        },
-      }
-      setItems(newItems)
-      setIsCOADialogOpen(false)
-
-      // Clear COA-related errors for this item
-      clearFieldError(`items.${selectedItemIndex}.coa_id`)
-      clearFieldError(`items.${selectedItemIndex}`)
-    }
-  }
-
   const handleSelectBranch = (branch: Branch) => {
     const isChangingBranch = selectedBranch && selectedBranch.id !== branch.id
-    
+
     // If changing branch (not initial selection), clear branch-specific data
     if (isChangingBranch) {
       clearBranchSpecificData()
     }
-    
+
     setSelectedBranch(branch)
     setBranchId(branch.id)
     clearFieldError("branch_id")
-  }
-
-  const handleUserSelect = (user: BranchUser) => {
-    if (userDialogOpen === "prepared") {
-      setPreparedBy(user)
-      clearFieldError("prepared_by")
-    } else if (userDialogOpen === "checked") {
-      setCheckedBy(user)
-      clearFieldError("checked_by")
-    } else if (userDialogOpen === "approved") {
-      setApprovedBy(user)
-      clearFieldError("approved_by")
-    }
-    setUserDialogOpen(null)
   }
 
   const resetForm = () => {
@@ -578,7 +545,7 @@ export default function AddEditEntryDialog({
 
       const response = await apiRequest(method, url, payload, {
         useAuth: true,
-       useBranchId: true,
+        useBranchId: true,
       })
       return response.data
     } catch (error: any) {
@@ -615,7 +582,7 @@ export default function AddEditEntryDialog({
   }
 
   const totalCredit = calculateTotalCredit(items)
-        const cookieBranchId = getBranchId();
+  const cookieBranchId = getBranchId()
   const handleSubmit = async () => {
     // Clear previous validation errors
     setValidationErrors({})
@@ -631,34 +598,32 @@ export default function AddEditEntryDialog({
       })
       return
     }
-    const formattedTransactionDate = transactionDate?.split("T")[0] || transactionDate;
+    const formattedTransactionDate = transactionDate?.split("T")[0] || transactionDate
     if (
       name &&
       particulars &&
       refNum &&
       refId &&
-      transactionDate &&
       checkedBy &&
       approvedBy &&
       preparedBy &&
       items.length
     ) {
       try {
-
         const payload = {
           name,
           particulars,
           ref_num: Number(refNum),
           ref_id: refId,
           branch_id: cookieBranchId || branchId,
-          transaction_date: formattedTransactionDate,
+          transaction_date: formattedTransactionDate || new Date().toISOString().slice(0, 10),
           checked_by: checkedBy.id,
           approved_by: approvedBy.id,
           prepared_by: preparedBy.id,
           trans_amount: totalCredit,
           items: items.map((item) => ({
-            ...(item.id && { id: item.id }), // Include ID for existing items when editing
-            coa_id: item.coa_id,
+            ...(item.id && { id: item.id }), // Include existing item ID when editing
+            coa_id: item.coa?.id || item.coa_id,
             debit: Number.parseFloat(item.debit) || 0,
             credit: Number.parseFloat(item.credit) || 0,
           })),
@@ -699,9 +664,7 @@ export default function AddEditEntryDialog({
       }
     }
   }
-  const formattedDate = transactionDate
-    ? new Date(transactionDate).toISOString().slice(0, 10)
-    : "";
+  const formattedDate = transactionDate ? new Date(transactionDate).toISOString().slice(0, 10) : ""
   const handleClose = () => {
     resetForm()
     onClose()
@@ -710,7 +673,7 @@ export default function AddEditEntryDialog({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-[700px] overflow-y-auto max-h-[80vh]">
+        <DialogContent className="sm:max-w-[900px] overflow-y-auto max-h-[80vh]">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold">
               {isEditMode ? "Edit General Journal" : "Add General Journal"}
@@ -718,38 +681,6 @@ export default function AddEditEntryDialog({
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>
-                  Name <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  value={name}
-                  onChange={(e) => {
-                    setName(e.target.value)
-                    clearFieldError("name")
-                  }}
-                  placeholder="Entry name"
-                  disabled={isSubmitting}
-                  className={hasFieldError("name") ? "border-red-500" : ""}
-                />
-                <ErrorMessage errors={getFieldErrors("name")} />
-              </div>
-              <div className="space-y-2">
-                <Label>
-                  Particulars <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  value={particulars}
-                  onChange={(e) => {
-                    setParticulars(e.target.value)
-                    clearFieldError("particulars")
-                  }}
-                  placeholder="Particulars"
-                  disabled={isSubmitting}
-                  className={hasFieldError("particulars") ? "border-red-500" : ""}
-                />
-                <ErrorMessage errors={getFieldErrors("particulars")} />
-              </div>
               <div className="space-y-2">
                 <Label>
                   Reference Number <span className="text-red-500">*</span>
@@ -774,52 +705,92 @@ export default function AddEditEntryDialog({
               </div>
               <div className="space-y-2">
                 <Label>
-                  Reference ID <span className="text-red-500">*</span>
+                  Reference Code <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  value={refId}
+                  value={refCode}
                   readOnly
                   placeholder="Reference ID"
                   className={hasFieldError("ref_id") ? "border-red-500" : ""}
                 />
                 <ErrorMessage errors={getFieldErrors("ref_id")} />
               </div>
-              <div className="space-y-2">
-                <Label>
-                  Branch <span className="text-red-500">*</span>
-                </Label>
-                <div
-                  className="w-full border rounded px-3 py-2 bg-white"
-                >
-                  {selectedBranch ? selectedBranch.name : branchId ? branchId : cookieBranchId}
-                </div>
-                <ErrorMessage errors={getFieldErrors("branch_id")} />
-              </div>
-              <div className="space-y-2">
+
+                <div className="space-y-2">
                 <Label>
                   Transaction Date <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   type="date"
-                  value={formattedDate}
+                  value={formattedDate || new Date().toISOString().slice(0, 10)}
                   onChange={(e) => {
-                    setTransactionDate(e.target.value)
-                    clearFieldError("transaction_date")
+                  setTransactionDate(e.target.value)
+                  clearFieldError("transaction_date")
                   }}
-                  
                   className={hasFieldError("transaction_date") ? "border-red-500" : ""}
                 />
                 <ErrorMessage errors={getFieldErrors("transaction_date")} />
+                </div>
+
+              <div className="space-y-2">
+                <Label>
+                  Name <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value)
+                    clearFieldError("name")
+                  }}
+                  placeholder="Entry name"
+                  disabled={isSubmitting}
+                  className={hasFieldError("name") ? "border-red-500" : ""}
+                />
+                <ErrorMessage errors={getFieldErrors("name")} />
+              </div>
+
+              <div className="hidden">
+                <input
+                  type="hidden"
+                  name="branch_id"
+                  value={selectedBranch ? selectedBranch.id : branchId || cookieBranchId}
+                />
+                <ErrorMessage errors={getFieldErrors("branch_id")} />
+              </div>
+
+              <div className="space-y-2">
+                <Label>
+                  Particulars <span className="text-red-500">*</span>
+                </Label>
+                <textarea
+                  value={particulars}
+                  onChange={(e) => {
+                    setParticulars(e.target.value)
+                    clearFieldError("particulars")
+                  }}
+                  placeholder="Particulars"
+                  disabled={isSubmitting}
+                  className={`block w-full rounded border px-3 py-2 ${
+                    hasFieldError("particulars") ? "border-red-500" : ""
+                  }`}
+                  rows={4}
+                />
+                <ErrorMessage errors={getFieldErrors("particulars")} />
               </div>
             </div>
 
             <div>
-              <div className="flex items-center justify-between">
-                <Label>
-                  Items <span className="text-red-500">*</span>
+              <div className="flex items-center justify-between mb-4">
+                <Label className="text-lg font-semibold">
+                  Journal Entry Items <span className="text-red-500">*</span>
                 </Label>
-                <Button variant="outline" onClick={addItem} disabled={isSubmitting}>
-                  Add Item
+                <Button
+                  variant="outline"
+                  onClick={addItem}
+                  disabled={isSubmitting}
+                  className="text-blue-600 border-blue-600"
+                >
+                  + Add Entry
                 </Button>
               </div>
 
@@ -829,113 +800,271 @@ export default function AddEditEntryDialog({
               {/* Display general items errors (like balance errors) */}
               <ErrorMessage errors={getFieldErrors("items")} />
 
+              {/* Table Header */}
+              <div className="grid grid-cols-5 gap-4 mb-2 text-sm font-medium text-gray-600 border-b pb-2">
+                <div>Account Code</div>
+                <div>Account Name</div>
+                <div>Debit</div>
+                <div>Credit</div>
+                <div></div>
+              </div>
+
+              {/* Table Rows */}
               {items.map((item, index) => (
-                <div key={index} className="border p-4 my-2 rounded-md space-y-2">
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label>COA</Label>
-                      <div
-                        className={`border rounded px-3 py-2 cursor-pointer bg-white ${
-                          isSubmitting ? "opacity-50 cursor-not-allowed" : ""
-                        } ${hasFieldError(`items.${index}.coa_id`) ? "border-red-500" : ""}`}
-                        onClick={() => {
-                          if (!isSubmitting) {
-                            setSelectedItemIndex(index)
-                            setIsCOADialogOpen(true)
+                <div key={index} className="grid grid-cols-5 gap-4 py-3 border-b border-gray-100">
+                  {/* Account Code Dropdown */}
+                  <div className="space-y-1">
+                    <Select<{ value: string; label: string }>
+                      value={
+                        item.coa
+                          ? {
+                              value: item.coa.id,
+                              label: item.coa.code,
+                            }
+                          : null
+                      }
+                      onChange={(selectedOption) => {
+                        if (selectedOption) {
+                          const account = chartOfAccounts.find((coa) => coa.id === selectedOption.value)
+                          if (account) {
+                            updateItem(index, "coa_id", account.id)
+                            const newItems = [...items]
+                            newItems[index] = {
+                              ...newItems[index],
+                              coa: {
+                                id: account.id,
+                                code: account.code,
+                                name: account.name,
+                              },
+                            }
+                            setItems(newItems)
                           }
-                        }}
-                      >
-                        {item.coa ? `${item.coa.code} - ${item.coa.name}` : <span className="text-gray-400">Select COA</span>}
-                      </div>
-                      <ErrorMessage errors={getFieldErrors(`items.${index}.coa_id`)} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Debit</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
-                        value={item.debit}
-                        onChange={(e) => updateItem(index, "debit", e.target.value)}
-                        disabled={isSubmitting}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Credit</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
-                        value={item.credit}
-                        onChange={(e) => updateItem(index, "credit", e.target.value)}
-                        disabled={isSubmitting}
-                      />
-                    </div>
+                        } else {
+                          updateItem(index, "coa_id", "")
+                          const newItems = [...items]
+                          newItems[index] = {
+                            ...newItems[index],
+                            coa: undefined,
+                          }
+                          setItems(newItems)
+                        }
+                      }}
+                      options={chartOfAccounts.map((coa) => ({
+                        value: coa.id,
+                        label: coa.code,
+                      }))}
+                      placeholder="Select Account..."
+                      isLoading={loadingCOA}
+                      isClearable
+                      classNamePrefix={hasFieldError(`items.${index}.coa_id`) ? "react-select-error" : "react-select"}
+                      isDisabled={isSubmitting}
+                    />
+                    <ErrorMessage errors={getFieldErrors(`items.${index}.coa_id`)} />
                   </div>
-                  {/* Display item-level errors (like uniqueness errors) */}
-                  <ErrorMessage errors={getFieldErrors(`items.${index}`)} />
-                  <div className="flex justify-end">
-                    <Button variant="outline" size="sm" onClick={() => removeItem(index)} disabled={isSubmitting}>
-                      Remove Item
+
+                  {/* Account Name Dropdown */}
+                  <div className="space-y-1">
+                    <Select<{ value: string; label: string }>
+                      value={
+                        item.coa
+                          ? {
+                              value: item.coa.id,
+                              label: item.coa.name,
+                            }
+                          : null
+                      }
+                      onChange={(selectedOption) => {
+                        if (selectedOption) {
+                          const account = chartOfAccounts.find((coa) => coa.id === selectedOption.value)
+                          if (account) {
+                            updateItem(index, "coa_id", account.id)
+                            const newItems = [...items]
+                            newItems[index] = {
+                              ...newItems[index],
+                              coa: {
+                                id: account.id,
+                                code: account.code,
+                                name: account.name,
+                              },
+                            }
+                            setItems(newItems)
+                          }
+                        } else {
+                          updateItem(index, "coa_id", "")
+                          const newItems = [...items]
+                          newItems[index] = {
+                            ...newItems[index],
+                            coa: undefined,
+                          }
+                          setItems(newItems)
+                        }
+                      }}
+                      options={chartOfAccounts.map((coa) => ({
+                        value: coa.id,
+                        label: coa.name,
+                      }))}
+                      placeholder="Select Account..."
+                      isLoading={loadingCOA}
+                      isClearable
+                      classNamePrefix={hasFieldError(`items.${index}.coa_id`) ? "react-select-error" : "react-select"}
+                      isDisabled={isSubmitting}
+                    />
+                  </div>
+
+                  {/* Debit Input */}
+                  <div>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={item.debit}
+                      onChange={(e) => updateItem(index, "debit", e.target.value)}
+                      disabled={isSubmitting}
+                      className="text-center"
+                    />
+                  </div>
+
+                  {/* Credit Input */}
+                  <div>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={item.credit}
+                      onChange={(e) => updateItem(index, "credit", e.target.value)}
+                      disabled={isSubmitting}
+                      className="text-center"
+                    />
+                  </div>
+
+                  {/* Remove Button */}
+                  <div className="flex justify-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeItem(index)}
+                      disabled={isSubmitting}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1"
+                    >
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
                     </Button>
                   </div>
+
+                  {/* Display item-level errors spanning full width */}
+                  {getFieldErrors(`items.${index}`).length > 0 && (
+                    <div className="col-span-5">
+                      <ErrorMessage errors={getFieldErrors(`items.${index}`)} />
+                    </div>
+                  )}
                 </div>
               ))}
+
+              {/* Totals Row */}
+              <div className="grid grid-cols-5 gap-4 py-3 border-t-2 border-gray-300 font-semibold">
+                <div className="col-span-2">Totals</div>
+                <div className="text-center">{calculateTotalDebit(items).toFixed(2)}</div>
+                <div className="text-center">{calculateTotalCredit(items).toFixed(2)}</div>
+                <div></div>
+              </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label>Prepared By</Label>
-                <Input
-                  value={preparedBy?.name ?? ""}
-                  readOnly
-                  placeholder="Select user"
-                  onClick={() => !isSubmitting && setUserDialogOpen("prepared")}
-                  className={`cursor-pointer ${
-                    isSubmitting ? "opacity-50 cursor-not-allowed" : ""
-                  } ${hasFieldError("prepared_by") ? "border-red-500" : ""}`}
-                />
-                <ErrorMessage errors={getFieldErrors("prepared_by")} />
-              </div>
+            {/* Approval Section */}
+            <div className="mt-8 space-y-6">
+              <h3 className="text-lg font-semibold">Approval</h3>
 
-              <div className="space-y-2">
-                <Label>Checked By</Label>
-                <Input
-                  value={checkedBy?.name ?? ""}
-                  readOnly
-                  placeholder="Select user"
-                  onClick={() => !isSubmitting && setUserDialogOpen("checked")}
-                  className={`cursor-pointer ${
-                    isSubmitting ? "opacity-50 cursor-not-allowed" : ""
-                  } ${hasFieldError("checked_by") ? "border-red-500" : ""}`}
-                />
-                <ErrorMessage errors={getFieldErrors("checked_by")} />
-              </div>
+              <div className="space-y-6">
+                {/* Prepared By */}
+                <div className="space-y-2">
+                  <Label className="font-medium">
+                    Prepared By <span className="text-red-500">*</span>
+                  </Label>
+                  <Select<{ value: string; label: string }>
+                    value={preparedBy ? { value: preparedBy.id, label: preparedBy.name } : null}
+                    onChange={(selectedOption) => {
+                      if (selectedOption) {
+                        setPreparedBy({
+                          id: selectedOption.value,
+                          name: selectedOption.label,
+                        })
+                        clearFieldError("prepared_by")
+                      } else {
+                        setPreparedBy(null)
+                      }
+                    }}
+                    options={branchUsers.map((user) => ({
+                      value: user.id,
+                      label: user.name,
+                    }))}
+                    placeholder="Select..."
+                    classNamePrefix={hasFieldError("prepared_by") ? "react-select-error" : "react-select"}
+                    isDisabled={isSubmitting}
+                  />
+                  <p className="text-sm text-gray-500">The user who prepared this journal entry</p>
+                  <ErrorMessage errors={getFieldErrors("prepared_by")} />
+                </div>
 
-              <div className="space-y-2">
-                <Label>Approved By</Label>
-                <Input
-                  value={approvedBy?.name ?? ""}
-                  readOnly
-                  placeholder="Select user"
-                  onClick={() => !isSubmitting && setUserDialogOpen("approved")}
-                  className={`cursor-pointer ${
-                    isSubmitting ? "opacity-50 cursor-not-allowed" : ""
-                  } ${hasFieldError("approved_by") ? "border-red-500" : ""}`}
-                />
-                <ErrorMessage errors={getFieldErrors("approved_by")} />
-              </div>
+                {/* Checked By */}
+                <div className="space-y-2">
+                  <Label className="font-medium">Checked By</Label>
+                  <Select<{ value: string; label: string }>
+                    value={checkedBy ? { value: checkedBy.id, label: checkedBy.name } : null}
+                    onChange={(selectedOption) => {
+                      if (selectedOption) {
+                        setCheckedBy({
+                          id: selectedOption.value,
+                          name: selectedOption.label,
+                        })
+                        clearFieldError("checked_by")
+                      } else {
+                        setCheckedBy(null)
+                      }
+                    }}
+                    options={branchUsers.map((user) => ({
+                      value: user.id,
+                      label: user.name,
+                    }))}
+                    placeholder="Select..."
+                    classNamePrefix={hasFieldError("checked_by") ? "react-select-error" : "react-select"}
+                    isDisabled={isSubmitting}
+                  />
+                  <p className="text-sm text-gray-500">The user who checked this journal entry (optional)</p>
+                  <ErrorMessage errors={getFieldErrors("checked_by")} />
+                </div>
 
-              <div className="space-y-2">
-                <Label>Transaction Amount</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={totalCredit.toFixed(2)}
-                  readOnly
-                  placeholder="0.00"
-                  className="bg-gray-50"
-                />
+                {/* Approved By */}
+                <div className="space-y-2">
+                  <Label className="font-medium">Approved By</Label>
+                  <Select<{ value: string; label: string }>
+                    value={approvedBy ? { value: approvedBy.id, label: approvedBy.name } : null}
+                    onChange={(selectedOption) => {
+                      if (selectedOption) {
+                        setApprovedBy({
+                          id: selectedOption.value,
+                          name: selectedOption.label,
+                        })
+                        clearFieldError("approved_by")
+                      } else {
+                        setApprovedBy(null)
+                      }
+                    }}
+                    options={branchUsers.map((user) => ({
+                      value: user.id,
+                      label: user.name,
+                    }))}
+                    placeholder="Select..."
+                    classNamePrefix={hasFieldError("approved_by") ? "react-select-error" : "react-select"}
+                    isDisabled={isSubmitting}
+                  />
+                  <p className="text-sm text-gray-500">The user who approved this journal entry (optional)</p>
+                  <ErrorMessage errors={getFieldErrors("approved_by")} />
+                </div>
               </div>
             </div>
           </div>
@@ -952,7 +1081,7 @@ export default function AddEditEntryDialog({
                 !particulars ||
                 !refNum ||
                 !refId ||
-                !transactionDate ||
+
                 !checkedBy ||
                 !approvedBy ||
                 !preparedBy ||
@@ -966,23 +1095,12 @@ export default function AddEditEntryDialog({
         </DialogContent>
       </Dialog>
 
-      {/* COA Dialog */}
-      <COADialog
-        open={isCOADialogOpen}
-        onClose={() => setIsCOADialogOpen(false)}
-        onSelect={handleSelectCOA}
-        branchId={branchId}
-      />
-
       {/* Branch Selection Dialog */}
       <BranchSelectionDialog
         open={isBranchDialogOpen}
         onClose={() => setIsBranchDialogOpen(false)}
         onSelect={handleSelectBranch}
       />
-
-      {/* Branch User Dialog */}
-      <BranchUserDialog open={!!userDialogOpen} onClose={() => setUserDialogOpen(null)} onSelect={handleUserSelect} />
 
       {/* Branch info display */}
       {selectedBranch && (

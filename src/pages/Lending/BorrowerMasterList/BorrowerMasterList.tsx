@@ -6,6 +6,7 @@ import { Upload, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ColumnDefinition, FilterDefinition, SearchDefinition } from "@/components/data-table/data-table"
+
 import { AddBorrowerDialog } from "../BarrowerProfileMaintenance/AddBorrowerDialog"
 import { BulkUploadDialog } from "../BarrowerProfileMaintenance/dialog/BulkUploadDialog"
 import { DataTableV3 } from "@/components/data-table/data-table-v3"
@@ -333,7 +334,7 @@ export default function BorrowersMasterList() {
     setIsBulkUploadOpen(true)
   }
 
-  // Custom action buttons with dropdown
+
 
 
   return (

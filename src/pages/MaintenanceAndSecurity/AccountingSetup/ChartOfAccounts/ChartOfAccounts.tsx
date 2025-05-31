@@ -378,7 +378,7 @@ const handlePdfExport = useCallback(async () => {
     {
       id: "accountType",
       label: "Filter by Classification",
-      placeholder: "Search",
+      placeholder: "Select...",
       type: "select",
       options: [
         { label: "Regular account", value: "regular account" },

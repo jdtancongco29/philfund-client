@@ -1,26 +1,24 @@
-import  { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { AlertCircle, CircleCheck } from 'lucide-react';
-import { toast } from 'sonner';
-import { apiRequest } from '@/lib/api';
-import { BranchSelectionDialog } from './BranchSelectionDialog';
-import { BranchUserDialog } from './BranchUserDialog';
-import { COADialog } from './COADialog';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { AlertCircle, CircleCheck } from "lucide-react";
+import { toast } from "sonner";
+import { apiRequest } from "@/lib/api";
+import { BranchSelectionDialog } from "./BranchSelectionDialog";
+import { BranchUserDialog } from "./BranchUserDialog";
+import { COADialog } from "./COADialog";
 
 interface ValidationErrors {
   [key: string]: string[];
 }
-
-
 
 interface Item {
   coa_id: string;
@@ -30,10 +28,10 @@ interface Item {
 }
 
 interface ChartOfAccount {
-  id: string
-  branch_id: string
-  code: string
-  name: string
+  id: string;
+  branch_id: string;
+  code: string;
+  name: string;
 }
 
 interface AddNewEntryDialogProps {
@@ -66,11 +64,17 @@ interface BranchUser {
 
 // Utility functions for balance calculations
 const calculateTotalDebit = (items: Item[]): number => {
-  return items.reduce((total, item) => total + (parseFloat(item.debit) || 0), 0);
+  return items.reduce(
+    (total, item) => total + (parseFloat(item.debit) || 0),
+    0
+  );
 };
 
 const calculateTotalCredit = (items: Item[]): number => {
-  return items.reduce((total, item) => total + (parseFloat(item.credit) || 0), 0);
+  return items.reduce(
+    (total, item) => total + (parseFloat(item.credit) || 0),
+    0
+  );
 };
 
 const isBalanced = (items: Item[]): boolean => {
@@ -82,11 +86,14 @@ const isBalanced = (items: Item[]): boolean => {
 // Error Display Component
 const ErrorMessage = ({ errors }: { errors: string[] }) => {
   if (!errors || errors.length === 0) return null;
-  
+
   return (
     <div className="mt-1 space-y-1">
       {errors.map((error, index) => (
-        <div key={index} className="flex items-center gap-1 text-sm text-red-600">
+        <div
+          key={index}
+          className="flex items-center gap-1 text-sm text-red-600"
+        >
           <AlertCircle className="h-3 w-3 flex-shrink-0" />
           <span>{error}</span>
         </div>
@@ -100,11 +107,15 @@ const BalanceValidationMessage = ({ items }: { items: Item[] }) => {
   const totalDebit = calculateTotalDebit(items);
   const totalCredit = calculateTotalCredit(items);
   const balanced = isBalanced(items);
-  
+
   if (items.length === 0) return null;
-  
+
   return (
-    <div className={`mt-2 p-3 rounded-md border ${balanced ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+    <div
+      className={`mt-2 p-3 rounded-md border ${
+        balanced ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
+      }`}
+    >
       <div className="flex items-center justify-between text-sm">
         <div className="flex items-center gap-2">
           {balanced ? (
@@ -112,20 +123,25 @@ const BalanceValidationMessage = ({ items }: { items: Item[] }) => {
           ) : (
             <AlertCircle className="h-4 w-4 text-red-600" />
           )}
-          <span className={balanced ? 'text-green-700' : 'text-red-700'}>
-            {balanced ? 'Balanced' : 'Out of Balance'}
+          <span className={balanced ? "text-green-700" : "text-red-700"}>
+            {balanced ? "Balanced" : "Out of Balance"}
           </span>
         </div>
         <div className="flex gap-4 text-xs">
           <span className="text-gray-600">
-            Total Debit: <span className="font-medium">{totalDebit.toFixed(2)}</span>
+            Total Debit:{" "}
+            <span className="font-medium">{totalDebit.toFixed(2)}</span>
           </span>
           <span className="text-gray-600">
-            Total Credit: <span className="font-medium">{totalCredit.toFixed(2)}</span>
+            Total Credit:{" "}
+            <span className="font-medium">{totalCredit.toFixed(2)}</span>
           </span>
           {!balanced && (
             <span className="text-red-600">
-              Difference: <span className="font-medium">{Math.abs(totalDebit - totalCredit).toFixed(2)}</span>
+              Difference:{" "}
+              <span className="font-medium">
+                {Math.abs(totalDebit - totalCredit).toFixed(2)}
+              </span>
             </span>
           )}
         </div>
@@ -150,13 +166,19 @@ export default function AddNewEntryDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Error state
-  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>(
+    {}
+  );
 
   const [isCOADialogOpen, setIsCOADialogOpen] = useState(false);
-  const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null);
+  const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(
+    null
+  );
 
   // User selection states
-  const [userDialogOpen, setUserDialogOpen] = useState<"prepared" | "checked" | "approved" | null>(null);
+  const [userDialogOpen, setUserDialogOpen] = useState<
+    "prepared" | "checked" | "approved" | null
+  >(null);
   const [preparedBy, setPreparedBy] = useState<BranchUser | null>(null);
   const [checkedBy, setCheckedBy] = useState<BranchUser | null>(null);
   const [approvedBy, setApprovedBy] = useState<BranchUser | null>(null);
@@ -178,7 +200,7 @@ export default function AddNewEntryDialog({
   // Clear errors when field values change
   const clearFieldError = (fieldName: string) => {
     if (hasFieldError(fieldName)) {
-      setValidationErrors(prev => {
+      setValidationErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[fieldName];
         return newErrors;
@@ -213,25 +235,25 @@ export default function AddNewEntryDialog({
   const addItem = () => {
     setItems([...items, { coa_id: "", debit: "", credit: "" }]);
     // Clear balance errors when adding new items
-    clearFieldError('items');
+    clearFieldError("items");
   };
 
   const removeItem = (index: number) => {
     setItems(items.filter((_, i) => i !== index));
     // Clear errors for removed item
-    const itemErrors = Object.keys(validationErrors).filter(key => 
+    const itemErrors = Object.keys(validationErrors).filter((key) =>
       key.startsWith(`items.${index}`)
     );
     if (itemErrors.length > 0) {
-      setValidationErrors(prev => {
+      setValidationErrors((prev) => {
         const newErrors = { ...prev };
-        itemErrors.forEach(key => delete newErrors[key]);
+        itemErrors.forEach((key) => delete newErrors[key]);
         return newErrors;
       });
     }
-    
+
     // Clear balance errors when removing items
-    clearFieldError('items');
+    clearFieldError("items");
   };
 
   const updateItem = (index: number, field: keyof Item, value: string) => {
@@ -241,14 +263,15 @@ export default function AddNewEntryDialog({
       [field]: value,
     };
     setItems(newItems);
-    
+
     // Clear item-specific errors when updating
-    const fieldKey = field === 'coa_id' ? `items.${index}.coa_id` : `items.${index}`;
+    const fieldKey =
+      field === "coa_id" ? `items.${index}.coa_id` : `items.${index}`;
     clearFieldError(fieldKey);
-    
+
     // Clear balance-related errors when amounts change
-    if (field === 'debit' || field === 'credit') {
-      clearFieldError('items');
+    if (field === "debit" || field === "credit") {
+      clearFieldError("items");
     }
   };
 
@@ -262,7 +285,7 @@ export default function AddNewEntryDialog({
       };
       setItems(newItems);
       setIsCOADialogOpen(false);
-      
+
       // Clear COA-related errors for this item
       clearFieldError(`items.${selectedItemIndex}.coa_id`);
       clearFieldError(`items.${selectedItemIndex}`);
@@ -272,19 +295,19 @@ export default function AddNewEntryDialog({
   const handleSelectBranch = (branch: Branch) => {
     setSelectedBranch(branch);
     setBranchId(branch.id);
-    clearFieldError('branch_id');
+    clearFieldError("branch_id");
   };
 
   const handleUserSelect = (user: BranchUser) => {
     if (userDialogOpen === "prepared") {
       setPreparedBy(user);
-      clearFieldError('prepared_by');
+      clearFieldError("prepared_by");
     } else if (userDialogOpen === "checked") {
       setCheckedBy(user);
-      clearFieldError('checked_by');
+      clearFieldError("checked_by");
     } else if (userDialogOpen === "approved") {
       setApprovedBy(user);
-      clearFieldError('approved_by');
+      clearFieldError("approved_by");
     }
     setUserDialogOpen(null);
   };
@@ -308,33 +331,30 @@ export default function AddNewEntryDialog({
   const createGeneralJournalEntry = async (payload: any) => {
     try {
       setIsSubmitting(true);
-      const response = await apiRequest(
-        "post",
-        "/general-journal",
-        payload,
-        { 
-          useAuth: true,
-          customHeaders: {
-            'X-Branch-Id': branchId
-          }
-        }
-      );
+      const response = await apiRequest("post", "/general-journal", payload, {
+        useAuth: true,
+        customHeaders: {
+          "X-Branch-Id": branchId,
+        },
+      });
       return response.data;
     } catch (error: any) {
       // Handle API validation errors
       if (error.response?.data?.errors) {
         setValidationErrors(error.response.data.errors);
-        
+
         // Show specific error message for balance issues
         const errorMessage = error.response.data.message;
-        if (errorMessage?.includes('debit and credit amounts must be equal')) {
+        if (errorMessage?.includes("debit and credit amounts must be equal")) {
           toast.error("Balance Error", {
-            description: "The total debit and credit amounts must be equal. Please adjust your entries.",
+            description:
+              "The total debit and credit amounts must be equal. Please adjust your entries.",
             duration: 6000,
           });
         } else {
           toast.error("Validation Error", {
-            description: errorMessage || "Please fix the errors below and try again.",
+            description:
+              errorMessage || "Please fix the errors below and try again.",
             duration: 5000,
           });
         }
@@ -345,7 +365,7 @@ export default function AddNewEntryDialog({
           duration: 5000,
         });
       }
-      
+
       console.error("Failed to create general journal entry:", error);
       throw error;
     } finally {
@@ -353,24 +373,25 @@ export default function AddNewEntryDialog({
     }
   };
   const totalCredit = calculateTotalCredit(items);
-// In your AddNewEntryDialog component, modify the handleSubmit function:
+  // In your AddNewEntryDialog component, modify the handleSubmit function:
 
-const handleSubmit = async () => {
+  const handleSubmit = async () => {
     // Clear previous validation errors
     setValidationErrors({});
-    
+
     // Client-side validation for balance
     if (items.length > 0 && !isBalanced(items)) {
       setValidationErrors({
-        items: ["The total debit and credit amounts must be equal."]
+        items: ["The total debit and credit amounts must be equal."],
       });
       toast.error("Balance Error", {
-        description: "The total debit and credit amounts must be equal. Please adjust your entries.",
+        description:
+          "The total debit and credit amounts must be equal. Please adjust your entries.",
         duration: 6000,
       });
       return;
     }
-    
+
     if (
       name &&
       particulars &&
@@ -403,7 +424,7 @@ const handleSubmit = async () => {
         };
 
         const result = await createGeneralJournalEntry(payload);
-        
+
         // Pass the result to parent component (which will handle the toast)
         onAdd({
           ...result,
@@ -412,21 +433,20 @@ const handleSubmit = async () => {
           ref_num: Number(refNum),
           trans_amount: totalCredit,
           transaction_date: transactionDate,
-          branch_name: selectedBranch?.name
+          branch_name: selectedBranch?.name,
         });
-        
+
         resetForm();
         onClose();
-        
+
         // REMOVE the toast from here since parent will handle it
         toast.success("General Journal Created", {
           description: `General Journal has been successfully created.`,
           icon: <CircleCheck className="h-5 w-5" />,
           duration: 5000,
         });
-        
+
         console.log("General journal entry created successfully:", result);
-        
       } catch (error) {
         // Error handling is done in createGeneralJournalEntry
         console.error("Error creating general journal entry:", error);
@@ -438,8 +458,6 @@ const handleSubmit = async () => {
     resetForm();
     onClose();
   };
-
-
 
   return (
     <>
@@ -460,13 +478,13 @@ const handleSubmit = async () => {
                   value={name}
                   onChange={(e) => {
                     setName(e.target.value);
-                    clearFieldError('name');
+                    clearFieldError("name");
                   }}
                   placeholder="Entry name"
                   disabled={isSubmitting}
-                  className={hasFieldError('name') ? 'border-red-500' : ''}
+                  className={hasFieldError("name") ? "border-red-500" : ""}
                 />
-                <ErrorMessage errors={getFieldErrors('name')} />
+                <ErrorMessage errors={getFieldErrors("name")} />
               </div>
               <div className="space-y-2">
                 <Label>
@@ -476,13 +494,15 @@ const handleSubmit = async () => {
                   value={particulars}
                   onChange={(e) => {
                     setParticulars(e.target.value);
-                    clearFieldError('particulars');
+                    clearFieldError("particulars");
                   }}
                   placeholder="Particulars"
                   disabled={isSubmitting}
-                  className={hasFieldError('particulars') ? 'border-red-500' : ''}
+                  className={
+                    hasFieldError("particulars") ? "border-red-500" : ""
+                  }
                 />
-                <ErrorMessage errors={getFieldErrors('particulars')} />
+                <ErrorMessage errors={getFieldErrors("particulars")} />
               </div>
               <div className="space-y-2">
                 <Label>
@@ -494,9 +514,9 @@ const handleSubmit = async () => {
                   readOnly
                   placeholder="Reference Number"
                   disabled={isSubmitting}
-                  className={hasFieldError('ref_num') ? 'border-red-500' : ''}
+                  className={hasFieldError("ref_num") ? "border-red-500" : ""}
                 />
-                <ErrorMessage errors={getFieldErrors('ref_num')} />
+                <ErrorMessage errors={getFieldErrors("ref_num")} />
               </div>
               <div className="space-y-2">
                 <Label>
@@ -506,13 +526,13 @@ const handleSubmit = async () => {
                   value={refId}
                   onChange={(e) => {
                     setRefId(e.target.value);
-                    clearFieldError('ref_id');
+                    clearFieldError("ref_id");
                   }}
                   placeholder="Reference ID"
                   disabled={isSubmitting}
-                  className={hasFieldError('ref_id') ? 'border-red-500' : ''}
+                  className={hasFieldError("ref_id") ? "border-red-500" : ""}
                 />
-                <ErrorMessage errors={getFieldErrors('ref_id')} />
+                <ErrorMessage errors={getFieldErrors("ref_id")} />
               </div>
               <div className="space-y-2">
                 <Label>
@@ -520,13 +540,17 @@ const handleSubmit = async () => {
                 </Label>
                 <div
                   className={`w-full border rounded px-3 py-2 bg-white cursor-pointer ${
-                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-                  } ${hasFieldError('branch_id') ? 'border-red-500' : ''}`}
+                    isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+                  } ${hasFieldError("branch_id") ? "border-red-500" : ""}`}
                   onClick={() => !isSubmitting && setIsBranchDialogOpen(true)}
                 >
-                  {selectedBranch ? selectedBranch.name : <span className="text-gray-400">Select Branch</span>}
+                  {selectedBranch ? (
+                    selectedBranch.name
+                  ) : (
+                    <span className="text-gray-400">Select Branch</span>
+                  )}
                 </div>
-                <ErrorMessage errors={getFieldErrors('branch_id')} />
+                <ErrorMessage errors={getFieldErrors("branch_id")} />
               </div>
               <div className="space-y-2">
                 <Label>
@@ -537,12 +561,14 @@ const handleSubmit = async () => {
                   value={transactionDate}
                   onChange={(e) => {
                     setTransactionDate(e.target.value);
-                    clearFieldError('transaction_date');
+                    clearFieldError("transaction_date");
                   }}
                   disabled={isSubmitting}
-                  className={hasFieldError('transaction_date') ? 'border-red-500' : ''}
+                  className={
+                    hasFieldError("transaction_date") ? "border-red-500" : ""
+                  }
                 />
-                <ErrorMessage errors={getFieldErrors('transaction_date')} />
+                <ErrorMessage errors={getFieldErrors("transaction_date")} />
               </div>
             </div>
 
@@ -551,21 +577,21 @@ const handleSubmit = async () => {
                 <Label>
                   Items <span className="text-red-500">*</span>
                 </Label>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={addItem}
                   disabled={isSubmitting}
                 >
                   Add Item
                 </Button>
               </div>
-              
+
               {/* Display balance validation message */}
               <BalanceValidationMessage items={items} />
-              
+
               {/* Display general items errors (like balance errors) */}
-              <ErrorMessage errors={getFieldErrors('items')} />
-              
+              <ErrorMessage errors={getFieldErrors("items")} />
+
               {items.map((item, index) => (
                 <div
                   key={index}
@@ -576,8 +602,12 @@ const handleSubmit = async () => {
                       <Label>COA</Label>
                       <div
                         className={`border rounded px-3 py-2 cursor-pointer bg-white ${
-                          isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-                        } ${hasFieldError(`items.${index}.coa_id`) ? 'border-red-500' : ''}`}
+                          isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+                        } ${
+                          hasFieldError(`items.${index}.coa_id`)
+                            ? "border-red-500"
+                            : ""
+                        }`}
                         onClick={() => {
                           if (!isSubmitting) {
                             setSelectedItemIndex(index);
@@ -589,7 +619,9 @@ const handleSubmit = async () => {
                           <span className="text-gray-400">Select COA</span>
                         )}
                       </div>
-                      <ErrorMessage errors={getFieldErrors(`items.${index}.coa_id`)} />
+                      <ErrorMessage
+                        errors={getFieldErrors(`items.${index}.coa_id`)}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label>Debit</Label>
@@ -598,7 +630,9 @@ const handleSubmit = async () => {
                         step="0.01"
                         placeholder="0.00"
                         value={item.debit}
-                        onChange={(e) => updateItem(index, "debit", e.target.value)}
+                        onChange={(e) =>
+                          updateItem(index, "debit", e.target.value)
+                        }
                         disabled={isSubmitting}
                       />
                     </div>
@@ -609,7 +643,9 @@ const handleSubmit = async () => {
                         step="0.01"
                         placeholder="0.00"
                         value={item.credit}
-                        onChange={(e) => updateItem(index, "credit", e.target.value)}
+                        onChange={(e) =>
+                          updateItem(index, "credit", e.target.value)
+                        }
                         disabled={isSubmitting}
                       />
                     </div>
@@ -629,7 +665,7 @@ const handleSubmit = async () => {
                 </div>
               ))}
             </div>
-            
+
             <div className="mt-4 grid grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label>Prepared By</Label>
@@ -639,10 +675,10 @@ const handleSubmit = async () => {
                   placeholder="Select user"
                   onClick={() => !isSubmitting && setUserDialogOpen("prepared")}
                   className={`cursor-pointer ${
-                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-                  } ${hasFieldError('prepared_by') ? 'border-red-500' : ''}`}
+                    isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+                  } ${hasFieldError("prepared_by") ? "border-red-500" : ""}`}
                 />
-                <ErrorMessage errors={getFieldErrors('prepared_by')} />
+                <ErrorMessage errors={getFieldErrors("prepared_by")} />
               </div>
 
               <div className="space-y-2">
@@ -653,10 +689,10 @@ const handleSubmit = async () => {
                   placeholder="Select user"
                   onClick={() => !isSubmitting && setUserDialogOpen("checked")}
                   className={`cursor-pointer ${
-                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-                  } ${hasFieldError('checked_by') ? 'border-red-500' : ''}`}
+                    isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+                  } ${hasFieldError("checked_by") ? "border-red-500" : ""}`}
                 />
-                <ErrorMessage errors={getFieldErrors('checked_by')} />
+                <ErrorMessage errors={getFieldErrors("checked_by")} />
               </div>
 
               <div className="space-y-2">
@@ -667,35 +703,35 @@ const handleSubmit = async () => {
                   placeholder="Select user"
                   onClick={() => !isSubmitting && setUserDialogOpen("approved")}
                   className={`cursor-pointer ${
-                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-                  } ${hasFieldError('approved_by') ? 'border-red-500' : ''}`}
+                    isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+                  } ${hasFieldError("approved_by") ? "border-red-500" : ""}`}
                 />
-                <ErrorMessage errors={getFieldErrors('approved_by')} />
+                <ErrorMessage errors={getFieldErrors("approved_by")} />
               </div>
 
-                <div className="space-y-2">
-                <Label>
-                  Transaction Amount
-                </Label>
+              <div className="space-y-2">
+                <Label>Transaction Amount</Label>
                 <Input
                   type="number"
                   step="0.01"
                   value={totalCredit.toFixed(2)}
                   onChange={(e) => {
-                  setTransAmount(e.target.value);
-                  clearFieldError('trans_amount');
+                    setTransAmount(e.target.value);
+                    clearFieldError("trans_amount");
                   }}
                   placeholder="0.00"
-                  className={hasFieldError('trans_amount') ? 'border-red-500' : ''}
+                  className={
+                    hasFieldError("trans_amount") ? "border-red-500" : ""
+                  }
                 />
-                <ErrorMessage errors={getFieldErrors('trans_amount')} />
-                </div>
+                <ErrorMessage errors={getFieldErrors("trans_amount")} />
+              </div>
             </div>
           </div>
-          
+
           <DialogFooter className="flex justify-end space-x-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={handleClose}
               disabled={isSubmitting}
             >
@@ -726,25 +762,25 @@ const handleSubmit = async () => {
 
       {/* COA Dialog - Replace with your actual COA dialog component */}
       <COADialog
-      open={isCOADialogOpen}
-      onClose={() => setIsCOADialogOpen(false)}
-      onSelect={handleSelectCOA}
-      branchId={branchId} // Pass the branchId prop
-    />
+        open={isCOADialogOpen}
+        onClose={() => setIsCOADialogOpen(false)}
+        onSelect={handleSelectCOA}
+        branchId={branchId} // Pass the branchId prop
+      />
       {/* Branch Selection Dialog - Replace with your actual branch dialog component */}
       <BranchSelectionDialog
         open={isBranchDialogOpen}
         onClose={() => setIsBranchDialogOpen(false)}
         onSelect={handleSelectBranch}
       />
-      
+
       {/* Branch User Dialog - Replace with your actual user dialog component */}
       <BranchUserDialog
         open={!!userDialogOpen}
         onClose={() => setUserDialogOpen(null)}
         onSelect={handleUserSelect}
       />
-      
+
       {/* Branch info display */}
       {selectedBranch && (
         <div className="text-sm text-muted-foreground mt-2">

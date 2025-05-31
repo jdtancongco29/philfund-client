@@ -1,434 +1,460 @@
-"use client"
+"use client";
 
-import { useEffect, useState, useCallback } from "react"
-import { apiRequest } from "@/lib/api"
+import { useEffect, useState, useCallback } from "react";
+import { apiRequest } from "@/lib/api";
 import {
   DataTable,
   type ColumnDefinition,
   type FilterDefinition,
   type SearchDefinition,
-} from "@/components/data-table/data-table-general-journal"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
+} from "@/components/data-table/data-table-general-journal";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
-import { CircleCheck } from "lucide-react"
-import { toast } from "sonner"
-import AddEditEntryDialog from "./AddNewEntryDialog"
+import { CircleCheck } from "lucide-react";
+import { toast } from "sonner";
+import AddEditEntryDialog from "./AddNewEntryDialog";
 // Import the updated dialog component
 
 interface AccountEntry {
-  id?: string
-  name: string
-  particulars?: string
-  transaction_amount: string
-  status: boolean
+  id?: string;
+  name: string;
+  particulars?: string;
+  transaction_amount: string;
+  status: boolean;
   details?: Array<{
     coa: {
-      id: string
-      code: string
-      name: string
-    }
-    debit: string
-    credit: string
-  }>
+      id: string;
+      code: string;
+      name: string;
+    };
+    debit: string;
+    credit: string;
+  }>;
 }
 
 interface DataPayload {
-  count: number
-  default_accounts: AccountEntry[]
-  pagination: Pagination
+  count: number;
+  default_accounts: AccountEntry[];
+  pagination: Pagination;
 }
 
 interface ApiResponse {
-  status: string
-  message: string
-  data: DataPayload
+  status: string;
+  message: string;
+  data: DataPayload;
 }
 
 interface Pagination {
-  current_page: number
-  per_page: number
-  total_pages: number
-  total_items: number
+  current_page: number;
+  per_page: number;
+  total_pages: number;
+  total_items: number;
 }
 
 export default function AccountEntriesTable() {
-  const [loading, setLoading] = useState(true)
-  const [onResetTable, setOnResetTable] = useState(false)
-  const [data, setData] = useState<AccountEntry[]>([])
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingEntry, setEditingEntry] = useState<AccountEntry | null>(null)
-  const [isExporting, setIsExporting] = useState(false)
+  const [loading, setLoading] = useState(true);
+  const [onResetTable, setOnResetTable] = useState(false);
+  const [data, setData] = useState<AccountEntry[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<AccountEntry | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Delete dialog state
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [entryToDelete, setEntryToDelete] = useState<AccountEntry | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [entryToDelete, setEntryToDelete] = useState<AccountEntry | null>(null);
 
   const fetchData = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const response = await apiRequest<ApiResponse>("get", "/default-entry", null, {
-        useAuth: true,
-        useBranchId: true,
-      })
-      setData(response.data.data.default_accounts)
-      setOnResetTable(true)
+      const response = await apiRequest<ApiResponse>(
+        "get",
+        "/default-entry",
+        null,
+        {
+          useAuth: true,
+          useBranchId: true,
+        }
+      );
+      setData(response.data.data.default_accounts);
+      setOnResetTable(true);
     } catch (err) {
-      console.error(err)
+      console.error(err);
       toast.error("Error", {
         description: "Failed to load account entries. Please try again.",
         duration: 3000,
-      })
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchData()
-  }, [])
+    fetchData();
+  }, []);
 
   const handleNew = () => {
-    setEditingEntry(null)
-    setIsDialogOpen(true)
-  }
+    setEditingEntry(null);
+    setIsDialogOpen(true);
+  };
 
   const handleEdit = async (entry: AccountEntry) => {
     try {
       // Fetch full entry details including account details
-      const response = await apiRequest<{ data: AccountEntry }>("get", `/default-entry/${entry.id}`, null, {
-        useAuth: true,
-        useBranchId: true,
-      })
-      setEditingEntry(response.data.data)
-      setIsDialogOpen(true)
+      const response = await apiRequest<{ data: AccountEntry }>(
+        "get",
+        `/default-entry/${entry.id}`,
+        null,
+        {
+          useAuth: true,
+          useBranchId: true,
+        }
+      );
+      setEditingEntry(response.data.data);
+      setIsDialogOpen(true);
     } catch (error) {
-      console.error("Failed to fetch entry details:", error)
+      console.error("Failed to fetch entry details:", error);
       toast.error("Error", {
         description: "Failed to load entry details. Please try again.",
         duration: 3000,
-      })
+      });
       // If individual fetch fails, use the existing entry data
-      setEditingEntry(entry)
-      setIsDialogOpen(true)
+      setEditingEntry(entry);
+      setIsDialogOpen(true);
     }
-  }
+  };
 
   // Open delete confirmation dialog
   const requestDelete = (entry: AccountEntry) => {
-    setEntryToDelete(entry)
-    setDeleteDialogOpen(true)
-  }
+    setEntryToDelete(entry);
+    setDeleteDialogOpen(true);
+  };
 
   // Confirm delete handler, calls API and refreshes data
   const confirmDelete = async () => {
-    if (!entryToDelete) return
+    if (!entryToDelete) return;
     try {
       await apiRequest("delete", `/default-entry/${entryToDelete.id}`, null, {
         useAuth: true,
         useBranchId: true,
-      })
-      setDeleteDialogOpen(false)
-      setEntryToDelete(null)
-      fetchData()
+      });
+      setDeleteDialogOpen(false);
+      setEntryToDelete(null);
+      fetchData();
       toast.success("Account Entry Deleted", {
         description: `Account Entry has been successfully deleted.`,
         icon: <CircleCheck className="h-5 w-5" />,
         duration: 5000,
-      })
+      });
     } catch (error) {
-      console.error("Failed to delete entry:", error)
+      console.error("Failed to delete entry:", error);
       toast.error("Delete Failed", {
         description: "Failed to delete the account entry. Please try again.",
         duration: 5000,
-      })
+      });
     }
-  }
+  };
 
   // Cancel delete dialog
   const cancelDelete = () => {
-    setDeleteDialogOpen(false)
-    setEntryToDelete(null)
-  }
+    setDeleteDialogOpen(false);
+    setEntryToDelete(null);
+  };
 
   const handleSave = (savedEntry: AccountEntry) => {
     if (editingEntry && savedEntry.id) {
       // Update existing entry
-      setData((prevData) => prevData.map((item) => (item.id === savedEntry.id ? savedEntry : item)))
+      setData((prevData) =>
+        prevData.map((item) => (item.id === savedEntry.id ? savedEntry : item))
+      );
     } else {
       // Add new entry
-      setData((prevData) => [savedEntry, ...prevData])
+      setData((prevData) => [savedEntry, ...prevData]);
     }
-    fetchData() // Refresh the table to get the latest data
-  }
+    fetchData(); // Refresh the table to get the latest data
+  };
 
   const handleCloseDialog = () => {
-    setIsDialogOpen(false)
-    setEditingEntry(null)
-  }
+    setIsDialogOpen(false);
+    setEditingEntry(null);
+  };
 
   const columns: ColumnDefinition<AccountEntry>[] = [
-
     {
       id: "particulars",
       header: "Particulars",
       accessorKey: "particulars",
       enableSorting: true,
     },
-       {
+    {
       id: "name",
       header: "Name",
       accessorKey: "name",
       enableSorting: true,
     },
 
-{
-  id: "debit_amount",
-  header: "Debit Amount",
-  accessorKey: "details",
-  cell: (item) => {
-    const totalDebit = (item.details ?? []).reduce(
-      (sum, d) => sum + parseFloat(d.debit || "0"),
-      0
-    );
-    return `₱${totalDebit.toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
-  },
-  enableSorting: false,
-},
-{
-  id: "credit_amount",
-  header: "Credit Amount",
-  accessorKey: "details",
-  cell: (item) => {
-    const totalCredit = (item.details ?? []).reduce(
-      (sum, d) => sum + parseFloat(d.credit || "0"),
-      0
-    );
-    return `₱${totalCredit.toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
-  },
-  enableSorting: false,
-},
-
-  ]
-
-  const filters: FilterDefinition[] = [
     {
-      id: "status",
-      label: "Status",
-      options: [
-        { label: "Active", value: "true" },
-        { label: "Inactive", value: "false" },
-      ],
-      type: "input",
+      id: "debit_amount",
+      header: "Debit Amount",
+      accessorKey: "details",
+      cell: (item) => {
+        const totalDebit = (item.details ?? []).reduce(
+          (sum, d) => sum + parseFloat(d.debit || "0"),
+          0
+        );
+        return `₱${totalDebit.toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}`;
+      },
+      enableSorting: false,
     },
-  ]
+    {
+      id: "credit_amount",
+      header: "Credit Amount",
+      accessorKey: "details",
+      cell: (item) => {
+        const totalCredit = (item.details ?? []).reduce(
+          (sum, d) => sum + parseFloat(d.credit || "0"),
+          0
+        );
+        return `₱${totalCredit.toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}`;
+      },
+      enableSorting: false,
+    },
+  ];
+
+  const filters: FilterDefinition[] = [];
 
   const search: SearchDefinition = {
     title: "Search",
-    placeholder: "Search by name or particulars",
+    placeholder: "Search user...  ",
     enableSearch: true,
-  }
+  };
 
   const downloadFile = useCallback((blob: Blob, filename: string) => {
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.href = url
-    link.download = filename
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
-  }, [])
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  }, []);
 
   const getAuthHeaders = useCallback(() => {
-    const authToken = localStorage.getItem("authToken")
-    const branchId = localStorage.getItem("branchId")
+    const authToken = localStorage.getItem("authToken");
+    const branchId = localStorage.getItem("branchId");
 
     if (!authToken) {
-      throw new Error("Authentication token not found")
+      throw new Error("Authentication token not found");
     }
 
     return {
       Authorization: `Bearer ${authToken}`,
       "X-Branch-ID": branchId || "",
       "Content-Type": "application/json",
-    }
-  }, [])
+    };
+  }, []);
 
   const safeCsvValue = useCallback((value: any): string => {
-    if (value === null || value === undefined) return '""'
-    const stringValue = String(value).replace(/"/g, '""')
-    return `"${stringValue}"`
-  }, [])
+    if (value === null || value === undefined) return '""';
+    const stringValue = String(value).replace(/"/g, '""');
+    return `"${stringValue}"`;
+  }, []);
 
   const generateCsvFromData = useCallback(() => {
     try {
-      const headers = ["Particulars", "Name", "Debit", "Credit"]
+      const headers = ["Particulars", "Name", "Debit", "Credit"];
 
-      const csvRows = [headers.join(",")]
+      const csvRows = [headers.join(",")];
 
       // Process each entry with proper error handling
       data.forEach((entry) => {
         try {
-          const debitAmount = Number.parseFloat(entry.transaction_amount || "0").toFixed(2)
-          const creditAmount = Number.parseFloat(entry.transaction_amount || "0").toFixed(2)
+          const debitAmount = Number.parseFloat(
+            entry.transaction_amount || "0"
+          ).toFixed(2);
+          const creditAmount = Number.parseFloat(
+            entry.transaction_amount || "0"
+          ).toFixed(2);
 
-          const row = [safeCsvValue(entry.particulars || ""), safeCsvValue(entry.name || ""), debitAmount, creditAmount]
-          csvRows.push(row.join(","))
+          const row = [
+            safeCsvValue(entry.particulars || ""),
+            safeCsvValue(entry.name || ""),
+            debitAmount,
+            creditAmount,
+          ];
+          csvRows.push(row.join(","));
         } catch (entryError) {
-          console.warn("Error processing entry for CSV:", entryError, entry)
+          console.warn("Error processing entry for CSV:", entryError, entry);
           // Add a basic row even if there's an error
           csvRows.push(
-            [safeCsvValue(entry.particulars || "Error"), safeCsvValue(entry.name || "Unknown"), "0.00", "0.00"].join(
-              ",",
-            ),
-          )
+            [
+              safeCsvValue(entry.particulars || "Error"),
+              safeCsvValue(entry.name || "Unknown"),
+              "0.00",
+              "0.00",
+            ].join(",")
+          );
         }
-      })
+      });
 
-      return csvRows.join("\n")
+      return csvRows.join("\n");
     } catch (error) {
-      console.error("Error generating CSV data:", error)
+      console.error("Error generating CSV data:", error);
       // Return minimal CSV with headers only
-      return 'Particulars,Name,Debit,Credit\n"Error generating data","",0.00,0.00'
+      return 'Particulars,Name,Debit,Credit\n"Error generating data","",0.00,0.00';
     }
-  }, [data, safeCsvValue])
+  }, [data, safeCsvValue]);
 
   const handleCsvExport = useCallback(async () => {
-    setIsExporting(true)
+    setIsExporting(true);
     try {
       // First try the API endpoint
-      const headers = getAuthHeaders()
+      const headers = getAuthHeaders();
       const response = await fetch("/api/default-entry/export-csv", {
         method: "GET",
         headers,
-      })
+      });
 
       if (response.ok) {
-        const blob = await response.blob()
-        const currentDate = new Date().toISOString().split("T")[0]
-        downloadFile(blob, `account-entries-${currentDate}.csv`)
+        const blob = await response.blob();
+        const currentDate = new Date().toISOString().split("T")[0];
+        downloadFile(blob, `account-entries-${currentDate}.csv`);
 
         toast.success("CSV Export Successful", {
-          description: "Account Entries have been exported to CSV successfully.",
+          description:
+            "Account Entries have been exported to CSV successfully.",
           icon: <CircleCheck className="h-5 w-5" />,
           duration: 5000,
-        })
-        return // Success, exit early
+        });
+        return; // Success, exit early
       } else {
-        throw new Error(`API endpoint returned status: ${response.status}`)
+        throw new Error(`API endpoint returned status: ${response.status}`);
       }
     } catch (apiError) {
-      console.warn("API CSV export failed, using fallback:", apiError)
+      console.warn("API CSV export failed, using fallback:", apiError);
 
       // Fallback: Generate CSV from current data
       try {
-        console.log("Attempting CSV fallback with data:", data.length, "entries")
+        console.log(
+          "Attempting CSV fallback with data:",
+          data.length,
+          "entries"
+        );
 
         if (!data || data.length === 0) {
           toast.error("No Data to Export", {
-            description: "There are no entries to export. Please refresh and try again.",
+            description:
+              "There are no entries to export. Please refresh and try again.",
             duration: 5000,
-          })
-          return
+          });
+          return;
         }
 
-        const csvContent = generateCsvFromData()
-        console.log("Generated CSV content length:", csvContent.length)
+        const csvContent = generateCsvFromData();
+        console.log("Generated CSV content length:", csvContent.length);
 
         if (!csvContent || csvContent.length < 50) {
           // Basic sanity check
-          throw new Error("Generated CSV content appears to be empty or invalid")
+          throw new Error(
+            "Generated CSV content appears to be empty or invalid"
+          );
         }
 
         // Create blob with explicit UTF-8 BOM for Excel compatibility
-        const BOM = "\uFEFF"
+        const BOM = "\uFEFF";
         const blob = new Blob([BOM + csvContent], {
           type: "text/csv;charset=utf-8;",
-        })
+        });
 
-        const currentDate = new Date().toISOString().split("T")[0]
-        downloadFile(blob, `account-entries-${currentDate}.csv`)
+        const currentDate = new Date().toISOString().split("T")[0];
+        downloadFile(blob, `account-entries-${currentDate}.csv`);
 
         toast.success("CSV Export Successful", {
           description: `Account Entries exported successfully (${data.length} entries).`,
           icon: <CircleCheck className="h-5 w-5" />,
           duration: 5000,
-        })
+        });
       } catch (fallbackError) {
-        console.error("Fallback CSV generation failed:", fallbackError)
-        console.error("Data structure:", data)
+        console.error("Fallback CSV generation failed:", fallbackError);
+        console.error("Data structure:", data);
 
         toast.error("CSV Export Failed", {
-          description: "Failed to export Account Entries to CSV. Please check the data and try again.",
+          description:
+            "Failed to export Account Entries to CSV. Please check the data and try again.",
           duration: 5000,
-        })
+        });
       }
     } finally {
-      setIsExporting(false)
+      setIsExporting(false);
     }
-  }, [getAuthHeaders, downloadFile, generateCsvFromData, data])
+  }, [getAuthHeaders, downloadFile, generateCsvFromData, data]);
 
-
-
-   const exportPdf = async (): Promise<string> => {
-  const endpoint = `/default-entry/export-pdf` // adjust endpoint if needed
-  try {
-    const response = await apiRequest<{ url: string }>("get", endpoint, null, {
-      useAuth: true,
-      useBranchId: true,
-    })
-    return response.data.url
-  } catch (error: any) {
-    const errorMessage = error.response?.data?.message || "Failed to export PDF"
-    throw new Error(errorMessage)
-  }
-}
-
-const handlePdfExport = useCallback(async () => {
-  setIsExporting(true)
-  try {
-    const url = await exportPdf()
-    
-    const newTab = window.open(url, "_blank")
-    if (newTab) {
-      newTab.focus()
-    } else {
-      // fallback for popup blockers
-      const link = document.createElement("a")
-      link.href = url
-      link.target = "_blank"
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
+  const exportPdf = async (): Promise<string> => {
+    const endpoint = `/default-entry/export-pdf`; // adjust endpoint if needed
+    try {
+      const response = await apiRequest<{ url: string }>(
+        "get",
+        endpoint,
+        null,
+        {
+          useAuth: true,
+          useBranchId: true,
+        }
+      );
+      return response.data.url;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || "Failed to export PDF";
+      throw new Error(errorMessage);
     }
+  };
 
-    toast.success("PDF opened in new tab")
-  } catch (error: any) {
-    toast.error("PDF Export Failed", {
-      description: error.message || "Could not export General Journal PDF.",
-    })
-  } finally {
-    setIsExporting(false)
-  }
-}, [])
+  const handlePdfExport = useCallback(async () => {
+    setIsExporting(true);
+    try {
+      const url = await exportPdf();
 
+      const newTab = window.open(url, "_blank");
+      if (newTab) {
+        newTab.focus();
+      } else {
+        // fallback for popup blockers
+        const link = document.createElement("a");
+        link.href = url;
+        link.target = "_blank";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
 
-
- 
-
+      toast.success("PDF opened in new tab");
+    } catch (error: any) {
+      toast.error("PDF Export Failed", {
+        description: error.message || "Could not export General Journal PDF.",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  }, []);
 
   return (
     <>
       <DataTable
-        title="Default Account Entries"
-        subtitle="Manage default account entries"
+        title="Accounting Entries Default Journal Entry"
+        subtitle="Record a new general journal entry with account details, debit and credit amounts"
         data={data}
         columns={columns}
         filters={filters}
@@ -463,7 +489,8 @@ const handlePdfExport = useCallback(async () => {
           </DialogHeader>
           <div className="py-4">
             <p className="text-sm text-muted-foreground">
-              Are you sure you want to delete the entry "{entryToDelete?.name}"? This action cannot be undone.
+              Are you sure you want to delete the entry "{entryToDelete?.name}"?
+              This action cannot be undone.
             </p>
           </div>
           <DialogFooter>
@@ -477,5 +504,5 @@ const handlePdfExport = useCallback(async () => {
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 }

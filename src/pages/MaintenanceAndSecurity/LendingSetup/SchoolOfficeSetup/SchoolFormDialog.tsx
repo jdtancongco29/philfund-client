@@ -96,13 +96,13 @@ export function SchoolFormDialog({ open, isEditing, item, onOpenChange, onCancel
       })
       setSelectedDivisionId("")
     }
-  }, [item, form, isFetchingDistricts])
+  }, [item, form])
 
   // Handle division change to filter districts
   const handleDivisionChange = (divisionId: string) => {
-    setSelectedDivisionId(divisionId)
     form.setValue("division_id", divisionId)
     form.setValue("district_id", "")
+    setSelectedDivisionId(divisionId)
   }
 
   const create = async (branch_id: string, values: FormValues) => {
@@ -158,7 +158,6 @@ export function SchoolFormDialog({ open, isEditing, item, onOpenChange, onCancel
     setIsGeneratingCode(true)
     try {
       const response = await SchoolSetupService.generateSchoolCode()
-      console.log(response);
       if (response.data) {
         form.setValue("code", response.data.toString())
       }

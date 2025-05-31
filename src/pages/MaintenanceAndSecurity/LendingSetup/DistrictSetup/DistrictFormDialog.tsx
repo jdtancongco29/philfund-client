@@ -98,6 +98,7 @@ export function DistrictDialogForm({
     try {
       await creationHandler.mutateAsync(payload)
       queryClient.invalidateQueries({ queryKey: ["district-table"] })
+      queryClient.invalidateQueries({ queryKey: ["districts-for-school"] })
       onSubmit()
       form.reset()
     } catch (errorData: unknown) {
@@ -115,6 +116,7 @@ export function DistrictDialogForm({
     try {
       await editingHandler.mutateAsync(payload)
       queryClient.invalidateQueries({ queryKey: ["district-table"] })
+      queryClient.invalidateQueries({ queryKey: ["districts-for-school"] })
       onSubmit()
       form.reset()
     } catch (_error) {

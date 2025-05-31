@@ -26,7 +26,6 @@ const formSchema = z.object({
   name: z.string().min(1, "Classification name is required"),
   bonus_loan_eligible: z.boolean(),
   qualified_for_restructure: z.boolean(),
-  eligible_for_bonus_loan: z.boolean(),
   allow_3mo_grace: z.boolean(),
   group_id: z.string().min(1, "Group is required"),
 })
@@ -83,8 +82,6 @@ export function ClassificationDialogForm({
       group_id: "",
     },
   })
-
-  console.log(item);
 
   useEffect(() => {
     if (item) {
@@ -160,6 +157,9 @@ export function ClassificationDialogForm({
       }
     }
   }
+
+  console.log(form.formState);
+
 
   return (
     <Dialog open={open} onOpenChange={(open) => {

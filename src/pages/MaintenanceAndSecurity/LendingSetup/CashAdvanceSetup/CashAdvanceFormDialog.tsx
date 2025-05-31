@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { SelectContent, SelectItem, SelectTrigger, SelectValue, Select as ShadSelect } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -25,6 +25,7 @@ import { SalaryLoanSetupService } from "../SalaryLoanSetup/Service/SalaryLoanSet
 import { Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { AxiosError } from "axios"
+import Select from "react-select"
 
 // Define the form schema with comprehensive validation
 const formSchema = z
@@ -44,8 +45,7 @@ const formSchema = z
       })
       .refine((val) => Number(val) <= 100, {
         message: "Interest rate must not exceed 100%",
-      })
-    ,
+      }),
     surcharge_rate: z
       .number()
       .min(1, "Surcharge rate must be positive")
@@ -54,8 +54,7 @@ const formSchema = z
       })
       .refine((val) => Number(val) <= 100, {
         message: "Surcharge rate must not exceed 100%",
-      })
-    ,
+      }),
     max_amt: z.number().min(0, "Maximum amount must be positive").optional().nullable(),
     max_rate: z
       .number()
@@ -67,8 +66,7 @@ const formSchema = z
       })
       .refine((val) => Number(val) <= 100, {
         message: "Maximum rate must not exceed 100%",
-      })
-    ,
+      }),
 
     // Classifications - at least one required
     eligible_class: z.array(z.string()).min(1, "At least one classification must be selected"),
@@ -597,7 +595,7 @@ export function CashAdvanceFormDialog({
                               Loan Code
                               <span className="text-red-500">*</span>
                             </FormLabel>
-                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
+                            <ShadSelect disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="h-11 w-full">
                                   <SelectValue placeholder="Select..." />
@@ -610,13 +608,12 @@ export function CashAdvanceFormDialog({
                                   </SelectItem>
                                 ))}
                               </SelectContent>
-                            </Select>
+                            </ShadSelect>
                             <FormMessage />
                           </FormItem>
                         )
                       }}
                     />
-
                     <div className="grid grid-cols-2 gap-6">
                       <FormField
                         disabled={isFormDisabled}
@@ -807,7 +804,7 @@ export function CashAdvanceFormDialog({
                   </div>
                 </TabsContent>
 
-                <TabsContent value="chart-of-accounts" className="space-y-6 mt-0">
+                <TabsContent value="chart-of-accounts" className="space-y-6 mt-0 overflow-hidden">
                   <div className="space-y-6">
                     {/* Required COA Fields */}
                     <FormField
@@ -829,21 +826,38 @@ export function CashAdvanceFormDialog({
                               />
                             </div>
                             <div className="col-span-3">
-                              <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger className="h-11 w-full">
-                                    <SelectValue placeholder="Select..." />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-
-                                  {getAvailableCoaOptions(field.value).map((account) => (
-                                    <SelectItem key={account.id} value={account.id}>
-                                      {account.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              <FormControl>
+                                <Select<{ value: string; label: string }>
+                                  value={
+                                    field.value
+                                      ? {
+                                        value: field.value,
+                                        label:
+                                          getAvailableCoaOptions(field.value).find(
+                                            (account) => account.id === field.value,
+                                          )?.name || "",
+                                      }
+                                      : null
+                                  }
+                                  onChange={(selectedOption) => {
+                                    if (selectedOption) {
+                                      field.onChange(selectedOption.value)
+                                    } else {
+                                      field.onChange("")
+                                    }
+                                  }}
+                                  options={getAvailableCoaOptions(field.value).map((account) => ({
+                                    value: account.id,
+                                    label: account.name,
+                                  }))}
+                                  placeholder="Select..."
+                                  classNamePrefix={
+                                    form.formState.errors.coa_loan_receivable ? "react-select-error" : "react-select"
+                                  }
+                                  isDisabled={isFormDisabled}
+                                  isClearable
+                                />
+                              </FormControl>
                             </div>
                           </div>
                           <FormMessage />
@@ -870,21 +884,40 @@ export function CashAdvanceFormDialog({
                               />
                             </div>
                             <div className="col-span-3">
-                              <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger className="h-11 w-full">
-                                    <SelectValue placeholder="Select..." />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-
-                                  {getAvailableCoaOptions(field.value).map((account) => (
-                                    <SelectItem key={account.id} value={account.id}>
-                                      {account.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              <FormControl>
+                                <Select<{ value: string; label: string }>
+                                  value={
+                                    field.value
+                                      ? {
+                                        value: field.value,
+                                        label:
+                                          getAvailableCoaOptions(field.value).find(
+                                            (account) => account.id === field.value,
+                                          )?.name || "",
+                                      }
+                                      : null
+                                  }
+                                  onChange={(selectedOption) => {
+                                    if (selectedOption) {
+                                      field.onChange(selectedOption.value)
+                                    } else {
+                                      field.onChange("")
+                                    }
+                                  }}
+                                  options={getAvailableCoaOptions(field.value).map((account) => ({
+                                    value: account.id,
+                                    label: account.name,
+                                  }))}
+                                  placeholder="Select..."
+                                  classNamePrefix={
+                                    form.formState.errors.coa_interest_receivable
+                                      ? "react-select-error"
+                                      : "react-select"
+                                  }
+                                  isDisabled={isFormDisabled}
+                                  isClearable
+                                />
+                              </FormControl>
                             </div>
                           </div>
                           <FormMessage />
@@ -911,21 +944,38 @@ export function CashAdvanceFormDialog({
                               />
                             </div>
                             <div className="col-span-3">
-                              <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger className="h-11 w-full">
-                                    <SelectValue placeholder="Select..." />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-
-                                  {getAvailableCoaOptions(field.value).map((account) => (
-                                    <SelectItem key={account.id} value={account.id}>
-                                      {account.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              <FormControl>
+                                <Select<{ value: string; label: string }>
+                                  value={
+                                    field.value
+                                      ? {
+                                        value: field.value,
+                                        label:
+                                          getAvailableCoaOptions(field.value).find(
+                                            (account) => account.id === field.value,
+                                          )?.name || "",
+                                      }
+                                      : null
+                                  }
+                                  onChange={(selectedOption) => {
+                                    if (selectedOption) {
+                                      field.onChange(selectedOption.value)
+                                    } else {
+                                      field.onChange("")
+                                    }
+                                  }}
+                                  options={getAvailableCoaOptions(field.value).map((account) => ({
+                                    value: account.id,
+                                    label: account.name,
+                                  }))}
+                                  placeholder="Select..."
+                                  classNamePrefix={
+                                    form.formState.errors.coa_interest_income ? "react-select-error" : "react-select"
+                                  }
+                                  isDisabled={isFormDisabled}
+                                  isClearable
+                                />
+                              </FormControl>
                             </div>
                           </div>
                           <FormMessage />
@@ -952,21 +1002,38 @@ export function CashAdvanceFormDialog({
                               />
                             </div>
                             <div className="col-span-3">
-                              <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger className="h-11 w-full">
-                                    <SelectValue placeholder="Select..." />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-
-                                  {getAvailableCoaOptions(field.value).map((account) => (
-                                    <SelectItem key={account.id} value={account.id}>
-                                      {account.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              <FormControl>
+                                <Select<{ value: string; label: string }>
+                                  value={
+                                    field.value
+                                      ? {
+                                        value: field.value,
+                                        label:
+                                          getAvailableCoaOptions(field.value).find(
+                                            (account) => account.id === field.value,
+                                          )?.name || "",
+                                      }
+                                      : null
+                                  }
+                                  onChange={(selectedOption) => {
+                                    if (selectedOption) {
+                                      field.onChange(selectedOption.value)
+                                    } else {
+                                      field.onChange("")
+                                    }
+                                  }}
+                                  options={getAvailableCoaOptions(field.value).map((account) => ({
+                                    value: account.id,
+                                    label: account.name,
+                                  }))}
+                                  placeholder="Select..."
+                                  classNamePrefix={
+                                    form.formState.errors.coa_garnished ? "react-select-error" : "react-select"
+                                  }
+                                  isDisabled={isFormDisabled}
+                                  isClearable
+                                />
+                              </FormControl>
                             </div>
                           </div>
                           <FormMessage />
@@ -992,21 +1059,38 @@ export function CashAdvanceFormDialog({
                               />
                             </div>
                             <div className="col-span-3">
-                              <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger className="h-11 w-full">
-                                    <SelectValue placeholder="Select..." />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-
-                                  {getAvailableCoaOptions(field!.value!).map((account) => (
-                                    <SelectItem key={account.id} value={account.id}>
-                                      {account.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              <FormControl>
+                                <Select<{ value: string; label: string }>
+                                  value={
+                                    field.value
+                                      ? {
+                                        value: field.value,
+                                        label:
+                                          coaData?.data.chartOfAccounts.find((account) => account.id === field.value)
+                                            ?.name || "",
+                                      }
+                                      : null
+                                  }
+                                  onChange={(selectedOption) => {
+                                    if (selectedOption) {
+                                      field.onChange(selectedOption.value)
+                                    } else {
+                                      field.onChange("")
+                                    }
+                                  }}
+                                  options={getAvailableCoaOptions(field.value || "").map((account) => ({
+                                    value: account.id,
+                                    label: account.name,
+                                  }))}
+                                  placeholder="Select..."
+                                  classNamePrefix={
+                                    form.formState.errors.coa_unearned_interest ? "react-select-error" : "react-select"
+                                  }
+                                  isDisabled={isFormDisabled}
+                                  isClearable
+                                  menuPlacement="top"
+                                />
+                              </FormControl>
                             </div>
                           </div>
                           <FormMessage />
@@ -1031,21 +1115,40 @@ export function CashAdvanceFormDialog({
                               />
                             </div>
                             <div className="col-span-3">
-                              <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger className="h-11 w-full">
-                                    <SelectValue placeholder="Select..." />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-
-                                  {getAvailableCoaOptions(field!.value!).map((account) => (
-                                    <SelectItem key={account.id} value={account.id}>
-                                      {account.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              <FormControl>
+                                <Select<{ value: string; label: string }>
+                                  value={
+                                    field.value
+                                      ? {
+                                        value: field.value,
+                                        label:
+                                          coaData?.data.chartOfAccounts.find((account) => account.id === field.value)
+                                            ?.name || "",
+                                      }
+                                      : null
+                                  }
+                                  onChange={(selectedOption) => {
+                                    if (selectedOption) {
+                                      field.onChange(selectedOption.value)
+                                    } else {
+                                      field.onChange("")
+                                    }
+                                  }}
+                                  options={getAvailableCoaOptions(field.value || "").map((account) => ({
+                                    value: account.id,
+                                    label: account.name,
+                                  }))}
+                                  placeholder="Select..."
+                                  classNamePrefix={
+                                    form.formState.errors.coa_other_income_penalty
+                                      ? "react-select-error"
+                                      : "react-select"
+                                  }
+                                  isDisabled={isFormDisabled}
+                                  isClearable
+                                  menuPlacement="top"
+                                />
+                              </FormControl>
                             </div>
                           </div>
                           <FormMessage />
@@ -1070,21 +1173,38 @@ export function CashAdvanceFormDialog({
                               />
                             </div>
                             <div className="col-span-3">
-                              <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger className="h-11 w-full">
-                                    <SelectValue placeholder="Select..." />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-
-                                  {getAvailableCoaOptions(field!.value!).map((account) => (
-                                    <SelectItem key={account.id} value={account.id}>
-                                      {account.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              <FormControl>
+                                <Select<{ value: string; label: string }>
+                                  value={
+                                    field.value
+                                      ? {
+                                        value: field.value,
+                                        label:
+                                          coaData?.data.chartOfAccounts.find((account) => account.id === field.value)
+                                            ?.name || "",
+                                      }
+                                      : null
+                                  }
+                                  onChange={(selectedOption) => {
+                                    if (selectedOption) {
+                                      field.onChange(selectedOption.value)
+                                    } else {
+                                      field.onChange("")
+                                    }
+                                  }}
+                                  options={getAvailableCoaOptions(field.value || "").map((account) => ({
+                                    value: account.id,
+                                    label: account.name,
+                                  }))}
+                                  placeholder="Select..."
+                                  classNamePrefix={
+                                    form.formState.errors.coa_allowance_doubtful ? "react-select-error" : "react-select"
+                                  }
+                                  isDisabled={isFormDisabled}
+                                  isClearable
+                                  menuPlacement="top"
+                                />
+                              </FormControl>
                             </div>
                           </div>
                           <FormMessage />
@@ -1109,21 +1229,38 @@ export function CashAdvanceFormDialog({
                               />
                             </div>
                             <div className="col-span-3">
-                              <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger className="h-11 w-full">
-                                    <SelectValue placeholder="Select..." />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-
-                                  {getAvailableCoaOptions(field!.value!).map((account) => (
-                                    <SelectItem key={account.id} value={account.id}>
-                                      {account.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              <FormControl>
+                                <Select<{ value: string; label: string }>
+                                  value={
+                                    field.value
+                                      ? {
+                                        value: field.value,
+                                        label:
+                                          coaData?.data.chartOfAccounts.find((account) => account.id === field.value)
+                                            ?.name || "",
+                                      }
+                                      : null
+                                  }
+                                  onChange={(selectedOption) => {
+                                    if (selectedOption) {
+                                      field.onChange(selectedOption.value)
+                                    } else {
+                                      field.onChange("")
+                                    }
+                                  }}
+                                  options={getAvailableCoaOptions(field.value || "").map((account) => ({
+                                    value: account.id,
+                                    label: account.name,
+                                  }))}
+                                  placeholder="Select..."
+                                  classNamePrefix={
+                                    form.formState.errors.coa_bad_dept_expense ? "react-select-error" : "react-select"
+                                  }
+                                  isDisabled={isFormDisabled}
+                                  isClearable
+                                  menuPlacement="top"
+                                />
+                              </FormControl>
                             </div>
                           </div>
                           <FormMessage />

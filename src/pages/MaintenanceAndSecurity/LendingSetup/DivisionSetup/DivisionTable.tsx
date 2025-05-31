@@ -87,7 +87,7 @@ export function DivisionTable() {
       id: "group",
       header: "Group",
       accessorKey: "group",
-      cell: (row) => <div><p className="font-bold">{row.name}</p>
+      cell: (row) => <div><p className="font-bold">{row.code}</p>
         <p className="text-xs">{row.group.name}</p>
       </div>,
       enableSorting: true,

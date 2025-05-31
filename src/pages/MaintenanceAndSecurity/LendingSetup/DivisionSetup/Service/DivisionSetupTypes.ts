@@ -9,6 +9,7 @@ export type ApiResponse<T> = {
 export interface Group {
   id: string
   name: string
+  code: string
 }
 
 // Division Types

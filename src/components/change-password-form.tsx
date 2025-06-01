@@ -34,7 +34,7 @@ export default function ChangePasswordForm() {
         const hasSpecial = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+/.test(password)
 
         if (!password) return "Password is required"
-        if (password.length < 8) return "Password must be at least 8 characters long"
+        if (password.length < 16) return "Password must be at least 16 characters long"
         if (!hasCapital || !hasSmall || !hasNumber || !hasSpecial) {
             return "Password must contain capital letters, small letters, numbers, and at least one special character"
         }

@@ -21,6 +21,7 @@ import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialo
 import type { ColumnDefinition } from "@/components/data-table/data-table"
 import { format, parseISO } from "date-fns"
 import ReactSelect from "react-select"
+import { DateRangePicker } from "@/components/date-range-picker"
 
 // Define the form schema with Zod
 const formSchema = (isEditing: boolean) =>
@@ -819,6 +820,7 @@ export function UserDialog({
                               <Input
                                 placeholder="Add mobile number"
                                 {...field}
+                                maxLength={11}
                                 onChange={(e) => {
                                   const digitsOnly = e.target.value.replace(/\D/g, "")
                                   field.onChange(digitsOnly)
@@ -929,11 +931,12 @@ export function UserDialog({
                             <FormItem className="w-full">
                               <FormLabel className="text-sm">Inactive Period (Optional)</FormLabel>
                               <FormControl className="w-full">
-                                <Input
+                                {/* <Input
                                   placeholder="mm / dd / yyyy - mm / dd / yyyy"
                                   {...field}
                                   className="focus-visible:outline-none"
-                                />
+                                /> */}
+                                <DateRangePicker {...field} />
                               </FormControl>
                               <FormDescription>
                                 Set a date range to automatically mark the user as inactive. Useful for temporary

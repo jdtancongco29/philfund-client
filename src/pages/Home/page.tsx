@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select } from "@radix-ui/react-select"
 import { ChevronDown, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, CreditCard, Download, FileText } from "lucide-react"
 import { ChartComponent } from "@/components/chart"
-import { DatePickerWithRange } from "@/components/date-range-picker"
+import { DateRangePicker } from "@/components/date-range-picker"
 
 export default function DashboardPage() {
   return (
@@ -17,7 +17,7 @@ export default function DashboardPage() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Dashboard</h1>
           <div className="flex items-center gap-2">
-            <DatePickerWithRange className="w-[300px]" />
+            <DateRangePicker className="w-[300px]" />
           </div>
         </div>
         {/* Metrics Cards */}
@@ -85,7 +85,8 @@ export default function DashboardPage() {
           </div>
           <div>
             <p className="text-sm mb-1">Date Range</p>
-            <DatePickerWithRange className="w-[300px]" />
+            {/* <DateRangePicker className="w-[300px]" /> */}
+            <DateRangePicker className="w-[300px]" />
           </div>
         </div>
 

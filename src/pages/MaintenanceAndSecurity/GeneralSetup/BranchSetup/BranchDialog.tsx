@@ -19,14 +19,15 @@ import { toast } from "sonner"
 // Define the form schema with Zod
 const formSchema = (isEditing: boolean) =>
   z.object({
-    code: z.string().min(1, "Branch code is required").max(3, "Branch code must be 3 characters"),
+    code: z.string().min(3, "Branch code must be 3 digits").max(3, "Branch code must be 3 digits"),
     name: z
       .string()
       .min(3, "Branch name must be at least 3 characters.")
       .max(50, "Branch name must not exceed 50 characters"),
     email: z.string().email("Invalid email address"),
     address: z.string().min(1, "Address is required"),
-    contact: z.string()
+    contact: z
+      .string()
       .min(11, "Contact number must be 11 digits")
       .max(11, "Contact number must be 11 digits")
       .regex(/^\d+$/, "Contact number must contain only digits"),
@@ -47,6 +48,7 @@ interface BranchDialogProps {
 
 export function BranchDialog({ item, open, isEditing, onOpenChange, onSuccess }: BranchDialogProps) {
   const [departmentsData, setDepartmentsData] = useState<Department[]>([])
+  const [serverErrors, setServerErrors] = useState<Record<string, string>>({})
   const queryClient = useQueryClient()
 
   // Fetch departments mutation
@@ -72,16 +74,24 @@ export function BranchDialog({ item, open, isEditing, onOpenChange, onSuccess }:
     onSuccess: () => {
       toast.success("Branch created successfully")
       queryClient.invalidateQueries({ queryKey: ["branch-setup-table"] })
+      setServerErrors({}) // Clear server errors on success
       onSuccess?.()
       onOpenChange(false)
     },
     onError: (error: any) => {
       if (error.response?.data?.errors) {
-        // Set form errors for each field
+        // Store server errors in state
+        const errors: Record<string, string> = {}
         Object.entries(error.response.data.errors).forEach(([field, messages]) => {
+          errors[field] = Array.isArray(messages) ? messages[0] : messages
+        })
+        setServerErrors(errors)
+
+        // Also set form errors for immediate display
+        Object.entries(errors).forEach(([field, message]) => {
           form.setError(field as any, {
             type: "server",
-            message: Array.isArray(messages) ? messages[0] : messages,
+            message: message,
           })
         })
       } else {
@@ -96,16 +106,24 @@ export function BranchDialog({ item, open, isEditing, onOpenChange, onSuccess }:
     onSuccess: () => {
       toast.success("Branch updated successfully")
       queryClient.invalidateQueries({ queryKey: ["branch-setup-table"] })
+      setServerErrors({}) // Clear server errors on success
       onSuccess?.()
       onOpenChange(false)
     },
     onError: (error: any) => {
       if (error.response?.data?.errors) {
-        // Set form errors for each field
+        // Store server errors in state
+        const errors: Record<string, string> = {}
         Object.entries(error.response.data.errors).forEach(([field, messages]) => {
+          errors[field] = Array.isArray(messages) ? messages[0] : messages
+        })
+        setServerErrors(errors)
+
+        // Also set form errors for immediate display
+        Object.entries(errors).forEach(([field, message]) => {
           form.setError(field as any, {
             type: "server",
-            message: Array.isArray(messages) ? messages[0] : messages,
+            message: message,
           })
         })
       } else {
@@ -129,10 +147,42 @@ export function BranchDialog({ item, open, isEditing, onOpenChange, onSuccess }:
     },
   })
 
+  // Watch form values to clear server errors when user modifies fields
+
+  // Clear server errors when user starts typing in a field
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      console.log(value);
+      if (name && serverErrors[name]) {
+        setServerErrors((prev) => {
+          const newErrors = { ...prev }
+          delete newErrors[name]
+          return newErrors
+        })
+      }
+    })
+    return () => subscription.unsubscribe()
+  }, [form, serverErrors])
+
+  // Re-apply server errors after client validation
+  useEffect(() => {
+    Object.entries(serverErrors).forEach(([field, message]) => {
+      const currentError = form.formState.errors[field as keyof FormValues]
+      // Only set server error if there's no current client-side error
+      if (!currentError) {
+        form.setError(field as any, {
+          type: "server",
+          message: message,
+        })
+      }
+    })
+  }, [form.formState.errors, serverErrors, form])
+
   // Effect to handle dialog opening and data fetching
   useEffect(() => {
     if (open) {
       fetchDepartments()
+      setServerErrors({}) // Clear server errors when opening dialog
 
       if (isEditing && item) {
         // Populate form with existing data
@@ -174,6 +224,9 @@ export function BranchDialog({ item, open, isEditing, onOpenChange, onSuccess }:
 
   // Handle form submission
   const handleSubmit = (values: FormValues) => {
+    // Clear server errors before submitting
+    setServerErrors({})
+
     const payload = {
       code: values.code,
       name: values.name,
@@ -214,7 +267,16 @@ export function BranchDialog({ item, open, isEditing, onOpenChange, onSuccess }:
                           Branch Code <span className="text-red-500">*</span>
                         </FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Enter branch code" className="focus:outline-none focus-visible:outline-none" />
+                          <Input
+                            {...field}
+                            placeholder="Enter branch code"
+                            className="focus:outline-none focus-visible:outline-none"
+                            maxLength={3}
+                            onChange={(e) => {
+                              const digitsOnly = e.target.value.replace(/\D/g, "")
+                              field.onChange(digitsOnly)
+                            }}
+                          />
                         </FormControl>
                         <FormDescription>A unique code to identify this branch</FormDescription>
                         <FormMessage />
@@ -270,9 +332,10 @@ export function BranchDialog({ item, open, isEditing, onOpenChange, onSuccess }:
                             inputMode="numeric"
                             {...field}
                             className="focus-visible:outline-none"
+                            maxLength={11}
                             onChange={(e) => {
-                              const digitsOnly = e.target.value.replace(/\D/g, "");
-                              field.onChange(digitsOnly);
+                              const digitsOnly = e.target.value.replace(/\D/g, "")
+                              field.onChange(digitsOnly)
                             }}
                           />
                         </FormControl>

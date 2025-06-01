@@ -82,6 +82,7 @@ export default function TwoFactorAuthForm() {
       Cookies.remove('message');
       Cookies.set("authToken", data.data.access_token, cookieOptions);
       Cookies.set("user", JSON.stringify(data.data.user), cookieOptions);
+      Cookies.set("current_branch", JSON.stringify(data.data.user.current_branch), cookieOptions);
       navigate("/dashboard");
     } catch (err) {
       setError(true);

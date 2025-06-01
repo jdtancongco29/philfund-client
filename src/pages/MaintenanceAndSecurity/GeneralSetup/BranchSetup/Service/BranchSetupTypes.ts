@@ -72,3 +72,13 @@ export interface UpdateBranchPayload {
   status: number // API expects 1 or 0
   departments: string[]
 }
+
+// Branch Types
+export interface Branch {
+  id: string
+  name: string
+}
+
+export interface UserBranchesResponse {
+  branches: Branch[]
+}

@@ -1,7 +1,9 @@
+"use client"
+
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
@@ -9,13 +11,14 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { SalaryLoan, CreateSalaryLoanPayload, UpdateSalaryLoanPayload } from "./Service/SalaryLoanSetupTypes"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import SalaryLoanSetupService from "./Service/SalaryLoanSetupService"
 import GroupSetupService from "../GroupSetup/Service/GroupSetupService"
-import { Loader2 } from 'lucide-react'
+import { Loader2 } from "lucide-react"
 import { AxiosError } from "axios"
+import ReactSelect from "react-select"
+import { debounce } from "lodash"
 
 // Update the form schema with proper validation
 const formSchema = z
@@ -152,36 +155,6 @@ const formSchema = z
     // Groups - at least one required
     eligible_groups: z.array(z.string()).min(1, "At least one group must be selected"),
   })
-  // .refine(
-  //   (data) => {
-  //     // Validate that client visible fees total equals PGA fees + branch other charges
-  //     const clientVisibleTotal =
-  //       Number(data.vis_service || 0) +
-  //       Number(data.vis_insurance || 0) +
-  //       Number(data.vis_notarial || 0) +
-  //       Number(data.vis_gross_reciept || 0) +
-  //       Number(data.vis_computer || 0)
-
-  //     const pgaFeesTotal =
-  //       Number(data.pga_service_charge || 0) +
-  //       Number(data.pga_insurance || 0) +
-  //       Number(data.pga_notarial || 0) +
-  //       Number(data.pga_gross_reciept || 0)
-
-  //     const branchChargesTotal =
-  //       Number(data.def_interest || 0) + Number(data.def_charge || 0) + Number(data.def_computer || 0)
-
-  //     const expectedTotal = pgaFeesTotal + branchChargesTotal
-
-  //     console.log(clientVisibleTotal, expectedTotal);
-
-  //     return Math.abs(clientVisibleTotal - expectedTotal) < 0.01 // Allow for small floating point differences
-  //   },
-  //   {
-  //     message: "Client visible fees total must equal PGA fees & surcharge + branch other charges",
-  //     path: ["vis_other_charges"], // Show error on the last client visible fee field
-  //   },
-  // )
   .refine(
     (data) => {
       // Validate that all COA values are unique
@@ -232,6 +205,9 @@ export function SalaryLoanFormDialog({
   onSubmit,
 }: SalaryLoanFormDialogProps) {
   const [activeTab, setActiveTab] = useState("basic-info")
+  const [searchLoading, setSearchLoading] = useState<Record<string, boolean>>({})
+  const [searchedCoaOptions, setSearchedCoaOptions] = useState<Record<string, any[]>>({})
+  const [, setActiveField] = useState<string | null>(null)
   const queryClient = useQueryClient()
 
   const editingHandler = useMutation({
@@ -266,6 +242,59 @@ export function SalaryLoanFormDialog({
     queryFn: () => SalaryLoanSetupService.getAllCOA(),
     staleTime: Number.POSITIVE_INFINITY,
   })
+
+  // Search COA by name or code
+  const searchCOA = useCallback(async (searchTerm: string, searchType: "name" | "code", fieldName: string) => {
+    if (!searchTerm.trim()) {
+      setSearchedCoaOptions((prev) => ({ ...prev, [fieldName]: [] }))
+      return
+    }
+
+    setSearchLoading((prev) => ({
+      ...prev,
+      [fieldName]: true,
+      [`${fieldName}_code`]: searchType === "code" ? true : prev[`${fieldName}_code`],
+      [fieldName]: searchType === "name" ? true : prev[fieldName],
+    }))
+
+    try {
+      const nameParam = searchType === "name" ? searchTerm : null
+      const codeParam = searchType === "code" ? searchTerm : null
+
+      const response = await SalaryLoanSetupService.getAllCOA(nameParam, codeParam)
+
+      if (response?.data?.chartOfAccounts) {
+        setSearchedCoaOptions((prev) => ({
+          ...prev,
+          [fieldName]: response.data.chartOfAccounts,
+        }))
+      }
+    } catch (error) {
+      console.error("Error searching COA:", error)
+      setSearchedCoaOptions((prev) => ({ ...prev, [fieldName]: [] }))
+    } finally {
+      setSearchLoading((prev) => ({
+        ...prev,
+        [fieldName]: searchType === "name" ? false : prev[fieldName],
+        [`${fieldName}_code`]: searchType === "code" ? false : prev[`${fieldName}_code`],
+      }))
+    }
+  }, [])
+
+  // Debounced search functions
+  const debouncedSearchByName = useCallback(
+    debounce((searchTerm: string, fieldName: string) => {
+      searchCOA(searchTerm, "name", fieldName)
+    }, 500),
+    [searchCOA],
+  )
+
+  const debouncedSearchByCode = useCallback(
+    debounce((searchTerm: string, fieldName: string) => {
+      searchCOA(searchTerm, "code", fieldName)
+    }, 500),
+    [searchCOA],
+  )
 
   // Initialize the form
   const form = useForm<FormValues>({
@@ -353,24 +382,174 @@ export function SalaryLoanFormDialog({
     "def_computer",
 
     // Groups
-    "eligible_groups"
-  ];
+    "eligible_groups",
+  ]
 
   // Get available COA options for each field (excluding already selected values)
-  const getAvailableCoaOptions = (currentFieldValue: string) => {
-    if (!coaData?.data.chartOfAccounts) return []
+  const getAvailableCoaOptions = (currentFieldValue: string, fieldName: string) => {
+    const baseOptions = coaData?.data.chartOfAccounts || []
+    const searchedOptions = searchedCoaOptions[fieldName] || []
+
+    // Always use search results if they exist, regardless of active field
+    let sourceOptions = baseOptions
+    if (searchedOptions.length > 0) {
+      sourceOptions = searchedOptions
+    }
+
+    // Add the currently selected option if it's not in the source options
+    // This ensures the selected value is always available in the dropdown
+    const allOptions = [...sourceOptions]
+
+    if (currentFieldValue) {
+      const selectedOption = [...baseOptions, ...Object.values(searchedCoaOptions).flat()].find(
+        (option) => option.id === currentFieldValue,
+      )
+
+      if (selectedOption && !allOptions.some((option) => option.id === currentFieldValue)) {
+        allOptions.push(selectedOption)
+      }
+    }
 
     const usedValues = watchedCoaValues.filter((value) => value && value !== currentFieldValue)
-    return coaData.data.chartOfAccounts.filter((account) => !usedValues.includes(account.id))
+    return allOptions.filter((account) => !usedValues.includes(account.id))
   }
 
   const getCoaFieldCode = (id: string) => {
-    const coa = coaData?.data.chartOfAccounts.filter((coa) => coa.id == id)
-    if (coa?.length != 0 || false) {
-      return coa![0].code
+    if (!id) return ""
+
+    // First check in the main COA data
+    const mainCoa = coaData?.data.chartOfAccounts.find((coa) => coa.id === id)
+    if (mainCoa) {
+      return mainCoa.code
     }
+
+    // Then check in searched options
+    for (const fieldOptions of Object.values(searchedCoaOptions)) {
+      const searchedCoa = fieldOptions.find((coa) => coa.id === id)
+      if (searchedCoa) {
+        return searchedCoa.code
+      }
+    }
+
     return ""
   }
+
+  // Enhanced COA field component with search functionality
+  const renderCoaField = (fieldName: string, label: string, required = false) => (
+    <FormField
+      disabled={isFormDisabled}
+      control={form.control}
+      name={fieldName as any}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel className="text-base font-medium">
+            {label} {required && <span className="text-red-500">*</span>}
+          </FormLabel>
+          <div className="grid grid-cols-2 gap-4">
+            <ReactSelect<{ value: string; label: string }>
+              placeholder="Search account code..."
+              options={getAvailableCoaOptions(field.value, fieldName).map((account) => ({
+                value: account.id,
+                label: account.code,
+              }))}
+              onChange={(selectedOption) => {
+                if (selectedOption) {
+                  field.onChange(selectedOption.value)
+                } else {
+                  field.onChange("")
+                }
+                // Only reset search results for this specific field after selection
+                setSearchedCoaOptions((prev) => ({
+                  ...prev,
+                  [fieldName]: [],
+                }))
+              }}
+              onInputChange={(inputValue) => {
+                if (inputValue && inputValue.length > 0) {
+                  debouncedSearchByCode(inputValue, fieldName)
+                } else {
+                  // Clear search results if input is empty
+                  setSearchedCoaOptions((prev) => ({
+                    ...prev,
+                    [fieldName]: [],
+                  }))
+                }
+              }}
+              onFocus={() => setActiveField(`${fieldName}_code`)}
+              value={
+                field.value
+                  ? {
+                    value: field.value,
+                    label: getCoaFieldCode(field.value),
+                  }
+                  : null
+              }
+              isDisabled={isFormDisabled}
+              isClearable
+              isLoading={searchLoading[`${fieldName}_code`]}
+              filterOption={() => true} // Disable default filtering since we handle it via API
+              classNamePrefix="react-select"
+              menuPlacement="auto"
+            />
+            <FormControl>
+              <ReactSelect<{ value: string; label: string }>
+                value={
+                  field.value
+                    ? {
+                      value: field.value,
+                      label:
+                        getAvailableCoaOptions(field.value, fieldName).find((account) => account.id === field.value)
+                          ?.name || "",
+                    }
+                    : null
+                }
+                onChange={(selectedOption) => {
+                  if (selectedOption) {
+                    field.onChange(selectedOption.value)
+                  } else {
+                    field.onChange("")
+                  }
+                  // Only reset search results for this specific field after selection
+                  setSearchedCoaOptions((prev) => ({
+                    ...prev,
+                    [fieldName]: [],
+                  }))
+                }}
+                onInputChange={(inputValue) => {
+                  if (inputValue && inputValue.length > 0) {
+                    debouncedSearchByName(inputValue, fieldName)
+                  } else {
+                    // Clear search results if input is empty
+                    setSearchedCoaOptions((prev) => ({
+                      ...prev,
+                      [fieldName]: [],
+                    }))
+                  }
+                }}
+                onFocus={() => setActiveField(fieldName)}
+                options={getAvailableCoaOptions(field.value, fieldName).map((account) => ({
+                  value: account.id,
+                  label: account.name,
+                }))}
+                placeholder="Search account name..."
+                classNamePrefix={
+                  form.formState.errors[fieldName as keyof typeof form.formState.errors]
+                    ? "react-select-error"
+                    : "react-select"
+                }
+                isDisabled={isFormDisabled}
+                isClearable
+                isLoading={searchLoading[fieldName]}
+                filterOption={() => true} // Disable default filtering since we handle it via API
+                menuPlacement="auto"
+              />
+            </FormControl>
+          </div>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  )
 
   useEffect(() => {
     if (isEditing && salaryLoanDetail?.data) {
@@ -450,7 +629,12 @@ export function SalaryLoanFormDialog({
   }, [isEditing, salaryLoanDetail, form, open])
 
   // Check if form should be disabled (loading or pending operations)
-  const isFormDisabled = creationHandler.isPending || editingHandler.isPending || (isEditing && isLoadingDetail) || isLoadingCOA || isLoadingGroups
+  const isFormDisabled =
+    creationHandler.isPending ||
+    editingHandler.isPending ||
+    (isEditing && isLoadingDetail) ||
+    isLoadingCOA ||
+    isLoadingGroups
 
   // Update the create function to ensure proper number conversion
   const create = async (values: FormValues) => {
@@ -498,13 +682,12 @@ export function SalaryLoanFormDialog({
     } catch (errorData: unknown) {
       if (errorData instanceof AxiosError) {
         Object.entries(errorData.response?.data.errors).forEach(([field, messages]) => {
-          const errorMsg = messages as string[];
+          const errorMsg = messages as string[]
           form.setError(field as any, {
-            type: 'manual',
-            message: errorMsg[0]
-          });
-        }
-        )
+            type: "manual",
+            message: errorMsg[0],
+          })
+        })
       }
     }
   }
@@ -555,13 +738,12 @@ export function SalaryLoanFormDialog({
     } catch (errorData: unknown) {
       if (errorData instanceof AxiosError) {
         Object.entries(errorData.response?.data.errors).forEach(([field, messages]) => {
-          const errorMsg = messages as string[];
+          const errorMsg = messages as string[]
           form.setError(field as any, {
-            type: 'manual',
-            message: errorMsg[0]
-          });
-        }
-        )
+            type: "manual",
+            message: errorMsg[0],
+          })
+        })
       }
     }
   }
@@ -588,6 +770,9 @@ export function SalaryLoanFormDialog({
         if (!open) {
           form.reset()
           setActiveTab("basic-info")
+          setSearchedCoaOptions({})
+          setSearchLoading({})
+          setActiveField(null)
         }
       }}
     >
@@ -605,27 +790,30 @@ export function SalaryLoanFormDialog({
         )}
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(
-            (data) => {
-              // Valid submission
-              onFormSubmit(data);
-            },
-            (errors) => {
-              // This is called AFTER validation fails
-              const errorKeys = Object.keys(errors);
-              for (const key of errorKeys) {
-                if (nonCOAFields.includes(key)) {
-                  setActiveTab("basic-info");
-                  return;
+          <form
+            onSubmit={form.handleSubmit(
+              (data) => {
+                // Valid submission
+                onFormSubmit(data)
+              },
+              (errors) => {
+                // This is called AFTER validation fails
+                const errorKeys = Object.keys(errors)
+                for (const key of errorKeys) {
+                  if (nonCOAFields.includes(key)) {
+                    setActiveTab("basic-info")
+                    return
+                  }
                 }
-              }
-              if (activeTab != "chart-of-accounts") {
-                // If no specific match, default tab
-                form.clearErrors()
-                setActiveTab("chart-of-accounts");
-              }
-            }
-          )} className="space-y-6">
+                if (activeTab != "chart-of-accounts") {
+                  // If no specific match, default tab
+                  form.clearErrors()
+                  setActiveTab("chart-of-accounts")
+                }
+              },
+            )}
+            className="space-y-6"
+          >
             <Tabs defaultValue="basic-info" value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="border-b w-full justify-start rounded-none h-auto p-0 mb-6">
                 <TabsTrigger
@@ -860,9 +1048,11 @@ export function SalaryLoanFormDialog({
                             Other Charges <span className="text-red-500">*</span>
                           </FormLabel>
                           <FormControl>
-                            <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                            <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value} />
                           </FormControl>
-                          <FormDescription className="select-none text-white">This is for layout alignment</FormDescription>
+                          <FormDescription className="select-none text-white">
+                            This is for layout alignment
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -940,7 +1130,9 @@ export function SalaryLoanFormDialog({
                           <FormControl>
                             <Input type="number" step="0.01" placeholder="0.00" {...field} />
                           </FormControl>
-                          <FormDescription className="select-none text-white">This is for layout alignment</FormDescription>
+                          <FormDescription className="select-none text-white">
+                            This is for layout alignment
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -978,7 +1170,7 @@ export function SalaryLoanFormDialog({
                             Service Charge Income (%) <span className="text-red-500">*</span>
                           </FormLabel>
                           <FormControl>
-                            <Input type="number" step="0.01" placeholder="0.00" {...field} value={1.50} />
+                            <Input type="number" step="0.01" placeholder="0.00" {...field} value={1.5} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -994,7 +1186,7 @@ export function SalaryLoanFormDialog({
                             Computer Charges (%) <span className="text-red-500">*</span>
                           </FormLabel>
                           <FormControl>
-                            <Input type="number" step="0.01" placeholder="0.00" {...field} value={0.10} />
+                            <Input type="number" step="0.01" placeholder="0.00" {...field} value={0.1} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -1065,185 +1257,11 @@ export function SalaryLoanFormDialog({
                   <h2 className="text-xl font-bold">Fee Accounts</h2>
 
                   <div className="space-y-4">
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="coa_service_charge"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            Service Charge Account <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <div className="grid grid-cols-2 gap-4">
-                            <Input
-                              value={getCoaFieldCode(field.value)}
-                              placeholder="Account Code"
-                              className="h-11"
-                              readOnly
-                            />
-                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="h-11 w-full">
-                                  <SelectValue placeholder="Select..." />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {getAvailableCoaOptions(field.value).map((account) => (
-                                  <SelectItem key={account.id} value={account.id}>
-                                    {account.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="coa_notarial"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            Notarial Account <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <div className="grid grid-cols-2 gap-4">
-                            <Input
-                              value={getCoaFieldCode(field.value)}
-                              placeholder="Account Code"
-                              className="h-11"
-                              readOnly
-                            />
-                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="h-11 w-full">
-                                  <SelectValue placeholder="Select..." />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {getAvailableCoaOptions(field.value).map((account) => (
-                                  <SelectItem key={account.id} value={account.id}>
-                                    {account.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="coa_gross_receipt"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            Gross Receipt Account <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <div className="grid grid-cols-2 gap-4">
-                            <Input
-                              value={getCoaFieldCode(field.value)}
-                              placeholder="Account Code"
-                              className="h-11"
-                              readOnly
-                            />
-                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="h-11 w-full">
-                                  <SelectValue placeholder="Select..." />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {getAvailableCoaOptions(field.value).map((account) => (
-                                  <SelectItem key={account.id} value={account.id}>
-                                    {account.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="coa_computer"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            Computer Charges Account <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <div className="grid grid-cols-2 gap-4">
-                            <Input
-                              value={getCoaFieldCode(field.value)}
-                              placeholder="Account Code"
-                              className="h-11"
-                              readOnly
-                            />
-                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="h-11 w-full">
-                                  <SelectValue placeholder="Select..." />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {getAvailableCoaOptions(field.value).map((account) => (
-                                  <SelectItem key={account.id} value={account.id}>
-                                    {account.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="coa_pga_accounts_payable"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            A/P PGA Account <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <div className="grid grid-cols-2 gap-4">
-                            <Input
-                              value={getCoaFieldCode(field.value)}
-                              placeholder="Account Code"
-                              className="h-11"
-                              readOnly
-                            />
-                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="h-11 w-full">
-                                  <SelectValue placeholder="Select..." />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {getAvailableCoaOptions(field.value).map((account) => (
-                                  <SelectItem key={account.id} value={account.id}>
-                                    {account.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {renderCoaField("coa_service_charge", "Service Charge Account", true)}
+                    {renderCoaField("coa_notarial", "Notarial Account", true)}
+                    {renderCoaField("coa_gross_receipt", "Gross Receipt Account", true)}
+                    {renderCoaField("coa_computer", "Computer Charges Account", true)}
+                    {renderCoaField("coa_pga_accounts_payable", "A/P PGA Account", true)}
                   </div>
                 </div>
 
@@ -1251,293 +1269,14 @@ export function SalaryLoanFormDialog({
                   <h2 className="text-xl font-bold">Loan Accounts</h2>
 
                   <div className="space-y-4">
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="coa_sl_receivable"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            Loans Receivable Account <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <div className="grid grid-cols-2 gap-4">
-                            <Input
-                              value={getCoaFieldCode(field.value)}
-                              placeholder="Account Code"
-                              className="h-11"
-                              readOnly
-                            />
-                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="h-11 w-full">
-                                  <SelectValue placeholder="Select..." />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {getAvailableCoaOptions(field.value).map((account) => (
-                                  <SelectItem key={account.id} value={account.id}>
-                                    {account.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="coa_sl_interest_income"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            Interest Income Account <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <div className="grid grid-cols-2 gap-4">
-                            <Input
-                              value={getCoaFieldCode(field.value)}
-                              placeholder="Account Code"
-                              className="h-11"
-                              readOnly
-                            />
-                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="h-11 w-full">
-                                  <SelectValue placeholder="Select..." />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {getAvailableCoaOptions(field.value).map((account) => (
-                                  <SelectItem key={account.id} value={account.id}>
-                                    {account.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="coa_sl_interest_receivable"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            Interest Receivable Account <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <div className="grid grid-cols-2 gap-4">
-                            <Input
-                              value={getCoaFieldCode(field.value)}
-                              placeholder="Account Code"
-                              className="h-11"
-                              readOnly
-                            />
-                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="h-11 w-full">
-                                  <SelectValue placeholder="Select..." />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {getAvailableCoaOptions(field.value).map((account) => (
-                                  <SelectItem key={account.id} value={account.id}>
-                                    {account.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="coa_sl_unearned_interest_income"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            Unearned Interest Income Account <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <div className="grid grid-cols-2 gap-4">
-                            <Input
-                              value={getCoaFieldCode(field.value)}
-                              placeholder="Account Code"
-                              className="h-11"
-                              readOnly
-                            />
-                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="h-11 w-full">
-                                  <SelectValue placeholder="Select..." />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {getAvailableCoaOptions(field.value).map((account) => (
-                                  <SelectItem key={account.id} value={account.id}>
-                                    {account.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="coa_sl_other_income_penalty"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            Other Income Penalty Account <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <div className="grid grid-cols-2 gap-4">
-                            <Input
-                              value={getCoaFieldCode(field.value)}
-                              placeholder="Account Code"
-                              className="h-11"
-                              readOnly
-                            />
-                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="h-11 w-full">
-                                  <SelectValue placeholder="Select..." />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {getAvailableCoaOptions(field.value).map((account) => (
-                                  <SelectItem key={account.id} value={account.id}>
-                                    {account.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="coa_sl_allowance_doubtful_account"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            Allowance for Doubtful Account <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <div className="grid grid-cols-2 gap-4">
-                            <Input
-                              value={getCoaFieldCode(field.value)}
-                              placeholder="Account Code"
-                              className="h-11"
-                              readOnly
-                            />
-                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="h-11 w-full">
-                                  <SelectValue placeholder="Select..." />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {getAvailableCoaOptions(field.value).map((account) => (
-                                  <SelectItem key={account.id} value={account.id}>
-                                    {account.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="coa_sl_bad_dept_expense"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            Bad Debt Expense Account <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <div className="grid grid-cols-2 gap-4">
-                            <Input
-                              value={getCoaFieldCode(field.value)}
-                              placeholder="Account Code"
-                              className="h-11"
-                              readOnly
-                            />
-                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="h-11 w-full">
-                                  <SelectValue placeholder="Select..." />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {getAvailableCoaOptions(field.value).map((account) => (
-                                  <SelectItem key={account.id} value={account.id}>
-                                    {account.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="coa_sl_garnished"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            Garnished Expense Account <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <div className="grid grid-cols-2 gap-4">
-                            <Input
-                              value={getCoaFieldCode(field.value)}
-                              placeholder="Account Code"
-                              className="h-11"
-                              readOnly
-                            />
-                            <Select disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="h-11 w-full">
-                                  <SelectValue placeholder="Select..." />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {getAvailableCoaOptions(field.value).map((account) => (
-                                  <SelectItem key={account.id} value={account.id}>
-                                    {account.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {renderCoaField("coa_sl_receivable", "Loans Receivable Account", true)}
+                    {renderCoaField("coa_sl_interest_income", "Interest Income Account", true)}
+                    {renderCoaField("coa_sl_interest_receivable", "Interest Receivable Account", true)}
+                    {renderCoaField("coa_sl_unearned_interest_income", "Unearned Interest Income Account", true)}
+                    {renderCoaField("coa_sl_other_income_penalty", "Other Income Penalty Account", true)}
+                    {renderCoaField("coa_sl_allowance_doubtful_account", "Allowance for Doubtful Account", true)}
+                    {renderCoaField("coa_sl_bad_dept_expense", "Bad Debt Expense Account", true)}
+                    {renderCoaField("coa_sl_garnished", "Garnished Expense Account", true)}
                   </div>
                 </div>
               </TabsContent>
@@ -1552,6 +1291,9 @@ export function SalaryLoanFormDialog({
                   onCancel()
                   onOpenChange(false)
                   form.reset()
+                  setSearchedCoaOptions({})
+                  setSearchLoading({})
+                  setActiveField(null)
                 }}
               >
                 Cancel

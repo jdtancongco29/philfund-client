@@ -97,7 +97,7 @@ export function CashAdvanceTable() {
       enableSorting: true,
       cell: (item) => {
         return (
-          <Badge variant={item.type === "bonus loan" ? "default" : "secondary"}>
+          <Badge variant={"secondary"}>
             {item.type === "bonus loan" ? "Bonus Loan" : "Salary Loan"}
           </Badge>
         )

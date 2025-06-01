@@ -23,9 +23,10 @@ import { ClassificationSetupService } from "../ClassificationSetup/Service/Class
 import { BonusLoanSetupService } from "../BonusLoanSetup/Service/BonusLoanSetupService"
 import { SalaryLoanSetupService } from "../SalaryLoanSetup/Service/SalaryLoanSetupService"
 import { Loader2 } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { AxiosError } from "axios"
 import Select from "react-select"
+import { debounce } from "lodash"
 
 // Define the form schema with comprehensive validation
 const formSchema = z
@@ -129,6 +130,9 @@ export function CashAdvanceFormDialog({
 }: CashAdvanceFormDialogProps) {
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState("basic-info")
+  const [searchLoading, setSearchLoading] = useState<Record<string, boolean>>({})
+  const [searchedCoaOptions, setSearchedCoaOptions] = useState<Record<string, any[]>>({})
+  const [, setActiveField] = useState<string | null>(null)
 
   const basicInfoFields = [
     "code",
@@ -141,17 +145,6 @@ export function CashAdvanceFormDialog({
     "max_rate",
     "eligible_class",
   ]
-
-  // const coaFields = [
-  //   "coa_loan_receivable",
-  //   "coa_interest_receivable",
-  //   "coa_interest_income",
-  //   "coa_garnished",
-  //   "coa_unearned_interest",
-  //   "coa_other_income_penalty",
-  //   "coa_allowance_doubtful",
-  //   "coa_bad_dept_expense"
-  // ];
 
   const editingHandler = useMutation({
     mutationFn: (newCashAdvance: UpdateCashAdvanceSetupPayload) => {
@@ -198,6 +191,77 @@ export function CashAdvanceFormDialog({
     staleTime: Number.POSITIVE_INFINITY,
   })
 
+  // Search COA by name or code
+  const searchCOA = useCallback(async (searchTerm: string, searchType: "name" | "code", fieldName: string) => {
+    if (!searchTerm.trim()) {
+      setSearchedCoaOptions((prev) => ({ ...prev, [fieldName]: [] }))
+      return
+    }
+
+    setSearchLoading((prev) => ({
+      ...prev,
+      [fieldName]: true,
+      [`${fieldName}_code`]: searchType === "code" ? true : prev[`${fieldName}_code`],
+      [fieldName]: searchType === "name" ? true : prev[fieldName],
+    }))
+
+    try {
+      const nameParam = searchType === "name" ? searchTerm : null
+      const codeParam = searchType === "code" ? searchTerm : null
+
+      const response = await CashAdvanceSetupService.getAllCOA(nameParam, codeParam)
+
+      if (response?.data?.chartOfAccounts) {
+        setSearchedCoaOptions((prev) => ({
+          ...prev,
+          [fieldName]: response.data.chartOfAccounts,
+        }))
+      }
+    } catch (error) {
+      console.error("Error searching COA:", error)
+      setSearchedCoaOptions((prev) => ({ ...prev, [fieldName]: [] }))
+    } finally {
+      setSearchLoading((prev) => ({
+        ...prev,
+        [fieldName]: searchType === "name" ? false : prev[fieldName],
+        [`${fieldName}_code`]: searchType === "code" ? false : prev[`${fieldName}_code`],
+      }))
+    }
+  }, [])
+
+  // Debounced search functions
+  const debouncedSearchByName = useCallback(
+    debounce((searchTerm: string, fieldName: string) => {
+      searchCOA(searchTerm, "name", fieldName)
+    }, 500),
+    [searchCOA],
+  )
+
+  const debouncedSearchByCode = useCallback(
+    debounce((searchTerm: string, fieldName: string) => {
+      searchCOA(searchTerm, "code", fieldName)
+    }, 500),
+    [searchCOA],
+  )
+
+  // Reset search results when changing fields
+  // useEffect(() => {
+  //   if (activeField) {
+  //     // Keep the search results only for the active field
+  //     const fieldsToReset = Object.keys(searchedCoaOptions).filter(
+  //       (field) => field !== activeField && field !== `${activeField}_code`,
+  //     )
+
+  //     if (fieldsToReset.length > 0) {
+  //       const newSearchedOptions = { ...searchedCoaOptions }
+  //       fieldsToReset.forEach((field) => {
+  //         newSearchedOptions[field] = []
+  //       })
+  //       setSearchedCoaOptions(newSearchedOptions)
+  //     }
+  //   }
+  // }, [activeField, searchedCoaOptions])
+
   // Initialize the form
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -237,22 +301,175 @@ export function CashAdvanceFormDialog({
   ])
 
   // Get available COA options for each field (excluding already selected values)
-  const getAvailableCoaOptions = (currentFieldValue: string) => {
-    if (!coaData?.data.chartOfAccounts) return []
+  const getAvailableCoaOptions = (currentFieldValue: string, fieldName: string) => {
+    const baseOptions = coaData?.data.chartOfAccounts || []
+    const searchedOptions = searchedCoaOptions[fieldName] || []
+
+    // Always use search results if they exist, regardless of active field
+    let sourceOptions = baseOptions
+    if (searchedOptions.length > 0) {
+      sourceOptions = searchedOptions
+    }
+
+    // Add the currently selected option if it's not in the source options
+    // This ensures the selected value is always available in the dropdown
+    const allOptions = [...sourceOptions]
+
+    if (currentFieldValue) {
+      const selectedOption = [...baseOptions, ...Object.values(searchedCoaOptions).flat()].find(
+        (option) => option.id === currentFieldValue,
+      )
+
+      if (selectedOption && !allOptions.some((option) => option.id === currentFieldValue)) {
+        allOptions.push(selectedOption)
+      }
+    }
 
     const usedValues = watchedCoaValues.filter((value) => value && value !== currentFieldValue)
-    return coaData.data.chartOfAccounts.filter((account) => !usedValues.includes(account.id))
+    return allOptions.filter((account) => !usedValues.includes(account.id))
   }
 
   const getCoaFieldCode = (id: string) => {
-    const coa = coaData?.data.chartOfAccounts.filter((coa) => coa.id == id)
-    if (coa?.length != 0 || false) {
-      return coa![0].code
+    if (!id) return ""
+
+    // First check in the main COA data
+    const mainCoa = coaData?.data.chartOfAccounts.find((coa) => coa.id === id)
+    if (mainCoa) {
+      return mainCoa.code
     }
+
+    // Then check in searched options
+    for (const fieldOptions of Object.values(searchedCoaOptions)) {
+      const searchedCoa = fieldOptions.find((coa) => coa.id === id)
+      if (searchedCoa) {
+        return searchedCoa.code
+      }
+    }
+
     return ""
   }
 
-  // Check if form should be disabled (loading or pending operations)
+  // Enhanced COA field component with search functionality
+  const renderCoaField = (fieldName: string, label: string, required = false) => (
+    <FormField
+      disabled={isFormDisabled}
+      control={form.control}
+      name={fieldName as any}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel className="text-base font-medium">
+            {label} {required && <span className="text-red-500">*</span>}
+          </FormLabel>
+          <div className="grid grid-cols-5 gap-4">
+            <div className="col-span-2">
+              <Select<{ value: string; label: string }>
+                placeholder="Search account code..."
+                options={getAvailableCoaOptions(field.value, fieldName).map((account) => ({
+                  value: account.id,
+                  label: account.code,
+                }))}
+                onChange={(selectedOption) => {
+                  if (selectedOption) {
+                    field.onChange(selectedOption.value)
+                  } else {
+                    field.onChange("")
+                  }
+                  // Only reset search results for this specific field after selection
+                  setSearchedCoaOptions((prev) => ({
+                    ...prev,
+                    [fieldName]: [],
+                  }))
+                }}
+                onInputChange={(inputValue) => {
+                  if (inputValue && inputValue.length > 0) {
+                    debouncedSearchByCode(inputValue, fieldName)
+                  } else {
+                    // Clear search results if input is empty
+                    setSearchedCoaOptions((prev) => ({
+                      ...prev,
+                      [fieldName]: [],
+                    }))
+                  }
+                }}
+                onFocus={() => setActiveField(`${fieldName}_code`)}
+                value={
+                  field.value
+                    ? {
+                      value: field.value,
+                      label: getCoaFieldCode(field.value),
+                    }
+                    : null
+                }
+                isDisabled={isFormDisabled}
+                isClearable
+                isLoading={searchLoading[`${fieldName}_code`]}
+                filterOption={() => true} // Disable default filtering since we handle it via API
+                classNamePrefix="react-select"
+                menuPlacement="auto"
+              />
+            </div>
+            <div className="col-span-3">
+              <FormControl>
+                <Select<{ value: string; label: string }>
+                  value={
+                    field.value
+                      ? {
+                        value: field.value,
+                        label:
+                          getAvailableCoaOptions(field.value, fieldName).find((account) => account.id === field.value)
+                            ?.name || "",
+                      }
+                      : null
+                  }
+                  onChange={(selectedOption) => {
+                    if (selectedOption) {
+                      field.onChange(selectedOption.value)
+                    } else {
+                      field.onChange("")
+                    }
+                    // Only reset search results for this specific field after selection
+                    setSearchedCoaOptions((prev) => ({
+                      ...prev,
+                      [fieldName]: [],
+                    }))
+                  }}
+                  onInputChange={(inputValue) => {
+                    if (inputValue && inputValue.length > 0) {
+                      debouncedSearchByName(inputValue, fieldName)
+                    } else {
+                      // Clear search results if input is empty
+                      setSearchedCoaOptions((prev) => ({
+                        ...prev,
+                        [fieldName]: [],
+                      }))
+                    }
+                  }}
+                  onFocus={() => setActiveField(fieldName)}
+                  options={getAvailableCoaOptions(field.value, fieldName).map((account) => ({
+                    value: account.id,
+                    label: account.name,
+                  }))}
+                  placeholder="Search account name..."
+                  classNamePrefix={
+                    form.formState.errors[fieldName as keyof typeof form.formState.errors]
+                      ? "react-select-error"
+                      : "react-select"
+                  }
+                  isDisabled={isFormDisabled}
+                  isClearable
+                  isLoading={searchLoading[fieldName]}
+                  filterOption={() => true} // Disable default filtering since we handle it via API
+                  menuPlacement="auto"
+                />
+              </FormControl>
+            </div>
+          </div>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  )
+
   const isFormDisabled = creationHandler.isPending || editingHandler.isPending || (isEditing && isLoadingDetail)
 
   useEffect(() => {
@@ -423,7 +640,6 @@ export function CashAdvanceFormDialog({
   const getDialogTitle = () => {
     return `${isEditing ? "Edit" : "Add New"} Cash Advance`
   }
-
   return (
     <Dialog
       open={open}
@@ -432,6 +648,9 @@ export function CashAdvanceFormDialog({
         if (!open) {
           setActiveTab("basic-info")
           form.reset()
+          setSearchedCoaOptions({})
+          setSearchLoading({})
+          setActiveField(null)
         }
       }}
     >
@@ -806,467 +1025,17 @@ export function CashAdvanceFormDialog({
 
                 <TabsContent value="chart-of-accounts" className="space-y-6 mt-0 overflow-hidden">
                   <div className="space-y-6">
-                    {/* Required COA Fields */}
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="coa_loan_receivable"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            Loans Receivable <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <div className="grid grid-cols-5 gap-4">
-                            <div className="col-span-2">
-                              <Input
-                                value={getCoaFieldCode(field.value)}
-                                placeholder="Account Code"
-                                className="h-11"
-                                readOnly
-                              />
-                            </div>
-                            <div className="col-span-3">
-                              <FormControl>
-                                <Select<{ value: string; label: string }>
-                                  value={
-                                    field.value
-                                      ? {
-                                        value: field.value,
-                                        label:
-                                          getAvailableCoaOptions(field.value).find(
-                                            (account) => account.id === field.value,
-                                          )?.name || "",
-                                      }
-                                      : null
-                                  }
-                                  onChange={(selectedOption) => {
-                                    if (selectedOption) {
-                                      field.onChange(selectedOption.value)
-                                    } else {
-                                      field.onChange("")
-                                    }
-                                  }}
-                                  options={getAvailableCoaOptions(field.value).map((account) => ({
-                                    value: account.id,
-                                    label: account.name,
-                                  }))}
-                                  placeholder="Select..."
-                                  classNamePrefix={
-                                    form.formState.errors.coa_loan_receivable ? "react-select-error" : "react-select"
-                                  }
-                                  isDisabled={isFormDisabled}
-                                  isClearable
-                                />
-                              </FormControl>
-                            </div>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {/* Required COA Fields with enhanced search */}
+                    {renderCoaField("coa_loan_receivable", "Loans Receivable", true)}
+                    {renderCoaField("coa_interest_receivable", "Interest Receivable", true)}
+                    {renderCoaField("coa_interest_income", "Interest Income", true)}
+                    {renderCoaField("coa_garnished", "Garnished Expense", true)}
 
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="coa_interest_receivable"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            Interest Receivable <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <div className="grid grid-cols-5 gap-4">
-                            <div className="col-span-2">
-                              <Input
-                                value={getCoaFieldCode(field.value)}
-                                placeholder="Account Code"
-                                className="h-11"
-                                readOnly
-                              />
-                            </div>
-                            <div className="col-span-3">
-                              <FormControl>
-                                <Select<{ value: string; label: string }>
-                                  value={
-                                    field.value
-                                      ? {
-                                        value: field.value,
-                                        label:
-                                          getAvailableCoaOptions(field.value).find(
-                                            (account) => account.id === field.value,
-                                          )?.name || "",
-                                      }
-                                      : null
-                                  }
-                                  onChange={(selectedOption) => {
-                                    if (selectedOption) {
-                                      field.onChange(selectedOption.value)
-                                    } else {
-                                      field.onChange("")
-                                    }
-                                  }}
-                                  options={getAvailableCoaOptions(field.value).map((account) => ({
-                                    value: account.id,
-                                    label: account.name,
-                                  }))}
-                                  placeholder="Select..."
-                                  classNamePrefix={
-                                    form.formState.errors.coa_interest_receivable
-                                      ? "react-select-error"
-                                      : "react-select"
-                                  }
-                                  isDisabled={isFormDisabled}
-                                  isClearable
-                                />
-                              </FormControl>
-                            </div>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="coa_interest_income"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            Interest Income <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <div className="grid grid-cols-5 gap-4">
-                            <div className="col-span-2">
-                              <Input
-                                value={getCoaFieldCode(field.value)}
-                                placeholder="Account Code"
-                                className="h-11"
-                                readOnly
-                              />
-                            </div>
-                            <div className="col-span-3">
-                              <FormControl>
-                                <Select<{ value: string; label: string }>
-                                  value={
-                                    field.value
-                                      ? {
-                                        value: field.value,
-                                        label:
-                                          getAvailableCoaOptions(field.value).find(
-                                            (account) => account.id === field.value,
-                                          )?.name || "",
-                                      }
-                                      : null
-                                  }
-                                  onChange={(selectedOption) => {
-                                    if (selectedOption) {
-                                      field.onChange(selectedOption.value)
-                                    } else {
-                                      field.onChange("")
-                                    }
-                                  }}
-                                  options={getAvailableCoaOptions(field.value).map((account) => ({
-                                    value: account.id,
-                                    label: account.name,
-                                  }))}
-                                  placeholder="Select..."
-                                  classNamePrefix={
-                                    form.formState.errors.coa_interest_income ? "react-select-error" : "react-select"
-                                  }
-                                  isDisabled={isFormDisabled}
-                                  isClearable
-                                />
-                              </FormControl>
-                            </div>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="coa_garnished"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            Garnished Expense <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <div className="grid grid-cols-5 gap-4">
-                            <div className="col-span-2">
-                              <Input
-                                value={getCoaFieldCode(field.value)}
-                                placeholder="Account Code"
-                                className="h-11"
-                                readOnly
-                              />
-                            </div>
-                            <div className="col-span-3">
-                              <FormControl>
-                                <Select<{ value: string; label: string }>
-                                  value={
-                                    field.value
-                                      ? {
-                                        value: field.value,
-                                        label:
-                                          getAvailableCoaOptions(field.value).find(
-                                            (account) => account.id === field.value,
-                                          )?.name || "",
-                                      }
-                                      : null
-                                  }
-                                  onChange={(selectedOption) => {
-                                    if (selectedOption) {
-                                      field.onChange(selectedOption.value)
-                                    } else {
-                                      field.onChange("")
-                                    }
-                                  }}
-                                  options={getAvailableCoaOptions(field.value).map((account) => ({
-                                    value: account.id,
-                                    label: account.name,
-                                  }))}
-                                  placeholder="Select..."
-                                  classNamePrefix={
-                                    form.formState.errors.coa_garnished ? "react-select-error" : "react-select"
-                                  }
-                                  isDisabled={isFormDisabled}
-                                  isClearable
-                                />
-                              </FormControl>
-                            </div>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Optional COA Fields */}
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="coa_unearned_interest"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">Unearned Interest</FormLabel>
-                          <div className="grid grid-cols-5 gap-4">
-                            <div className="col-span-2">
-                              <Input
-                                value={getCoaFieldCode(field.value ?? "")}
-                                placeholder="Account Code"
-                                className="h-11"
-                                readOnly
-                              />
-                            </div>
-                            <div className="col-span-3">
-                              <FormControl>
-                                <Select<{ value: string; label: string }>
-                                  value={
-                                    field.value
-                                      ? {
-                                        value: field.value,
-                                        label:
-                                          coaData?.data.chartOfAccounts.find((account) => account.id === field.value)
-                                            ?.name || "",
-                                      }
-                                      : null
-                                  }
-                                  onChange={(selectedOption) => {
-                                    if (selectedOption) {
-                                      field.onChange(selectedOption.value)
-                                    } else {
-                                      field.onChange("")
-                                    }
-                                  }}
-                                  options={getAvailableCoaOptions(field.value || "").map((account) => ({
-                                    value: account.id,
-                                    label: account.name,
-                                  }))}
-                                  placeholder="Select..."
-                                  classNamePrefix={
-                                    form.formState.errors.coa_unearned_interest ? "react-select-error" : "react-select"
-                                  }
-                                  isDisabled={isFormDisabled}
-                                  isClearable
-                                  menuPlacement="top"
-                                />
-                              </FormControl>
-                            </div>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="coa_other_income_penalty"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">Other Income Penalty</FormLabel>
-                          <div className="grid grid-cols-5 gap-4">
-                            <div className="col-span-2">
-                              <Input
-                                value={getCoaFieldCode(field.value ?? "")}
-                                placeholder="Account Code"
-                                className="h-11"
-                                readOnly
-                              />
-                            </div>
-                            <div className="col-span-3">
-                              <FormControl>
-                                <Select<{ value: string; label: string }>
-                                  value={
-                                    field.value
-                                      ? {
-                                        value: field.value,
-                                        label:
-                                          coaData?.data.chartOfAccounts.find((account) => account.id === field.value)
-                                            ?.name || "",
-                                      }
-                                      : null
-                                  }
-                                  onChange={(selectedOption) => {
-                                    if (selectedOption) {
-                                      field.onChange(selectedOption.value)
-                                    } else {
-                                      field.onChange("")
-                                    }
-                                  }}
-                                  options={getAvailableCoaOptions(field.value || "").map((account) => ({
-                                    value: account.id,
-                                    label: account.name,
-                                  }))}
-                                  placeholder="Select..."
-                                  classNamePrefix={
-                                    form.formState.errors.coa_other_income_penalty
-                                      ? "react-select-error"
-                                      : "react-select"
-                                  }
-                                  isDisabled={isFormDisabled}
-                                  isClearable
-                                  menuPlacement="top"
-                                />
-                              </FormControl>
-                            </div>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="coa_allowance_doubtful"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">Allowance for Doubtful Account</FormLabel>
-                          <div className="grid grid-cols-5 gap-4">
-                            <div className="col-span-2">
-                              <Input
-                                value={getCoaFieldCode(field.value ?? "")}
-                                placeholder="Account Code"
-                                className="h-11"
-                                readOnly
-                              />
-                            </div>
-                            <div className="col-span-3">
-                              <FormControl>
-                                <Select<{ value: string; label: string }>
-                                  value={
-                                    field.value
-                                      ? {
-                                        value: field.value,
-                                        label:
-                                          coaData?.data.chartOfAccounts.find((account) => account.id === field.value)
-                                            ?.name || "",
-                                      }
-                                      : null
-                                  }
-                                  onChange={(selectedOption) => {
-                                    if (selectedOption) {
-                                      field.onChange(selectedOption.value)
-                                    } else {
-                                      field.onChange("")
-                                    }
-                                  }}
-                                  options={getAvailableCoaOptions(field.value || "").map((account) => ({
-                                    value: account.id,
-                                    label: account.name,
-                                  }))}
-                                  placeholder="Select..."
-                                  classNamePrefix={
-                                    form.formState.errors.coa_allowance_doubtful ? "react-select-error" : "react-select"
-                                  }
-                                  isDisabled={isFormDisabled}
-                                  isClearable
-                                  menuPlacement="top"
-                                />
-                              </FormControl>
-                            </div>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="coa_bad_dept_expense"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">Bad Debt Expense</FormLabel>
-                          <div className="grid grid-cols-5 gap-4">
-                            <div className="col-span-2">
-                              <Input
-                                value={getCoaFieldCode(field.value ?? "")}
-                                placeholder="Account Code"
-                                className="h-11"
-                                readOnly
-                              />
-                            </div>
-                            <div className="col-span-3">
-                              <FormControl>
-                                <Select<{ value: string; label: string }>
-                                  value={
-                                    field.value
-                                      ? {
-                                        value: field.value,
-                                        label:
-                                          coaData?.data.chartOfAccounts.find((account) => account.id === field.value)
-                                            ?.name || "",
-                                      }
-                                      : null
-                                  }
-                                  onChange={(selectedOption) => {
-                                    if (selectedOption) {
-                                      field.onChange(selectedOption.value)
-                                    } else {
-                                      field.onChange("")
-                                    }
-                                  }}
-                                  options={getAvailableCoaOptions(field.value || "").map((account) => ({
-                                    value: account.id,
-                                    label: account.name,
-                                  }))}
-                                  placeholder="Select..."
-                                  classNamePrefix={
-                                    form.formState.errors.coa_bad_dept_expense ? "react-select-error" : "react-select"
-                                  }
-                                  isDisabled={isFormDisabled}
-                                  isClearable
-                                  menuPlacement="top"
-                                />
-                              </FormControl>
-                            </div>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {/* Optional COA Fields with enhanced search */}
+                    {renderCoaField("coa_unearned_interest", "Unearned Interest")}
+                    {renderCoaField("coa_other_income_penalty", "Other Income Penalty")}
+                    {renderCoaField("coa_allowance_doubtful", "Allowance for Doubtful Account")}
+                    {renderCoaField("coa_bad_dept_expense", "Bad Debt Expense")}
                   </div>
                 </TabsContent>
               </div>
@@ -1282,6 +1051,9 @@ export function CashAdvanceFormDialog({
                   onOpenChange(false)
                   setActiveTab("basic-info")
                   form.reset()
+                  setSearchedCoaOptions({})
+                  setSearchLoading({})
+                  setActiveField(null)
                 }}
                 className="px-6"
               >

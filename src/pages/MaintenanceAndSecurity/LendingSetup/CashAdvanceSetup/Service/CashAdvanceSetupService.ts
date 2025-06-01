@@ -161,8 +161,14 @@ export const CashAdvanceSetupService = {
   /**
    * Get all Chart of Accounts
    */
-  getAllCOA: async (): Promise<ApiResponse<GetAllCOAResponse>> => {
-    const endpoint = "/coa";
+  getAllCOA: async (
+    name?: string | null,
+    code?: string | null
+  ): Promise<ApiResponse<GetAllCOAResponse>> => {
+    const params = new URLSearchParams();
+    if (name) params.append("name", name.toString());
+    if (code) params.append("code", code.toString());
+    const endpoint = `/coa${params.toString() ? `?${params.toString()}` : ""}`;
     const response = await apiRequest<ApiResponse<GetAllCOAResponse>>(
       "get",
       endpoint,

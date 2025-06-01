@@ -18,9 +18,13 @@ const getToken = (): string | undefined => {
 // Get branch ID from user cookie
 export const getBranchId = (): string | undefined => {
   try {
-    const userCookie = Cookies.get("user");
-    const user = userCookie ? JSON.parse(userCookie) : null;
-    return user?.current_branch;
+    const raw = Cookies.get("current_branch");
+
+    if (!raw) return undefined;
+
+    // Strip quotes if value is a JSON string
+    const currentBranch = raw.replace(/^"|"$/g, '');
+    return currentBranch;
   } catch (error) {
     console.error("Failed to parse user cookie:", error);
     return undefined;
@@ -62,7 +66,7 @@ export const apiRequest = async <T = any>(
   }
 
   const fullUrl = `${API_URL}${endpoint}`;
-
+  console.log(headers);
   const config = {
     method,
     url: fullUrl,

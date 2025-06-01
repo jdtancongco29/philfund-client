@@ -95,6 +95,7 @@ export type DataTableProps<T> = {
   onNew?: () => void
   idField?: keyof T
   enableNew?: boolean
+  newButtonText?: string
   enablePdfExport?: boolean
   enableCsvExport?: boolean
   enableFilter?: boolean
@@ -128,6 +129,7 @@ export function DataTableV2<T>({
   onNew,
   idField = "id" as keyof T,
   enableNew = true,
+  newButtonText = "New",
   enablePdfExport = true,
   enableCsvExport = true,
   enableFilter = true,
@@ -369,7 +371,7 @@ export function DataTableV2<T>({
           {enableNew && (
             <Button size="sm" onClick={onNew}>
               <PlusIcon className="h-4 w-4" />
-              New
+              {newButtonText}
             </Button>
           )}
         </div>

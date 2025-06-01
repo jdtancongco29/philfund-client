@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -12,7 +12,7 @@ import { ChevronDownIcon, ChevronsUpDownIcon, ChevronUpIcon, SearchIcon } from "
 import type { ModulePermission, UserForSelection, UserPermissionResponse, Module } from "./Service/PermissionsTypes"
 import PermissionsService from "./Service/PermissionsService"
 import { toast } from "sonner"
-import Select from "react-select";
+import Select from "react-select"
 
 export function PermissionsTable() {
   const [selectedUser, setSelectedUser] = useState<UserForSelection | null>(null)
@@ -22,6 +22,30 @@ export function PermissionsTable() {
   const [originalPermissions, setOriginalPermissions] = useState<ModulePermission[]>([])
   const [hasChanges, setHasChanges] = useState(false)
   const [sortOrder, setSortOrder] = useState<"asc" | "desc" | null>(null)
+  const [isScrollable, setIsScrollable] = useState(false)
+  const tableContainerRef = useRef<HTMLDivElement>(null)
+  
+  // Check if table is scrollable
+  useEffect(() => {
+    const checkIfScrollable = () => {
+      if (tableContainerRef.current) {
+        const { scrollWidth, clientWidth } = tableContainerRef.current
+        setIsScrollable(scrollWidth > clientWidth)
+        console.log(isScrollable)
+      }
+    }
+
+    // Initial check
+    checkIfScrollable()
+
+    // Check on window resize
+    window.addEventListener("resize", checkIfScrollable)
+
+    // Cleanup
+    return () => {
+      window.removeEventListener("resize", checkIfScrollable)
+    }
+  }, [permissions])
 
   // Fetch all modules
   const { data: modulesData, isLoading: isLoadingModules } = useQuery({
@@ -72,6 +96,7 @@ export function PermissionsTable() {
       setPermissions([])
       setOriginalPermissions([])
       setHasChanges(false)
+      setModuleSearchQuery("");
       // console.log("User set successfully:", user)
     } else {
       console.error("User not found for ID:", userId)
@@ -80,7 +105,6 @@ export function PermissionsTable() {
 
   // Create permissions matrix when modules and user permissions are loaded
   useEffect(() => {
-
     if (modulesData?.data.module && selectedUser) {
       const modules: Module[] = modulesData.data.module
       const userPerms: UserPermissionResponse[] = userPermissions?.data || []
@@ -152,24 +176,24 @@ export function PermissionsTable() {
       prev.map((perm) =>
         perm.module.id === moduleId
           ? {
-            ...perm,
-            [permissionType]: checked,
-            // If unchecking access, uncheck all other permissions
-            ...(permissionType === "can_access" && !checked
-              ? {
-                can_add: false,
-                can_edit: false,
-                can_delete: false,
-                can_export: false,
-                can_print: false,
-                can_void: false,
-              }
-              : {}),
-            // If checking can_export, also check can_print
-            ...(permissionType === "can_export" && checked ? { can_print: true } : {}),
-            // If unchecking can_print, also uncheck can_export
-            ...(permissionType === "can_print" && !checked ? { can_export: false } : {}),
-          }
+              ...perm,
+              [permissionType]: checked,
+              // If unchecking access, uncheck all other permissions
+              ...(permissionType === "can_access" && !checked
+                ? {
+                    can_add: false,
+                    can_edit: false,
+                    can_delete: false,
+                    can_export: false,
+                    can_print: false,
+                    can_void: false,
+                  }
+                : {}),
+              // If checking can_export, also check can_print
+              ...(permissionType === "can_export" && checked ? { can_print: true } : {}),
+              // If unchecking can_print, also uncheck can_export
+              ...(permissionType === "can_print" && !checked ? { can_export: false } : {}),
+            }
           : perm,
       ),
     )
@@ -183,15 +207,15 @@ export function PermissionsTable() {
       prev.map((perm) =>
         perm.module.id === moduleId
           ? {
-            ...perm,
-            can_access: checked,
-            can_add: checked,
-            can_edit: checked,
-            can_delete: checked,
-            can_export: checked,
-            can_print: checked,
-            can_void: checked,
-          }
+              ...perm,
+              can_access: checked,
+              can_add: checked,
+              can_edit: checked,
+              can_delete: checked,
+              can_export: checked,
+              can_print: checked,
+              can_void: checked,
+            }
           : perm,
       ),
     )
@@ -256,11 +280,11 @@ export function PermissionsTable() {
     setSortOrder((prev) => (prev === "asc" ? "desc" : prev === "desc" ? null : "asc"))
   }
   return (
-    <div className="space-y-4">
-      <div className="flex gap-6 h-[calc(100vh-8rem)]">
+    <div className="space-y-4 w-full max-w-full">
+      <div className="flex gap-6 h-[calc(100vh-8rem)] min-w-0">
         {/* Left Sidebar - User Selection */}
-        <div className="w-80 flex-shrink-0">
-          <Card className="h-full">
+        <div className="w-80 flex-shrink-0 min-w-0">
+          <Card className="flex-1">
             <CardContent className="space-y-4">
               {/* User Search */}
               <div className="space-y-2">
@@ -277,9 +301,9 @@ export function PermissionsTable() {
                   value={
                     selectedUser
                       ? {
-                        value: selectedUser.id,
-                        label: `${selectedUser.full_name} (${selectedUser.username})`,
-                      }
+                          value: selectedUser.id,
+                          label: `${selectedUser.full_name} (${selectedUser.username})`,
+                        }
                       : null
                   }
                   onChange={(option) => {
@@ -290,6 +314,7 @@ export function PermissionsTable() {
                       setPermissions([])
                       setOriginalPermissions([])
                       setHasChanges(false)
+                      setModuleSearchQuery("")
                     }
                   }}
                   placeholder="Search and select user..."
@@ -376,7 +401,7 @@ export function PermissionsTable() {
 
                   <div className="space-y-2">
                     <Label className="text-sm text-muted-foreground">Branch</Label>
-                    <p className="font-medium">{selectedUser.branches.map(branch => branch.name).join(", ")}</p>
+                    <p className="font-medium">{selectedUser.branches.map((branch) => branch.name).join(", ")}</p>
                   </div>
 
                   <div className="space-y-2">
@@ -401,8 +426,8 @@ export function PermissionsTable() {
         </div>
 
         {/* Right Content - Permissions Table */}
-        <div className="flex-1 flex flex-col">
-          <Card className="flex-1">
+        <div className="flex-1 flex flex-col min-w-0">
+          <Card className="flex-1 gap-4">
             <CardHeader>
               <CardTitle>Module Permissions</CardTitle>
               <div className="space-y-2 mt-4">
@@ -419,130 +444,143 @@ export function PermissionsTable() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="overflow-auto">
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[200px] cursor-pointer select-none" onClick={handleSortToggle}>
-                        <div className="flex items-center gap-2">
-                          Module
-                          {sortOrder === "asc" ? (
-                            <ChevronUpIcon className="w-4 h-4" />
-                          ) : sortOrder === "desc" ? (
-                            <ChevronDownIcon className="w-4 h-4" />
-                          ) : (
-                            <ChevronsUpDownIcon className="w-4 h-4" />
-                          )}
-                        </div>
-                      </TableHead>
-                      <TableHead className="w-[80px] text-center">All</TableHead>
-                      <TableHead className="w-[80px] text-center">Add</TableHead>
-                      <TableHead className="w-[80px] text-center">Edit</TableHead>
-                      <TableHead className="w-[80px] text-center">Delete</TableHead>
-                      <TableHead className="w-[80px] text-center">Read</TableHead>
-                      <TableHead className="w-[120px] text-center">Generate PDF/CSV</TableHead>
-                      <TableHead className="w-[100px] text-center">Cancel/Void</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {isLoadingModules || isLoadingPermissions ? (
+            <CardContent className="px-6">
+              <div className="w-full overflow-x-auto relative" ref={tableContainerRef}>
+                <div className="rounded-md border overflow-hidden min-w-max">
+                  <Table className="min-w-[800px] rounded-md">
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-4">
-                          Loading Data...
-                        </TableCell>
+                        <TableHead
+                          className="w-[200px] cursor-pointer select-none"
+                          onClick={handleSortToggle}
+                        >
+                          <div className="flex items-center gap-2">
+                            Module
+                            {sortOrder === "asc" ? (
+                              <ChevronUpIcon className="w-4 h-4" />
+                            ) : sortOrder === "desc" ? (
+                              <ChevronDownIcon className="w-4 h-4" />
+                            ) : (
+                              <ChevronsUpDownIcon className="w-4 h-4" />
+                            )}
+                          </div>
+                        </TableHead>
+                        <TableHead className="w-[80px] text-center">All</TableHead>
+                        <TableHead className="w-[80px] text-center">Add</TableHead>
+                        <TableHead className="w-[80px] text-center">Edit</TableHead>
+                        <TableHead className="w-[80px] text-center">Delete</TableHead>
+                        <TableHead className="w-[80px] text-center">Read</TableHead>
+                        <TableHead className="w-[120px] text-center">Generate PDF/CSV</TableHead>
+                        <TableHead className="w-[100px] text-center">Cancel/Void</TableHead>
                       </TableRow>
-                    ) : !selectedUser ? (
-                      <TableRow>
-                        <TableCell colSpan={8} className="text-center py-4">
-                          Select a user to manage their permissions
-                        </TableCell>
-                      </TableRow>
-                    ) : sortedPermissions.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={8} className="text-center py-4">
-                          No modules found.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      sortedPermissions.map((permission) => (
-                        <TableRow key={permission.module.id}>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{permission.module.name}</div>
-                              <div className="text-sm text-muted-foreground">
-                                Module permissions for {selectedUser.full_name}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Checkbox
-                              checked={isAllPermissionsEnabled(permission)}
-                              onCheckedChange={(checked) =>
-                                handleAllPermissions(permission.module.id, checked as boolean)
-                              }
-                            />
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Checkbox
-                              checked={permission.can_add}
-                              onCheckedChange={(checked) =>
-                                handlePermissionChange(permission.module.id, "can_add", checked as boolean)
-                              }
-                            />
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Checkbox
-                              checked={permission.can_edit}
-                              onCheckedChange={(checked) =>
-                                handlePermissionChange(permission.module.id, "can_edit", checked as boolean)
-                              }
-                            />
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Checkbox
-                              checked={permission.can_delete}
-                              onCheckedChange={(checked) =>
-                                handlePermissionChange(permission.module.id, "can_delete", checked as boolean)
-                              }
-                            />
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Checkbox
-                              checked={permission.can_access}
-                              onCheckedChange={(checked) =>
-                                handlePermissionChange(permission.module.id, "can_access", checked as boolean)
-                              }
-                            />
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Checkbox
-                              checked={permission.can_export}
-                              onCheckedChange={(checked) =>
-                                handlePermissionChange(permission.module.id, "can_export", checked as boolean)
-                              }
-                            />
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Checkbox
-                              checked={permission.can_void}
-                              onCheckedChange={(checked) =>
-                                handlePermissionChange(permission.module.id, "can_void", checked as boolean)
-                              }
-                            />
+                    </TableHeader>
+                    <TableBody>
+                      {isLoadingModules || isLoadingPermissions ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={8}
+                            className="text-center py-4"
+                          >
+                            Loading Data...
                           </TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-
-                </Table>
+                      ) : !selectedUser ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={8}
+                            className="text-center py-4"
+                          >
+                            Select a user to manage their permissions
+                          </TableCell>
+                        </TableRow>
+                      ) : sortedPermissions.length === 0 ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={8}
+                            className="text-center py-4"
+                          >
+                            No modules found.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        sortedPermissions.map((permission) => (
+                          <TableRow key={permission.module.id}>
+                            <TableCell>
+                              <div>
+                                <div className="font-medium">{permission.module.name}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  Module permissions for {selectedUser.full_name}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Checkbox
+                                checked={isAllPermissionsEnabled(permission)}
+                                onCheckedChange={(checked) =>
+                                  handleAllPermissions(permission.module.id, checked as boolean)
+                                }
+                              />
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Checkbox
+                                checked={permission.can_add}
+                                onCheckedChange={(checked) =>
+                                  handlePermissionChange(permission.module.id, "can_add", checked as boolean)
+                                }
+                              />
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Checkbox
+                                checked={permission.can_edit}
+                                onCheckedChange={(checked) =>
+                                  handlePermissionChange(permission.module.id, "can_edit", checked as boolean)
+                                }
+                              />
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Checkbox
+                                checked={permission.can_delete}
+                                onCheckedChange={(checked) =>
+                                  handlePermissionChange(permission.module.id, "can_delete", checked as boolean)
+                                }
+                              />
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Checkbox
+                                checked={permission.can_access}
+                                onCheckedChange={(checked) =>
+                                  handlePermissionChange(permission.module.id, "can_access", checked as boolean)
+                                }
+                              />
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Checkbox
+                                checked={permission.can_export}
+                                onCheckedChange={(checked) =>
+                                  handlePermissionChange(permission.module.id, "can_export", checked as boolean)
+                                }
+                              />
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Checkbox
+                                checked={permission.can_void}
+                                onCheckedChange={(checked) =>
+                                  handlePermissionChange(permission.module.id, "can_void", checked as boolean)
+                                }
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Bottom Action Buttons */}
-          <div className="flex justify-end gap-2 p-4 border-t bg-background">
+          <div className="flex justify-end gap-2 p-4 bg-background">
             <Button
               variant="outline"
               onClick={handleReset}

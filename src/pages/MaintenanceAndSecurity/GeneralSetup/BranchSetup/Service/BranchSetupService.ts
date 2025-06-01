@@ -6,6 +6,7 @@ import type {
   CreateBranchPayload,
   UpdateBranchPayload,
   GetAllDepartmentResponse,
+  UserBranchesResponse
 } from "./BranchSetupTypes"
 
 export const BranchSetupService = {
@@ -203,6 +204,19 @@ export const BranchSetupService = {
       const errorMessage = error.response?.data?.message || "Failed to export CSV"
       throw new Error(errorMessage)
     }
+  },
+
+    /**
+   * Get user's accessible branches
+   */
+  getUserBranches: async (): Promise<ApiResponse<UserBranchesResponse>> => {
+    const endpoint = "/branch/my-branch"
+    const response = await apiRequest<ApiResponse<UserBranchesResponse>>("get", endpoint, null, {
+      useAuth: true,
+      useBranchId: true,
+    })
+
+    return response.data
   },
 }
 

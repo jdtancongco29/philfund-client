@@ -1,10 +1,10 @@
-import ComingSoon from '@/components/coming-soon'
 import MainLayout from '@/components/layout/MainLayout'
+import { SystemBackupTable } from './SystemBackupTable'
 
 function BackupAndRestorePage() {
   return (
     <MainLayout>
-        <ComingSoon />
+        <SystemBackupTable />
     </MainLayout>
   )
 }

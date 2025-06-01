@@ -73,7 +73,7 @@ const formSchema = z
       .min(1, "GRT is required")
       .refine((val) => !isNaN(Number(val)), "Must be a valid number")
       .refine((val) => Number(val) <= 100, {
-        message: "Gross Receipt not exceed 100%",
+        message: "Gross Receipt Tax must not exceed 100%",
       }),
     vis_computer: z
       .string()

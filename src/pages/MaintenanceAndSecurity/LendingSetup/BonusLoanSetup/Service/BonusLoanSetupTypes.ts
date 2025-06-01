@@ -71,7 +71,7 @@ export interface CreateBonusLoanPayload {
   surcharge_rate: number;
   release_month: number;
   cut_off_date: string;
-  max_amt: number;
+  max_amt: number | null;
   max_rate: number | null;
   eligible_class: string[];
   coa_loan_receivable: string;

@@ -42,17 +42,18 @@ const formSchema = z
       }),
     release_month: z.string().min(1, "Release month is required"),
     cut_off_date: z.string().min(1, "Cut-off date is required"),
-    max_amt: z
-      .string()
-      .refine((val) => !isNaN(Number(val)), "Must be a valid number").nullable(),
+    max_amt: z.number().min(0, "Maximum amount must be positive").optional().nullable(),
     max_rate: z
-      .string()
+      .number()
+      .min(0, "Maximum rate must be positive")
       .optional()
-      .refine((val) => val === "" || !isNaN(Number(val)), "Must be a valid number")
+      .nullable()
+      .refine((val) => Number(val) <= 100, {
+        message: "Max rate must not exceed 100%",
+      })
       .refine((val) => Number(val) <= 100, {
         message: "Maximum rate must not exceed 100%",
       }),
-
     // Chart of Accounts - all required
     coa_interest_receivable: z.string().min(1, "Loan Interest Receivable account is required"),
     coa_loan_receivable: z.string().min(1, "Loan Receivable account is required"),
@@ -164,8 +165,8 @@ export function BonusLoanFormDialog({
       surcharge_rate: "",
       release_month: "",
       cut_off_date: "",
-      max_amt: "",
-      max_rate: "",
+      max_amt: null,
+      max_rate: null,
       coa_interest_receivable: "",
       coa_loan_receivable: "",
       coa_interest_income: "",
@@ -225,8 +226,8 @@ export function BonusLoanFormDialog({
         surcharge_rate: detail.surcharge_rate,
         release_month: detail.release_month.toString(),
         cut_off_date: detail.cut_off_date,
-        max_amt: detail.max_amt,
-        max_rate: detail.max_rate || "",
+        max_amt: detail.max_amt ? Number.parseFloat(detail.max_amt) : null,
+        max_rate: detail.max_rate ? Number.parseFloat(detail.max_rate) : null,
         coa_interest_receivable: detail.coa_interest_receivable?.id || "",
         coa_loan_receivable: detail.coa_loan_receivable?.id || "",
         coa_interest_income: detail.coa_interest_income?.id || "",
@@ -245,8 +246,8 @@ export function BonusLoanFormDialog({
         surcharge_rate: "",
         release_month: "",
         cut_off_date: "",
-        max_amt: "",
-        max_rate: "",
+        max_amt: null,
+        max_rate: null,
         coa_interest_receivable: "",
         coa_loan_receivable: "",
         coa_interest_income: "",
@@ -268,8 +269,8 @@ export function BonusLoanFormDialog({
       surcharge_rate: Number.parseFloat(values.surcharge_rate),
       release_month: Number.parseInt(values.release_month),
       cut_off_date: values.cut_off_date,
-      max_amt: Number.parseFloat(values?.max_amt ?? ""),
-      max_rate: values.max_rate ? Number.parseFloat(values.max_rate) : null,
+      max_amt: values.max_amt ?? null,
+      max_rate: values.max_rate ?? null,
       eligible_class: values.eligible_class,
       coa_loan_receivable: values.coa_loan_receivable,
       coa_interest_receivable: values.coa_interest_receivable,
@@ -307,8 +308,8 @@ export function BonusLoanFormDialog({
       surcharge_rate: Number.parseFloat(values.surcharge_rate),
       release_month: Number.parseInt(values.release_month),
       cut_off_date: values.cut_off_date,
-      max_amt: Number.parseFloat(values?.max_amt ?? ""),
-      max_rate: values.max_rate ? Number.parseFloat(values.max_rate) : null,
+      max_amt: values.max_amt ?? null,
+      max_rate: values.max_rate ?? null,
       eligible_class: values.eligible_class,
       coa_loan_receivable: values.coa_loan_receivable,
       coa_interest_receivable: values.coa_interest_receivable,
@@ -339,16 +340,16 @@ export function BonusLoanFormDialog({
   }
 
   // Handle form submission
-  const onFormSubmit = (values: FormValues) => {
+  const onFormSubmit = async (values: FormValues) => {
     if (activeTab === "basic-info") {
       setActiveTab("chart-of-accounts")
       return
     }
 
     if (isEditing) {
-      update(values)
+      await update(values)
     } else {
-      create(values)
+      await create(values)
     }
     setActiveTab("basic-info")
   }
@@ -545,7 +546,7 @@ export function BonusLoanFormDialog({
                   />
 
                   <FormField
-                    disabled={isFormDisabled}
+                    disabled={isFormDisabled || form.watch("max_rate") != null}
                     control={form.control}
                     name="max_amt"
                     render={({ field }) => (
@@ -554,7 +555,21 @@ export function BonusLoanFormDialog({
                           Maximum Amount
                         </FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ""} />
+                          <Input
+                            type="number" step="0.01" placeholder="0.00"
+                            {...field}
+                            value={field.value === null || field.value === undefined ? "" : field.value.toString()}
+                            onChange={(e) => {
+                              const value = e.target.value
+                              if (value === "") {
+                                field.onChange(null)
+                              } else {
+                                const numValue = Number.parseFloat(value)
+                                field.onChange(isNaN(numValue) ? null : numValue)
+                              }
+                            }}
+                            disabled={isFormDisabled || form.watch("max_rate") != null}
+                          />
                         </FormControl>
                         <FormDescription>Maximum loan amount allowed</FormDescription>
                         <FormMessage />
@@ -563,14 +578,29 @@ export function BonusLoanFormDialog({
                   />
 
                   <FormField
-                    disabled={isFormDisabled}
+                    disabled={isFormDisabled || form.watch("max_amt") != null}
                     control={form.control}
                     name="max_rate"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-base font-medium">Maximum Rate (%)</FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                          <Input
+                            type="number" step="0.01" placeholder="0.00" {...field}
+                            disabled={isFormDisabled || form.watch("max_amt") != null}
+                            value={field.value === null || field.value === undefined ? "" : field.value.toString()}
+                            onChange={(e) => {
+                              const value = e.target.value
+                              if (value === "") {
+                                field.onChange(null)
+                              } else {
+                                const numValue = Number.parseFloat(value)
+                                field.onChange(isNaN(numValue) ? null : numValue)
+                              }
+
+                            }}
+
+                          />
                         </FormControl>
                         <FormDescription>Maximum rate percentage (optional)</FormDescription>
                         <FormMessage />

@@ -41,26 +41,21 @@ export function BorrowerClassificationTable() {
 
   // Export mutations
   const exportPdfMutation = useMutation({
-    mutationFn: GroupSetupService.exportPdf,
-    onSuccess: (blob) => {
-      const url = window.URL.createObjectURL(blob)
+    mutationFn: ClassificationSetupService.exportPdf,
+    onSuccess: (data) => {
+      console.log(data);
+
       // Open PDF in new tab for preview
-      const newTab = window.open(url, "_blank")
+      const newTab = window.open(data.url, "_blank")
       if (newTab) {
         newTab.focus()
+        toast.success("PDF opened in new tab")
       } else {
-        // Fallback if popup is blocked
-        const link = document.createElement("a")
-        link.href = url
-        link.download = `borrower-classifications-${new Date().toISOString().split("T")[0]}.pdf`
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
+        toast.error("Failed to open PDF. Please try again.")
       }
-      toast.success("PDF opened in new tab")
     },
-    onError: () => {
-      toast.error("Failed to export PDF")
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to export PDF")
     },
   })
 
@@ -69,7 +64,7 @@ export function BorrowerClassificationTable() {
     onSuccess: (csvData: Blob) => {
       try {
         const currentDate = new Date().toISOString().split("T")[0]
-        downloadFile(csvData, `borrower-classifications-${currentDate}.csv`)
+        downloadFile(csvData, `Classifications ${currentDate}.csv`)
         toast.success("CSV generated successfully")
       } catch (error: unknown) {
         console.error(error);

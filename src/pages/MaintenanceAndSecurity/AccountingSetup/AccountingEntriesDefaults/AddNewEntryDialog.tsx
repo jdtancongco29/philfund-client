@@ -534,7 +534,7 @@ export default function AddEditEntryDialog({
             {/* Table Header */}
             <div className="grid grid-cols-5 gap-3 mb-2 text-xs font-medium text-gray-600 border-b pb-2">
               <div className="col-span-1">Account Code</div>
-              <div className="col-span-2 text-left">Account Name</div>
+              <div className="col-span-2 text-left ml-11">Account Name</div>
               <div className="col-span-1 text-center mr-4">Debit</div>
               <div className="col-span-1 text-center  mr-5">Credit</div>
               <div className="col-span-1"></div>
@@ -702,7 +702,7 @@ export default function AddEditEntryDialog({
             {/* Totals Row */}
             <div className="grid grid-cols-5 gap-4 py-3 border-t-2 border-gray-300 font-semibold">
               <div className="col-span-2">Totals</div>
-              <div className="text-center">
+              <div className="text-center ml-100">
                 {calculateTotalDebit(items).toFixed(2)}
               </div>
               <div className="text-center">

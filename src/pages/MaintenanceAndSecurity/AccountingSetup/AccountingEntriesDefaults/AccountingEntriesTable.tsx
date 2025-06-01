@@ -187,49 +187,33 @@ export default function AccountEntriesTable() {
 
   const columns: ColumnDefinition<AccountEntry>[] = [
     {
-      id: "particulars",
-      header: "Particulars",
-      accessorKey: "particulars",
-      enableSorting: true,
-    },
-    {
       id: "name",
       header: "Name",
       accessorKey: "name",
+      enableSorting: true,
+    },
+    {
+      id: "particulars",
+      header: "Particulars",
+      accessorKey: "particulars",
       enableSorting: true,
     },
 
     {
       id: "debit_amount",
       header: "Debit Amount",
-      accessorKey: "details",
-      cell: (item) => {
-        const totalDebit = (item.details ?? []).reduce(
-          (sum, d) => sum + parseFloat(d.debit || "0"),
-          0
-        );
-        return `₱${totalDebit.toLocaleString("en-US", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })}`;
-      },
-      enableSorting: false,
+      accessorKey: "transaction_amount",
+      cell: (item) => parseFloat(item.transaction_amount || "0").toFixed(2),
+      enableSorting: true,
+      isNumeric: true,
     },
     {
       id: "credit_amount",
       header: "Credit Amount",
-      accessorKey: "details",
-      cell: (item) => {
-        const totalCredit = (item.details ?? []).reduce(
-          (sum, d) => sum + parseFloat(d.credit || "0"),
-          0
-        );
-        return `₱${totalCredit.toLocaleString("en-US", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })}`;
-      },
-      enableSorting: false,
+      accessorKey: "transaction_amount",
+      cell: (item) => parseFloat(item.transaction_amount || "0").toFixed(2),
+      enableSorting: true,
+      isNumeric: true,
     },
   ];
 
@@ -471,6 +455,8 @@ export default function AccountEntriesTable() {
         onCsvExport={handleCsvExport}
         onLoading={loading || isExporting}
         onResetTable={onResetTable}
+        showTotals={true}
+        totalRowLabel="Total"
       />
 
       {/* Add/Edit Entry Dialog */}

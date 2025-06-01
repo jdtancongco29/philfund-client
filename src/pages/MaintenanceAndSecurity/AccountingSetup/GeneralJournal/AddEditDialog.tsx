@@ -733,501 +733,532 @@ export default function AddEditEntryDialog({
     onClose();
   };
 
+  const handleAccountSelection = (
+    index: number,
+    selectedOption: { value: string; label: string } | null
+  ) => {
+    if (selectedOption) {
+      const account = chartOfAccounts.find(
+        (coa) => coa.id === selectedOption.value
+      );
+      if (account) {
+        updateItem(index, "coa_id", account.id);
+        const newItems = [...items];
+        newItems[index] = {
+          ...newItems[index],
+          coa: {
+            id: account.id,
+            code: account.code,
+            name: account.name,
+          },
+        };
+        setItems(newItems);
+      }
+    } else {
+      updateItem(index, "coa_id", "");
+      const newItems = [...items];
+      newItems[index] = {
+        ...newItems[index],
+        coa: undefined,
+      };
+      setItems(newItems);
+    }
+  };
+  const getSelectedAccountIds = (): string[] => {
+    return items
+      .map((item) => item.coa_id || item.coa?.id)
+      .filter(Boolean) as string[];
+  };
+
+  const getAvailableAccountsForItem = (
+    currentIndex: number
+  ): ChartOfAccount[] => {
+    const selectedIds = getSelectedAccountIds();
+    const currentItemAccountId =
+      items[currentIndex]?.coa_id || items[currentIndex]?.coa?.id;
+
+    return chartOfAccounts.filter(
+      (account) =>
+        !selectedIds.includes(account.id) || account.id === currentItemAccountId
+    );
+  };
   return (
     <>
       <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-[900px] overflow-y-auto max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">
-              {isEditMode ? "Edit General Journal" : "Add General Journal"}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>
-                  Reference Number <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  type="number"
-                  value={refNum}
-                  readOnly={!isEditMode}
-                  onChange={
-                    isEditMode
-                      ? (e) => {
-                          setRefNum(e.target.value);
-                          clearFieldError("ref_num");
-                        }
-                      : undefined
-                  }
-                  placeholder="Reference Number"
-                  disabled={isEditMode || isSubmitting}
-                  className={hasFieldError("ref_num") ? "border-red-500" : ""}
-                />
-                <ErrorMessage errors={getFieldErrors("ref_num")} />
-              </div>
-              <div className="space-y-2">
-                <Label>
-                  Reference Code <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  value={refCode}
-                  readOnly
-                  placeholder="Reference ID"
-                  disabled={isEditMode || isSubmitting} 
-                  className={hasFieldError("ref_id") ? "border-red-500" : ""}
-                />
-                <ErrorMessage errors={getFieldErrors("ref_id")} />
-              </div>
-
-              <div className="space-y-2">
-                <Label>
-                  Transaction Date <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  type="date"
-                  value={formattedDate || new Date().toISOString().slice(0, 10)}
-                  onChange={(e) => {
-                    setTransactionDate(e.target.value);
-                    clearFieldError("transaction_date");
-                  }}
-                  disabled={isEditMode || isSubmitting}
-                  className={
-                    hasFieldError("transaction_date") ? "border-red-500" : ""
-                  }
-                />
-                <ErrorMessage errors={getFieldErrors("transaction_date")} />
-              </div>
-
-              <div className="space-y-2">
-                <Label>
-                  Name <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  value={name}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    clearFieldError("name");
-                  }}
-                  placeholder="Entry name"
-                  disabled={isEditMode || isSubmitting}
-                  className={hasFieldError("name") ? "border-red-500" : ""}
-                />
-                <ErrorMessage errors={getFieldErrors("name")} />
-              </div>
-
-              <div className="hidden">
-                <input
-                  type="hidden"
-                  name="branch_id"
-                  value={
-                    selectedBranch
-                      ? selectedBranch.id
-                      : branchId || cookieBranchId
-                  }
-                />
-                <ErrorMessage errors={getFieldErrors("branch_id")} />
-              </div>
-
-              <div className="space-y-2 col-span-2">
-                <Label>
-                  Particulars <span className="text-red-500">*</span>
-                </Label>
-                <textarea
-                  value={particulars}
-                  onChange={(e) => {
-                    setParticulars(e.target.value);
-                    clearFieldError("particulars");
-                  }}
-                  placeholder="Particulars"
-                  disabled={isEditMode || isSubmitting}
-                  className={`block w-full rounded border px-3 py-2 ${
-                    hasFieldError("particulars") ? "border-red-500" : ""
-                  }`}
-                  rows={4}
-                />
-                <ErrorMessage errors={getFieldErrors("particulars")} />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-4 mt-20">
-                <Label className="text-lg font-semibold">
-                  Journal Entry Items <span className="text-red-500">*</span>
-                </Label>
-                <Button
-                  variant="outline"
-                  onClick={addItem}
-                  disabled={isEditMode || isSubmitting}
-                  className="text-black-600 border-black-600"
-                >
-                  + Add Entry
-                </Button>
-              </div>
-
-              {/* Display balance validation message */}
-              <BalanceValidationMessage items={items} />
-
-              {/* Display general items errors (like balance errors) */}
-              <ErrorMessage errors={getFieldErrors("items")} />
-
-              {/* Table Header */}
-              <div className="grid grid-cols-5 gap-4 mb-2 text-sm font-medium text-gray-600 border-b pb-2">
-                <div>Account Code</div>
-                <div>Account Name</div>
-                <div>Debit</div>
-                <div>Credit</div>
-                <div></div>
-              </div>
-
-              {/* Table Rows */}
-              {items.map((item, index) => (
-                <div
-                  key={index}
-                  className="grid grid-cols-5 gap-4 py-3 border-b border-gray-100"
-                >
-                  {/* Account Code Dropdown */}
-                  <div className="space-y-1">
-                    <Select<{ value: string; label: string }>
-                      value={
-                        item.coa
-                          ? {
-                              value: item.coa.id,
-                              label: item.coa.code,
-                            }
-                          : null
-                      }
-                      onChange={(selectedOption) => {
-                        if (selectedOption) {
-                          const account = chartOfAccounts.find(
-                            (coa) => coa.id === selectedOption.value
-                          );
-                          if (account) {
-                            updateItem(index, "coa_id", account.id);
-                            const newItems = [...items];
-                            newItems[index] = {
-                              ...newItems[index],
-                              coa: {
-                                id: account.id,
-                                code: account.code,
-                                name: account.name,
-                              },
-                            };
-                            setItems(newItems);
-                          }
-                        } else {
-                          updateItem(index, "coa_id", "");
-                          const newItems = [...items];
-                          newItems[index] = {
-                            ...newItems[index],
-                            coa: undefined,
-                          };
-                          setItems(newItems);
-                        }
-                      }}
-                      options={chartOfAccounts.map((coa) => ({
-                        value: coa.id,
-                        label: coa.code,
-                      }))}
-                      placeholder="Select Account..."
-                      isLoading={loadingCOA}
-                      isClearable
-                      classNamePrefix={
-                        hasFieldError(`items.${index}.coa_id`)
-                          ? "react-select-error"
-                          : "react-select"
-                      }
-                      isDisabled={isEditMode || isSubmitting}
-                    />
-                    <ErrorMessage
-                      errors={getFieldErrors(`items.${index}.coa_id`)}
-                    />
-                  </div>
-
-                  {/* Account Name Dropdown */}
-                  <div className="space-y-1">
-                    <Select<{ value: string; label: string }>
-                      value={
-                        item.coa
-                          ? {
-                              value: item.coa.id,
-                              label: item.coa.name,
-                            }
-                          : null
-                      }
-                      onChange={(selectedOption) => {
-                        if (selectedOption) {
-                          const account = chartOfAccounts.find(
-                            (coa) => coa.id === selectedOption.value
-                          );
-                          if (account) {
-                            updateItem(index, "coa_id", account.id);
-                            const newItems = [...items];
-                            newItems[index] = {
-                              ...newItems[index],
-                              coa: {
-                                id: account.id,
-                                code: account.code,
-                                name: account.name,
-                              },
-                            };
-                            setItems(newItems);
-                          }
-                        } else {
-                          updateItem(index, "coa_id", "");
-                          const newItems = [...items];
-                          newItems[index] = {
-                            ...newItems[index],
-                            coa: undefined,
-                          };
-                          setItems(newItems);
-                        }
-                      }}
-                      options={chartOfAccounts.map((coa) => ({
-                        value: coa.id,
-                        label: coa.name,
-                      }))}
-                      placeholder="Select Account..."
-                      isLoading={loadingCOA}
-                      isClearable
-                      classNamePrefix={
-                        hasFieldError(`items.${index}.coa_id`)
-                          ? "react-select-error"
-                          : "react-select"
-                      }
-                      isDisabled={isEditMode || isSubmitting}
-                    />
-                  </div>
-
-                  {/* Debit Input */}
-                  <div>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={item.debit}
-                      onChange={(e) =>
-                        updateItem(index, "debit", e.target.value)
-                      }
-                      disabled={isEditMode || isSubmitting}
-                      className="text-center"
-                    />
-                  </div>
-
-                  {/* Credit Input */}
-                  <div>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={item.credit}
-                      onChange={(e) =>
-                        updateItem(index, "credit", e.target.value)
-                      }
-                      disabled={isEditMode || isSubmitting}
-                      className="text-center"
-                    />
-                  </div>
-
-                  {/* Remove Button */}
-                  <div className="flex justify-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeItem(index)}
-                      disabled={isEditMode || isSubmitting}
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1"
-                    >
-                      <svg
-                        className="h-4 w-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    </Button>
-                  </div>
-
-                  {/* Display item-level errors spanning full width */}
-                  {getFieldErrors(`items.${index}`).length > 0 && (
-                    <div className="col-span-5">
-                      <ErrorMessage errors={getFieldErrors(`items.${index}`)} />
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {/* Totals Row */}
-              <div className="grid grid-cols-5 gap-4 py-3 border-t-2 border-gray-300 font-semibold">
-                <div className="col-span-2">Totals</div>
-                <div className="text-center">
-                  {calculateTotalDebit(items).toFixed(2)}
-                </div>
-                <div className="text-center">
-                  {calculateTotalCredit(items).toFixed(2)}
-                </div>
-                <div></div>
-              </div>
-            </div>
-
-            {/* Approval Section */}
-            <div className="mt-8 space-y-6">
-              <h3 className="text-lg font-semibold">Approval</h3>
-
-              <div className="space-y-6">
-                {/* Prepared By */}
+        <DialogContent className="sm:max-w-[900px]  ">
+          <div className="max-h-[85vh] overflow-y-auto pr-2 mt-4">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold">
+                {isEditMode ? "Edit General Journal" : "Add General Journal"}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="font-medium">
-                    Prepared By <span className="text-red-500">*</span>
+                  <Label>
+                    Reference Number <span className="text-red-500">*</span>
                   </Label>
-                  <Select<{ value: string; label: string }>
-                    value={
-                      preparedBy
-                        ? { value: preparedBy.id, label: preparedBy.name }
-                        : null
+                  <Input
+                    type="number"
+                    value={refNum}
+                    readOnly={!isEditMode}
+                    onChange={
+                      isEditMode
+                        ? (e) => {
+                            setRefNum(e.target.value);
+                            clearFieldError("ref_num");
+                          }
+                        : undefined
                     }
-                    onChange={(selectedOption) => {
-                      if (selectedOption) {
-                        setPreparedBy({
-                          id: selectedOption.value,
-                          name: selectedOption.label,
-                        });
-                        clearFieldError("prepared_by");
-                      } else {
-                        setPreparedBy(null);
-                      }
-                    }}
-                    options={branchUsers.map((user) => ({
-                      value: user.id,
-                      label: user.name,
-                    }))}
-                    placeholder="Select..."
-                    classNamePrefix={
-                      hasFieldError("prepared_by")
-                        ? "react-select-error"
-                        : "react-select"
-                    }
-                    isDisabled={isEditMode || isSubmitting}
+                    placeholder="Reference Number"
+                    disabled={isEditMode || isSubmitting}
+                    className={hasFieldError("ref_num") ? "border-red-500" : ""}
                   />
-                  <p className="text-sm text-gray-500">
-                    The user who prepared this journal entry
-                  </p>
-                  <ErrorMessage errors={getFieldErrors("prepared_by")} />
+                  <ErrorMessage errors={getFieldErrors("ref_num")} />
+                </div>
+                <div className="space-y-2">
+                  <Label>
+                    Reference Code <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    value={refCode}
+                    readOnly
+                    placeholder="Reference ID"
+                    disabled={isEditMode || isSubmitting}
+                    className={hasFieldError("ref_id") ? "border-red-500" : ""}
+                  />
+                  <ErrorMessage errors={getFieldErrors("ref_id")} />
                 </div>
 
-                {/* Checked By */}
                 <div className="space-y-2">
-                  <Label className="font-medium">Checked By</Label>
-                  <Select<{ value: string; label: string }>
+                  <Label>
+                    Transaction Date <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    type="date"
                     value={
-                      checkedBy
-                        ? { value: checkedBy.id, label: checkedBy.name }
-                        : null
+                      formattedDate || new Date().toISOString().slice(0, 10)
                     }
-                    onChange={(selectedOption) => {
-                      if (selectedOption) {
-                        setCheckedBy({
-                          id: selectedOption.value,
-                          name: selectedOption.label,
-                        });
-                        clearFieldError("checked_by");
-                      } else {
-                        setCheckedBy(null);
-                      }
+                    onChange={(e) => {
+                      setTransactionDate(e.target.value);
+                      clearFieldError("transaction_date");
                     }}
-                    options={branchUsers.map((user) => ({
-                      value: user.id,
-                      label: user.name,
-                    }))}
-                    placeholder="Select..."
-                    classNamePrefix={
-                      hasFieldError("checked_by")
-                        ? "react-select-error"
-                        : "react-select"
+                    disabled={isEditMode || isSubmitting}
+                    className={
+                      hasFieldError("transaction_date") ? "border-red-500" : ""
                     }
-                    isDisabled={isEditMode || isSubmitting}
                   />
-                  <p className="text-sm text-gray-500">
-                    The user who checked this journal entry (optional)
-                  </p>
-                  <ErrorMessage errors={getFieldErrors("checked_by")} />
+                  <ErrorMessage errors={getFieldErrors("transaction_date")} />
                 </div>
 
-                {/* Approved By */}
                 <div className="space-y-2">
-                  <Label className="font-medium">Approved By</Label>
-                  <Select<{ value: string; label: string }>
-                    value={
-                      approvedBy
-                        ? { value: approvedBy.id, label: approvedBy.name }
-                        : null
-                    }
-                    onChange={(selectedOption) => {
-                      if (selectedOption) {
-                        setApprovedBy({
-                          id: selectedOption.value,
-                          name: selectedOption.label,
-                        });
-                        clearFieldError("approved_by");
-                      } else {
-                        setApprovedBy(null);
-                      }
+                  <Label>
+                    Name <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      clearFieldError("name");
                     }}
-                    options={branchUsers.map((user) => ({
-                      value: user.id,
-                      label: user.name,
-                    }))}
-                    placeholder="Select..."
-                    classNamePrefix={
-                      hasFieldError("approved_by")
-                        ? "react-select-error"
-                        : "react-select"
-                    }
-                    isDisabled={isEditMode || isSubmitting}
+                    placeholder="Entry name"
+                    disabled={isEditMode || isSubmitting}
+                    className={hasFieldError("name") ? "border-red-500" : ""}
                   />
-                  <p className="text-sm text-gray-500">
-                    The user who approved this journal entry (optional)
-                  </p>
-                  <ErrorMessage errors={getFieldErrors("approved_by")} />
+                  <ErrorMessage errors={getFieldErrors("name")} />
+                </div>
+
+                <div className="hidden">
+                  <input
+                    type="hidden"
+                    name="branch_id"
+                    value={
+                      selectedBranch
+                        ? selectedBranch.id
+                        : branchId || cookieBranchId
+                    }
+                  />
+                  <ErrorMessage errors={getFieldErrors("branch_id")} />
+                </div>
+
+                <div className="space-y-2 col-span-2">
+                  <Label>
+                    Particulars <span className="text-red-500">*</span>
+                  </Label>
+                  <textarea
+                    value={particulars}
+                    onChange={(e) => {
+                      setParticulars(e.target.value);
+                      clearFieldError("particulars");
+                    }}
+                    placeholder="Particulars"
+                    disabled={isEditMode || isSubmitting}
+                    className={`block w-full rounded border px-3 py-2 ${
+                      hasFieldError("particulars") ? "border-red-500" : ""
+                    }`}
+                    rows={4}
+                  />
+                  <ErrorMessage errors={getFieldErrors("particulars")} />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-4 mt-20">
+                  <Label className="text-lg font-semibold">
+                    Journal Entry Items <span className="text-red-500">*</span>
+                  </Label>
+                  <Button
+                    variant="outline"
+                    onClick={addItem}
+                    disabled={isEditMode || isSubmitting}
+                    className="text-black-600 border-black-600"
+                  >
+                    + Add Entry
+                  </Button>
+                </div>
+
+                {/* Display balance validation message */}
+                <BalanceValidationMessage items={items} />
+
+                {/* Display general items errors (like balance errors) */}
+                <ErrorMessage errors={getFieldErrors("items")} />
+
+                {/* Table Header */}
+                <div className="grid grid-cols-5 gap-3 mb-2 text-xs font-medium text-gray-600 border-b pb-2">
+                  <div className="col-span-1">Account Code</div>
+                  <div className="col-span-2 text-left ml-11">Account Name</div>
+                  <div className="col-span-1 text-center mr-4">Debit</div>
+                  <div className="col-span-1 text-center  mr-5">Credit</div>
+                  <div className="col-span-1"></div>
+                </div>
+
+                {/* Table Rows */}
+                {items.map((item, index) => {
+                  const availableAccounts = getAvailableAccountsForItem(index);
+
+                  return (
+                    <div
+                      key={index}
+                      className="grid grid-cols-5 gap-3 py-2 border-b border-gray-100"
+                    >
+                      {/* Account Code Dropdown */}
+                      <div className="space-y-1 ">
+                        <Select<{ value: string; label: string }>
+                          value={
+                            item.coa
+                              ? {
+                                  value: item.coa.id,
+                                  label: item.coa.code,
+                                }
+                              : null
+                          }
+                          styles={{
+                            control: (base) => ({
+                              ...base,
+                              fontSize: "12px", // 👈 Smaller text
+                              minWidth: "200px", // 👈 Set width
+                            }),
+                            menu: (base) => ({
+                              ...base,
+                              fontSize: "12px", // 👈 Smaller text in dropdown
+                            }),
+                          }}
+                          onChange={(selectedOption) => {
+                            handleAccountSelection(index, selectedOption);
+                          }}
+                          options={availableAccounts.map((coa) => ({
+                            value: coa.id,
+                            label: coa.code,
+                          }))}
+                          placeholder="Select Account..."
+                          isLoading={loadingCOA}
+                          isClearable
+                          classNamePrefix={
+                            hasFieldError(`items.${index}.coa_id`)
+                              ? "react-select-error"
+                              : "react-select"
+                          }
+                          isDisabled={isSubmitting || isEditMode}
+                        />
+                        <ErrorMessage
+                          errors={getFieldErrors(`items.${index}.coa_id`)}
+                        />
+                      </div>
+
+                      {/* Account Name Dropdown */}
+                      <div className="space-y-1 ml-10">
+                        <Select<{ value: string; label: string }>
+                          value={
+                            item.coa
+                              ? {
+                                  value: item.coa.id,
+                                  label: item.coa.name,
+                                }
+                              : null
+                          }
+                          styles={{
+                            control: (base) => ({
+                              ...base,
+                              fontSize: "12px", // 👈 Smaller text
+                              minWidth: "200px", // 👈 Set width
+                            }),
+                            menu: (base) => ({
+                              ...base,
+                              fontSize: "12px", // 👈 Smaller text in dropdown
+                            }),
+                          }}
+                          onChange={(selectedOption) => {
+                            handleAccountSelection(index, selectedOption);
+                          }}
+                          options={availableAccounts.map((coa) => ({
+                            value: coa.id,
+                            label: coa.name,
+                          }))}
+                          placeholder="Select Account..."
+                          isLoading={loadingCOA}
+                          isClearable
+                          classNamePrefix={
+                            hasFieldError(`items.${index}.coa_id`)
+                              ? "react-select-error"
+                              : "react-select"
+                          }
+                          isDisabled={isSubmitting || isEditMode}
+                        />
+                      </div>
+
+                      {/* Debit Input */}
+                      <div>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={item.debit}
+                          onChange={(e) =>
+                            updateItem(index, "debit", e.target.value)
+                          }
+                          disabled={isEditMode || isSubmitting}
+                          className="text-center ml-25"
+                        />
+                      </div>
+
+                      {/* Credit Input */}
+                      <div>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={item.credit}
+                          onChange={(e) =>
+                            updateItem(index, "credit", e.target.value)
+                          }
+                          disabled={isEditMode || isSubmitting}
+                          className="text-center ml-25"
+                        />
+                      </div>
+
+                      {/* Remove Button */}
+                      <div className="flex justify-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeItem(index)}
+                          disabled={isEditMode || isSubmitting}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 ml-25"
+                        >
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        </Button>
+                      </div>
+
+                      {/* Display item-level errors spanning full width */}
+                      {getFieldErrors(`items.${index}`).length > 0 && (
+                        <div className="col-span-5">
+                          <ErrorMessage
+                            errors={getFieldErrors(`items.${index}`)}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* Totals Row */}
+                <div className="grid grid-cols-5 gap-4 py-3 border-t-2 border-gray-300 font-semibold">
+                  <div className="col-span-2">Totals</div>
+                  <div className="text-center ml-100">
+                    {calculateTotalDebit(items).toFixed(2)}
+                  </div>
+                  <div className="text-center">
+                    {calculateTotalCredit(items).toFixed(2)}
+                  </div>
+                  <div></div>
+                </div>
+              </div>
+
+              {/* Approval Section */}
+              <div className="mt-8 space-y-6">
+                <h3 className="text-lg font-semibold">Approval</h3>
+
+                <div className="space-y-6">
+                  {/* Prepared By */}
+                  <div className="space-y-2">
+                    <Label className="font-medium">
+                      Prepared By <span className="text-red-500">*</span>
+                    </Label>
+                    <Select<{ value: string; label: string }>
+                      value={
+                        preparedBy
+                          ? { value: preparedBy.id, label: preparedBy.name }
+                          : null
+                      }
+                      onChange={(selectedOption) => {
+                        if (selectedOption) {
+                          setPreparedBy({
+                            id: selectedOption.value,
+                            name: selectedOption.label,
+                          });
+                          clearFieldError("prepared_by");
+                        } else {
+                          setPreparedBy(null);
+                        }
+                      }}
+                      options={branchUsers.map((user) => ({
+                        value: user.id,
+                        label: user.name,
+                      }))}
+                      placeholder="Select..."
+                      classNamePrefix={
+                        hasFieldError("prepared_by")
+                          ? "react-select-error"
+                          : "react-select"
+                      }
+                      isDisabled={isEditMode || isSubmitting}
+                    />
+                    <p className="text-sm text-gray-500">
+                      The user who prepared this journal entry
+                    </p>
+                    <ErrorMessage errors={getFieldErrors("prepared_by")} />
+                  </div>
+
+                  {/* Checked By */}
+                  <div className="space-y-2">
+                    <Label className="font-medium">Checked By</Label>
+                    <Select<{ value: string; label: string }>
+                      value={
+                        checkedBy
+                          ? { value: checkedBy.id, label: checkedBy.name }
+                          : null
+                      }
+                      onChange={(selectedOption) => {
+                        if (selectedOption) {
+                          setCheckedBy({
+                            id: selectedOption.value,
+                            name: selectedOption.label,
+                          });
+                          clearFieldError("checked_by");
+                        } else {
+                          setCheckedBy(null);
+                        }
+                      }}
+                      options={branchUsers.map((user) => ({
+                        value: user.id,
+                        label: user.name,
+                      }))}
+                      placeholder="Select..."
+                      classNamePrefix={
+                        hasFieldError("checked_by")
+                          ? "react-select-error"
+                          : "react-select"
+                      }
+                      isDisabled={isEditMode || isSubmitting}
+                    />
+                    <p className="text-sm text-gray-500">
+                      The user who checked this journal entry (optional)
+                    </p>
+                    <ErrorMessage errors={getFieldErrors("checked_by")} />
+                  </div>
+
+                  {/* Approved By */}
+                  <div className="space-y-2">
+                    <Label className="font-medium">Approved By</Label>
+                    <Select<{ value: string; label: string }>
+                      value={
+                        approvedBy
+                          ? { value: approvedBy.id, label: approvedBy.name }
+                          : null
+                      }
+                      onChange={(selectedOption) => {
+                        if (selectedOption) {
+                          setApprovedBy({
+                            id: selectedOption.value,
+                            name: selectedOption.label,
+                          });
+                          clearFieldError("approved_by");
+                        } else {
+                          setApprovedBy(null);
+                        }
+                      }}
+                      options={branchUsers.map((user) => ({
+                        value: user.id,
+                        label: user.name,
+                      }))}
+                      placeholder="Select..."
+                      classNamePrefix={
+                        hasFieldError("approved_by")
+                          ? "react-select-error"
+                          : "react-select"
+                      }
+                      isDisabled={isEditMode || isSubmitting}
+                    />
+                    <p className="text-sm text-gray-500">
+                      The user who approved this journal entry (optional)
+                    </p>
+                    <ErrorMessage errors={getFieldErrors("approved_by")} />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <DialogFooter className="flex justify-end space-x-2">
-            <Button
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
-              {isEditMode ? "Close" : "Cancel"}
-            </Button>
-            {!isEditMode && (
+            <DialogFooter className="flex justify-end space-x-2">
               <Button
-                onClick={handleSubmit}
-                disabled={
-                  isSubmitting ||
-                  !name ||
-                  !particulars ||
-                  !refNum ||
-                  !refId ||
-                  !checkedBy ||
-                  !approvedBy ||
-                  !preparedBy ||
-                  items.length === 0 ||
-                  !isBalanced(items)
-                }
+                variant="outline"
+                onClick={handleClose}
+                disabled={isSubmitting}
               >
-                {isSubmitting ? "Save" : "Save"}
+                {isEditMode ? "Close" : "Cancel"}
               </Button>
-            )}
-          </DialogFooter>
+              {!isEditMode && (
+                <Button
+                  onClick={handleSubmit}
+                  disabled={
+                    isSubmitting ||
+                    !name ||
+                    !particulars ||
+                    !refNum ||
+                    !refId ||
+                    !checkedBy ||
+                    !approvedBy ||
+                    !preparedBy ||
+                    items.length === 0 ||
+                    !isBalanced(items)
+                  }
+                >
+                  {isSubmitting ? "Save" : "Save"}
+                </Button>
+              )}
+            </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 

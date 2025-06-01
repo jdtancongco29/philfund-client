@@ -323,309 +323,335 @@ export function EditBankDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="sm:max-w-[700px] max-h-[calc(100vh-100px)] overflow-y-auto"
+        className="max-w-[700px] max-h-[90vh] overflow-hidden p-7"
         aria-describedby={undefined}
       >
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">
-            {isEditMode ? "Edit Bank Account" : "Add New Bank Account"}
-          </DialogTitle>
-        </DialogHeader>
+        <div className="max-h-[85vh] overflow-y-auto pr-2 ">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">
+              {isEditMode ? "Edit Bank Account" : "Add New Bank Account"}
+            </DialogTitle>
+          </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6 py-4">
-          {errors.root && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-600">{errors.root}</p>
-            </div>
-          )}
-
-          {/* Bank Code */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium leading-none">
-              Bank Code <span className="text-red-500">*</span>
-            </label>
-            <Input
-              placeholder="Enter bank code (e.g., BANK-002)"
-              value={formValues.code}
-              onChange={(e) => handleInputChange("code", e.target.value)}
-              className={`mt-1 ${errors.code ? "border-red-500" : ""}`}
-            />
-            <p className="text-sm text-gray-600">
-              A unique code to identify this bank account
-            </p>
-            {errors.code && (
-              <p className="text-sm text-red-600">{errors.code}</p>
-            )}
-          </div>
-
-          {/* Bank Name */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium leading-none">
-              Bank Name <span className="text-red-500">*</span>
-            </label>
-            <Input
-              placeholder="Enter bank account name"
-              value={formValues.name}
-              onChange={(e) => handleInputChange("name", e.target.value)}
-              className={`mt-1 ${errors.name ? "border-red-500" : ""}`}
-            />
-            <p className="text-sm text-gray-600">
-              The descriptive name for this bank account
-            </p>
-            {errors.name && (
-              <p className="text-sm text-red-600">{errors.name}</p>
-            )}
-          </div>
-
-          {/* Bank Address */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium leading-none">
-              Address <span className="text-red-500">*</span>
-            </label>
-            <Input
-              placeholder="Bank Address"
-              value={formValues.address}
-              onChange={(e) => handleInputChange("address", e.target.value)}
-              className={`mt-1 ${errors.address ? "border-red-500" : ""}`}
-            />
-            <p className="text-sm text-gray-600">
-              The physical address of the bank branch
-            </p>
-            {errors.address && (
-              <p className="text-sm text-red-600">{errors.address}</p>
-            )}
-          </div>
-
-          {/* Branch Dropdown */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium leading-none mb-2">
-              Branch <span className="text-red-500">*</span>
-            </label>
-
-            <Select<{ value: string; label: string }>
-              className="mt-1"
-              value={
-                formValues.branch_id
-                  ? branches.length > 0
-                    ? branches
-                        .map((branch) => ({
-                          value: branch.id,
-                          label: `${branch.name} - ${branch.city}`,
-                        }))
-                        .find(
-                          (option) => option.value === formValues.branch_id
-                        ) || null
-                    : formValues.branch_name
-                    ? {
-                        value: formValues.branch_id,
-                        label: formValues.branch_name,
-                      }
-                    : null
-                  : null
-              }
-              onChange={(selectedOption) => {
-                const selectedBranch = branches.find(
-                  (b) => b.id === selectedOption?.value
-                );
-                handleInputChange(
-                  "branch_id",
-                  selectedOption ? selectedOption.value : ""
-                );
-                if (selectedBranch) {
-                  handleInputChange("branch_name", selectedBranch.name);
-                }
-              }}
-              options={branches.map((branch) => ({
-                value: branch.id,
-                label: `${branch.name} - ${branch.city}`,
-              }))}
-              placeholder={
-                loadingBranches ? "Loading branches..." : "Select..."
-              }
-              isLoading={loadingBranches}
-              classNamePrefix={
-                errors.branch_id ? "react-select-error" : "react-select"
-              }
-            />
-            {errors.branch_id && (
-              <p className="text-sm text-red-600">{errors.branch_id}</p>
-            )}
-          </div>
-
-          {/* COA Dropdown */}
-          <div className="space-y-1">
-            <label className="text-sm font-medium leading-none">
-              Chart of Account <span className="text-red-500">*</span>
-            </label>
-
-            <div className="flex gap-2">
-              <div className="w-1/3">
-                <Select<{ value: string; label: string }>
-                  value={
-                    formValues.coa_id
-                      ? chartOfAccounts.length > 0
-                        ? chartOfAccounts
-                            .map((coa) => ({
-                              value: coa.id,
-                              label: coa.code,
-                            }))
-                            .find(
-                              (option) => option.value === formValues.coa_id
-                            ) || null
-                        : null
-                      : null
-                  }
-                  onChange={(selectedOption) => {
-                    const selectedCOA = chartOfAccounts.find(
-                      (c) => c.id === selectedOption?.value
-                    );
-                    handleInputChange(
-                      "coa_id",
-                      selectedOption ? selectedOption.value : ""
-                    );
-                    if (selectedCOA) {
-                      handleInputChange("coa_name", selectedCOA.name);
-                    }
-                  }}
-                  options={chartOfAccounts.map((coa) => ({
-                    value: coa.id,
-                    label: coa.code,
-                  }))}
-                  placeholder={loadingCOA ? "Loading..." : "Account Code"}
-                  isLoading={loadingCOA}
-                  classNamePrefix={
-                    errors.coa_id ? "react-select-error" : "react-select"
-                  }
-                />
+          <form onSubmit={handleSubmit} className="space-y-6 py-4">
+            {errors.root && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-600">{errors.root}</p>
               </div>
-
-              <div className="w-2/3">
-                <Select<{ value: string; label: string }>
-                  value={
-                    formValues.coa_id
-                      ? chartOfAccounts.length > 0
-                        ? chartOfAccounts
-                            .map((coa) => ({
-                              value: coa.id,
-                              label: `${coa.name}`,
-                            }))
-                            .find(
-                              (option) => option.value === formValues.coa_id
-                            ) || null
-                        : formValues.coa_name
-                        ? {
-                            value: formValues.coa_id,
-                            label: formValues.coa_name,
-                          }
-                        : null
-                      : null
-                  }
-                  onChange={(selectedOption) => {
-                    const selectedCOA = chartOfAccounts.find(
-                      (c) => c.id === selectedOption?.value
-                    );
-                    handleInputChange(
-                      "coa_id",
-                      selectedOption ? selectedOption.value : ""
-                    );
-                    if (selectedCOA) {
-                      handleInputChange("coa_name", selectedCOA.name);
-                    }
-                  }}
-                  options={chartOfAccounts.map((coa) => ({
-                    value: coa.id,
-                    label: `${coa.name}`,
-                  }))}
-                  placeholder={
-                    loadingCOA ? "Loading chart of accounts..." : "Select..,."
-                  }
-                  isLoading={loadingCOA}
-                  classNamePrefix={
-                    errors.coa_id ? "react-select-error" : "react-select"
-                  }
-                />
-              </div>
-            </div>
-
-            {errors.coa_id && (
-              <p className="text-sm text-red-600">{errors.coa_id}</p>
             )}
-          </div>
 
-          {/* Account Type */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium leading-none">
-              Type of Bank Account<span className="text-red-500">*</span>
-            </label>
-            <select
-              value={formValues.account_type}
-              onChange={(e) =>
-                handleInputChange("account_type", e.target.value)
-              }
-              className={`w-full px-3 py-2 border rounded-md text-sm mt-1 ${
-                errors.account_type ? "border-red-500" : "border-gray-300"
-              }`}
-            >
-              <option value="">Select...</option>
-              <option value="salary funds account">Salary Funds Account</option>
-              <option value="bonus funds account">Bonus Funds Account</option>
-              <option value="check encashment account">
-                Check Encashment Account
-              </option>
-            </select>
-            <p className="text-sm text-gray-600">
-              The type or purpose of this bank account
-            </p>
-            {errors.account_type && (
-              <p className="text-sm text-red-600">{errors.account_type}</p>
-            )}
-          </div>
-
-          {/* Status */}
-          <div className="p-3 border rounded-md">
-            <label className="text-sm font-medium leading-none flex items-center gap-1 mb-2">
-              Status (Active)
-              <span className="text-red-500">*</span>
-            </label>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">
-                  This department is currently{" "}
-                  {formValues.status ? "active" : "inactive"}.
-                </p>
-              </div>
-              <Switch
-                checked={Boolean(formValues.status)}
-                onCheckedChange={(checked) =>
-                  handleInputChange("status", checked ? 1 : 0)
-                }
-                className="data-[state=checked]:bg-blue-500"
+            {/* Bank Code */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none">
+                Bank Code <span className="text-red-500">*</span>
+              </label>
+              <Input
+                placeholder="Enter bank code (e.g., BANK-002)"
+                value={formValues.code}
+                onChange={(e) => handleInputChange("code", e.target.value)}
+                className={`mt-1 ${errors.code ? "border-red-500" : ""}`}
               />
+              <p className="text-sm text-gray-600">
+                A unique code to identify this bank account
+              </p>
+              {errors.code && (
+                <p className="text-sm text-red-600">{errors.code}</p>
+              )}
             </div>
-          </div>
 
-          <DialogFooter className="pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCancel}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="bg-blue-500 hover:bg-blue-600"
-              disabled={isSubmitting}
-            >
-              {isSubmitting
-                ? "Saving..."
-                : isEditMode
-                ? "Save Bank Account"
-                : "Add Bank Account"}
-            </Button>
-          </DialogFooter>
-        </form>
+            {/* Bank Name */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none">
+                Bank Name <span className="text-red-500">*</span>
+              </label>
+              <Input
+                placeholder="Enter bank account name"
+                value={formValues.name}
+                onChange={(e) => handleInputChange("name", e.target.value)}
+                className={`mt-1 ${errors.name ? "border-red-500" : ""}`}
+              />
+              <p className="text-sm text-gray-600">
+                The descriptive name for this bank account
+              </p>
+              {errors.name && (
+                <p className="text-sm text-red-600">{errors.name}</p>
+              )}
+            </div>
+
+            {/* Bank Address */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none">
+                Address <span className="text-red-500">*</span>
+              </label>
+              <Input
+                placeholder="Bank Address"
+                value={formValues.address}
+                onChange={(e) => handleInputChange("address", e.target.value)}
+                className={`mt-1 ${errors.address ? "border-red-500" : ""}`}
+              />
+              <p className="text-sm text-gray-600">
+                The physical address of the bank branch
+              </p>
+              {errors.address && (
+                <p className="text-sm text-red-600">{errors.address}</p>
+              )}
+            </div>
+
+            {/* Branch Dropdown */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none mb-2">
+                Branch <span className="text-red-500">*</span>
+              </label>
+
+              <Select<{ value: string; label: string }>
+                className="mt-1"
+                value={
+                  formValues.branch_id
+                    ? branches.length > 0
+                      ? branches
+                          .map((branch) => ({
+                            value: branch.id,
+                            label: `${branch.name} - ${branch.city}`,
+                          }))
+                          .find(
+                            (option) => option.value === formValues.branch_id
+                          ) || null
+                      : formValues.branch_name
+                      ? {
+                          value: formValues.branch_id,
+                          label: formValues.branch_name,
+                        }
+                      : null
+                    : null
+                }
+                onChange={(selectedOption) => {
+                  const selectedBranch = branches.find(
+                    (b) => b.id === selectedOption?.value
+                  );
+                  handleInputChange(
+                    "branch_id",
+                    selectedOption ? selectedOption.value : ""
+                  );
+                  if (selectedBranch) {
+                    handleInputChange("branch_name", selectedBranch.name);
+                  }
+                }}
+                options={branches.map((branch) => ({
+                  value: branch.id,
+                  label: `${branch.name} - ${branch.city}`,
+                }))}
+                placeholder={
+                  loadingBranches ? "Loading branches..." : "Select..."
+                }
+                isLoading={loadingBranches}
+                classNamePrefix={
+                  errors.branch_id ? "react-select-error" : "react-select"
+                }
+              />
+              {errors.branch_id && (
+                <p className="text-sm text-red-600">{errors.branch_id}</p>
+              )}
+            </div>
+
+            {/* COA Dropdown */}
+            <div className="space-y-1">
+              <label className="text-sm font-medium leading-none">
+                Chart of Account <span className="text-red-500">*</span>
+              </label>
+
+              <div className="flex gap-2">
+                <div className="w-1/3">
+                  <Select<{ value: string; label: string }>
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        fontSize: "12px", // 👈 Smaller text
+                        minWidth: "10 0px", // 👈 Set width
+                      }),
+                      menu: (base) => ({
+                        ...base,
+                        fontSize: "12px", // 👈 Smaller text in dropdown
+                      }),
+                    }}
+                    value={
+                      formValues.coa_id
+                        ? chartOfAccounts.length > 0
+                          ? chartOfAccounts
+                              .map((coa) => ({
+                                value: coa.id,
+                                label: coa.code,
+                              }))
+                              .find(
+                                (option) => option.value === formValues.coa_id
+                              ) || null
+                          : null
+                        : null
+                    }
+                    onChange={(selectedOption) => {
+                      const selectedCOA = chartOfAccounts.find(
+                        (c) => c.id === selectedOption?.value
+                      );
+                      handleInputChange(
+                        "coa_id",
+                        selectedOption ? selectedOption.value : ""
+                      );
+                      if (selectedCOA) {
+                        handleInputChange("coa_name", selectedCOA.name);
+                      }
+                    }}
+                    options={chartOfAccounts.map((coa) => ({
+                      value: coa.id,
+                      label: coa.code,
+                    }))}
+                    placeholder={loadingCOA ? "Loading..." : "Account Code"}
+                    isLoading={loadingCOA}
+                    classNamePrefix={
+                      errors.coa_id ? "react-select-error" : "react-select"
+                    }
+                  />
+                </div>
+
+                <div className="w-2/3">
+                  <Select<{ value: string; label: string }>
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        fontSize: "12px", // 👈 Smaller text
+                        minWidth: "200px", // 👈 Set width
+                      }),
+                      menu: (base) => ({
+                        ...base,
+                        fontSize: "12px", // 👈 Smaller text in dropdown
+                      }),
+                    }}
+                    value={
+                      formValues.coa_id
+                        ? chartOfAccounts.length > 0
+                          ? chartOfAccounts
+                              .map((coa) => ({
+                                value: coa.id,
+                                label: `${coa.name}`,
+                              }))
+                              .find(
+                                (option) => option.value === formValues.coa_id
+                              ) || null
+                          : formValues.coa_name
+                          ? {
+                              value: formValues.coa_id,
+                              label: formValues.coa_name,
+                            }
+                          : null
+                        : null
+                    }
+                    onChange={(selectedOption) => {
+                      const selectedCOA = chartOfAccounts.find(
+                        (c) => c.id === selectedOption?.value
+                      );
+                      handleInputChange(
+                        "coa_id",
+                        selectedOption ? selectedOption.value : ""
+                      );
+                      if (selectedCOA) {
+                        handleInputChange("coa_name", selectedCOA.name);
+                      }
+                    }}
+                    options={chartOfAccounts.map((coa) => ({
+                      value: coa.id,
+                      label: `${coa.name}`,
+                    }))}
+                    placeholder={
+                      loadingCOA ? "Loading chart of accounts..." : "Select..,."
+                    }
+                    isLoading={loadingCOA}
+                    classNamePrefix={
+                      errors.coa_id ? "react-select-error" : "react-select"
+                    }
+                  />
+                </div>
+              </div>
+
+              {errors.coa_id && (
+                <p className="text-sm text-red-600">{errors.coa_id}</p>
+              )}
+            </div>
+
+            {/* Account Type */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none">
+                Type of Bank Account<span className="text-red-500">*</span>
+              </label>
+              <select
+                value={formValues.account_type}
+                onChange={(e) =>
+                  handleInputChange("account_type", e.target.value)
+                }
+                className={`w-full px-3 py-2 border rounded-md text-sm mt-1 ${
+                  errors.account_type ? "border-red-500" : "border-gray-300"
+                }`}
+              >
+                <option value="">Select...</option>
+                <option value="salary funds account">
+                  Salary Funds Account
+                </option>
+                <option value="bonus funds account">Bonus Funds Account</option>
+                <option value="check encashment account">
+                  Check Encashment Account
+                </option>
+              </select>
+              <p className="text-sm text-gray-600">
+                The type or purpose of this bank account
+              </p>
+              {errors.account_type && (
+                <p className="text-sm text-red-600">{errors.account_type}</p>
+              )}
+            </div>
+
+            {/* Status */}
+            <div className="p-3 border rounded-md">
+              <label className="text-sm font-medium leading-none flex items-center gap-1 mb-2">
+                Status (Active)
+                <span className="text-red-500">*</span>
+              </label>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">
+                    This department is currently{" "}
+                    {formValues.status ? "active" : "inactive"}.
+                  </p>
+                </div>
+                <Switch
+                  checked={Boolean(formValues.status)}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("status", checked ? 1 : 0)
+                  }
+                  className="data-[state=checked]:bg-blue-500"
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCancel}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="bg-blue-500 hover:bg-blue-600"
+                disabled={isSubmitting}
+              >
+                {isSubmitting
+                  ? "Saving..."
+                  : isEditMode
+                  ? "Save Bank Account"
+                  : "Add Bank Account"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

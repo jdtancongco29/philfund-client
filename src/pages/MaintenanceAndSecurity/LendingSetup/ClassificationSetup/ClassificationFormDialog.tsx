@@ -90,7 +90,6 @@ export function ClassificationDialogForm({
         name: item.name,
         bonus_loan_eligible: item.bonus_loan_eligible,
         qualified_for_restructure: item.qualified_for_restructure || false,
-        eligible_for_bonus_loan: item.eligible_for_bonus_loan || false,
         allow_3mo_grace: item.allow_3mo_grace || false,
         group_id: item.group.id,
       })

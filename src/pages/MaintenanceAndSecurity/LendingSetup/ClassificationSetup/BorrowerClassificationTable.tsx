@@ -10,7 +10,6 @@ import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialo
 import { DataTableV2 } from "@/components/data-table/data-table-v2"
 import { toast } from "sonner"
 import { downloadFile } from "@/lib/utils"
-import GroupSetupService from "../GroupSetup/Service/GroupSetupService"
 
 export function BorrowerClassificationTable() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)

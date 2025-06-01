@@ -193,7 +193,7 @@ export const SchoolSetupService = {
   /**
    * Export to PDF
    */
-  exportPdf: async (): Promise<Blob> => {
+  exportPdf: async () => {
     const endpoint = `/borrower/school/export-pdf`;
     try {
       const response = await apiRequest("get", endpoint, null, {

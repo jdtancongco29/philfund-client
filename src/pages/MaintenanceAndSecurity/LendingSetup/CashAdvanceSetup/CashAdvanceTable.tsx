@@ -42,34 +42,27 @@ export function CashAdvanceTable() {
   // Export mutations
   const exportPdfMutation = useMutation({
     mutationFn: CashAdvanceSetupService.exportPdf,
-    onSuccess: (blob) => {
-      const url = window.URL.createObjectURL(blob)
-      // Open PDF in new tab for preview
-      const newTab = window.open(url, "_blank")
+    onSuccess: (data) => { // Open PDF in new tab for preview
+      const newTab = window.open(data.url, "_blank")
       if (newTab) {
         newTab.focus()
+        toast.success("PDF opened in new tab")
       } else {
-        // Fallback if popup is blocked
-        const link = document.createElement("a")
-        link.href = url
-        link.download = `cash-advances-${new Date().toISOString().split("T")[0]}.pdf`
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
+        toast.error("Failed to open PDF. Please try again.")
       }
-      toast.success("PDF opened in new tab")
     },
-    onError: () => {
-      toast.error("Failed to export PDF")
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to export PDF")
     },
   })
+
 
   const exportCsvMutation = useMutation({
     mutationFn: CashAdvanceSetupService.exportCsv,
     onSuccess: (csvData: Blob) => {
       try {
         const currentDate = new Date().toISOString().split("T")[0]
-        downloadFile(csvData, `cash-advances-${currentDate}.csv`)
+        downloadFile(csvData, `Cash Advance ${currentDate}.csv`)
         toast.success("CSV generated successfully")
       } catch (error: unknown) {
         console.error(error);

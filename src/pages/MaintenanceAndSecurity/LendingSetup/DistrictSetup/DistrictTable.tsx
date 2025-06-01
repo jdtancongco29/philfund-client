@@ -40,25 +40,18 @@ export function DistrictTable() {
   // Export mutations
   const exportPdfMutation = useMutation({
     mutationFn: DistrictSetupService.exportPdf,
-    onSuccess: (blob) => {
-      const url = window.URL.createObjectURL(blob)
+    onSuccess: (data) => {
       // Open PDF in new tab for preview
-      const newTab = window.open(url, "_blank")
+      const newTab = window.open(data.url, "_blank")
       if (newTab) {
         newTab.focus()
+        toast.success("PDF opened in new tab")
       } else {
-        // Fallback if popup is blocked
-        const link = document.createElement("a")
-        link.href = url
-        link.download = `borrower-districts-${new Date().toISOString().split("T")[0]}.pdf`
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
+        toast.error("Failed to open PDF. Please try again.")
       }
-      toast.success("PDF opened in new tab")
     },
-    onError: () => {
-      toast.error("Failed to export PDF")
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to export PDF")
     },
   })
 
@@ -67,7 +60,7 @@ export function DistrictTable() {
     onSuccess: (csvData: Blob) => {
       try {
         const currentDate = new Date().toISOString().split("T")[0]
-        downloadFile(csvData, `borrower-districts-${currentDate}.csv`)
+        downloadFile(csvData, `Districts ${currentDate}.csv`)
         toast.success("CSV generated successfully")
       } catch (error: unknown) {
         console.error(error);

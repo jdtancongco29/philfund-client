@@ -201,13 +201,12 @@ export const BonusLoanSetupService = {
   /**
    * Export to PDF
    */
-  exportPdf: async (): Promise<Blob> => {
+  exportPdf: async () => {
     const endpoint = `/bonus-loan-setup/export-pdf`;
     try {
-      const response = await apiRequest<Blob>("get", endpoint, null, {
+      const response = await apiRequest("get", endpoint, null, {
         useAuth: true,
         useBranchId: true,
-        responseType: "blob",
       });
       return response.data;
     } catch (error: any) {

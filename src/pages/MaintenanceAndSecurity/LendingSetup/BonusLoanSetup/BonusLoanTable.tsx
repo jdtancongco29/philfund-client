@@ -41,34 +41,27 @@ export function BonusLoanTable() {
   // Export mutations
   const exportPdfMutation = useMutation({
     mutationFn: BonusLoanSetupService.exportPdf,
-    onSuccess: (blob) => {
-      const url = window.URL.createObjectURL(blob)
-      // Open PDF in new tab for preview
-      const newTab = window.open(url, "_blank")
+    onSuccess: (data) => { // Open PDF in new tab for preview
+      const newTab = window.open(data.url, "_blank")
       if (newTab) {
         newTab.focus()
+        toast.success("PDF opened in new tab")
       } else {
-        // Fallback if popup is blocked
-        const link = document.createElement("a")
-        link.href = url
-        link.download = `borrower-bonus-loans-${new Date().toISOString().split("T")[0]}.pdf`
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
+        toast.error("Failed to open PDF. Please try again.")
       }
-      toast.success("PDF opened in new tab")
     },
-    onError: () => {
-      toast.error("Failed to export PDF")
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to export PDF")
     },
   })
+
 
   const exportCsvMutation = useMutation({
     mutationFn: BonusLoanSetupService.exportCsv,
     onSuccess: (csvData: Blob) => {
       try {
         const currentDate = new Date().toISOString().split("T")[0]
-        downloadFile(csvData, `borrower-bonus-loans-${currentDate}.csv`)
+        downloadFile(csvData, `Bonus Loan ${currentDate}.csv`)
         toast.success("CSV generated successfully")
       } catch (error: unknown) {
         console.error(error);

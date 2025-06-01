@@ -501,7 +501,7 @@ export default function AddEditEntryDialog({
                   setParticulars(e.target.value);
                   clearFieldError("particulars");
                 }}
-                placeholder="Enter the reason or purpose of this general journal entry."
+                placeholder="Enter the reason or purpose of this entry."
                 disabled={isEditMode || isSubmitting}
                 className={hasFieldError("particulars") ? "border-red-500" : ""}
               />
@@ -532,180 +532,185 @@ export default function AddEditEntryDialog({
             <ErrorMessage errors={getFieldErrors("items")} />
 
             {/* Table Header */}
-            <div className="grid grid-cols-5 gap-3 mb-2 text-xs font-medium text-gray-600 border-b pb-2">
-              <div className="col-span-1">Account Code</div>
-              <div className="col-span-2 text-left ml-11">Account Name</div>
-              <div className="col-span-1 text-center mr-4">Debit</div>
-              <div className="col-span-1 text-center  mr-5">Credit</div>
-              <div className="col-span-1"></div>
-            </div>
+            <div className="border border-gray-300 rounded-md">
+              {/* Header Row */}
+              <div className="grid grid-cols-5 gap-3 px-2 py-2 text-xs font-medium text-gray-600 border-b">
+                <div className="col-span-1">Account Code</div>
+                <div className="col-span-2 text-left ml-15">Account Name</div>
+                <div className="col-span-1 text-left ml-5">Debit</div>
+                <div className="col-span-1 text-left ml-5">Credit</div>
+                <div className="col-span-1"></div>
+              </div>
 
-            {/* Table Rows */}
-            {items.map((item, index) => {
-              const availableAccounts = getAvailableAccountsForItem(index);
+              {/* Table Rows */}
+              {items.map((item, index) => {
+                const availableAccounts = getAvailableAccountsForItem(index);
 
-              return (
-                <div
-                  key={index}
-                  className="grid grid-cols-5 gap-3 py-2 border-b border-gray-100"
-                >
-                  {/* Account Code Dropdown */}
-                  <div className="space-y-1 ">
-                    <Select<{ value: string; label: string }>
-                      value={
-                        item.coa
-                          ? {
-                              value: item.coa.id,
-                              label: item.coa.code,
-                            }
-                          : null
-                      }
-                      styles={{
-                        control: (base) => ({
-                          ...base,
-                          fontSize: "12px", // 👈 Smaller text
-                          minWidth: "200px", // 👈 Set width
-                        }),
-                        menu: (base) => ({
-                          ...base,
-                          fontSize: "12px", // 👈 Smaller text in dropdown
-                        }),
-                      }}
-                      onChange={(selectedOption) => {
-                        handleAccountSelection(index, selectedOption);
-                      }}
-                      options={availableAccounts.map((coa) => ({
-                        value: coa.id,
-                        label: coa.code,
-                      }))}
-                      placeholder="Select Account..."
-                      isLoading={loadingCOA}
-                      isClearable
-                      classNamePrefix={
-                        hasFieldError(`items.${index}.coa_id`)
-                          ? "react-select-error"
-                          : "react-select"
-                      }
-                      isDisabled={isSubmitting || isEditMode}
-                    />
-                    <ErrorMessage
-                      errors={getFieldErrors(`items.${index}.coa_id`)}
-                    />
-                  </div>
-
-                  {/* Account Name Dropdown */}
-                  <div className="space-y-1 ml-10">
-                    <Select<{ value: string; label: string }>
-                      value={
-                        item.coa
-                          ? {
-                              value: item.coa.id,
-                              label: item.coa.name,
-                            }
-                          : null
-                      }
-                      styles={{
-                        control: (base) => ({
-                          ...base,
-                          fontSize: "12px", // 👈 Smaller text
-                          minWidth: "200px", // 👈 Set width
-                        }),
-                        menu: (base) => ({
-                          ...base,
-                          fontSize: "12px", // 👈 Smaller text in dropdown
-                        }),
-                      }}
-                      onChange={(selectedOption) => {
-                        handleAccountSelection(index, selectedOption);
-                      }}
-                      options={availableAccounts.map((coa) => ({
-                        value: coa.id,
-                        label: coa.name,
-                      }))}
-                      placeholder="Select Account..."
-                      isLoading={loadingCOA}
-                      isClearable
-                      classNamePrefix={
-                        hasFieldError(`items.${index}.coa_id`)
-                          ? "react-select-error"
-                          : "react-select"
-                      }
-                      isDisabled={isSubmitting || isEditMode}
-                    />
-                  </div>
-
-                  {/* Debit Input */}
-                  <div>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={item.debit}
-                      onChange={(e) =>
-                        updateItem(index, "debit", e.target.value)
-                      }
-                      disabled={isEditMode || isSubmitting}
-                      className="text-center ml-25"
-                    />
-                  </div>
-
-                  {/* Credit Input */}
-                  <div>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={item.credit}
-                      onChange={(e) =>
-                        updateItem(index, "credit", e.target.value)
-                      }
-                      disabled={isEditMode || isSubmitting}
-                      className="text-center ml-25"
-                    />
-                  </div>
-
-                  {/* Remove Button */}
-                  <div className="flex justify-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeItem(index)}
-                      disabled={isEditMode || isSubmitting}
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 ml-25"
-                    >
-                      <svg
-                        className="h-4 w-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    </Button>
-                  </div>
-
-                  {/* Display item-level errors spanning full width */}
-                  {getFieldErrors(`items.${index}`).length > 0 && (
-                    <div className="col-span-5">
-                      <ErrorMessage errors={getFieldErrors(`items.${index}`)} />
+                return (
+                  <div
+                    key={index}
+                    className="grid grid-cols-5 gap-2 px-2 py-2 border-b last:border-b-0"
+                  >
+                    {/* Account Code Dropdown */}
+                    <div className="space-y-1">
+                      <Select<{ value: string; label: string }>
+                        value={
+                          item.coa
+                            ? {
+                                value: item.coa.id,
+                                label: item.coa.code,
+                              }
+                            : null
+                        }
+                        styles={{
+                          control: (base) => ({
+                            ...base,
+                            fontSize: "12px",
+                            minWidth: "120%",
+                          }),
+                          menu: (base) => ({
+                            ...base,
+                            fontSize: "12px",
+                          }),
+                        }}
+                        onChange={(selectedOption) => {
+                          handleAccountSelection(index, selectedOption);
+                        }}
+                        options={availableAccounts.map((coa) => ({
+                          value: coa.id,
+                          label: coa.code,
+                        }))}
+                        placeholder="Select Account..."
+                        isLoading={loadingCOA}
+                        isClearable
+                        classNamePrefix={
+                          hasFieldError(`items.${index}.coa_id`)
+                            ? "react-select-error"
+                            : "react-select"
+                        }
+                        isDisabled={isSubmitting || isEditMode}
+                      />
+                      <ErrorMessage
+                        errors={getFieldErrors(`items.${index}.coa_id`)}
+                      />
                     </div>
-                  )}
-                </div>
-              );
-            })}
+
+                    {/* Account Name Dropdown */}
+                    <div className="space-y-1 ml-15">
+                      <Select<{ value: string; label: string }>
+                        value={
+                          item.coa
+                            ? {
+                                value: item.coa.id,
+                                label: item.coa.name,
+                              }
+                            : null
+                        }
+                        styles={{
+                          control: (base) => ({
+                            ...base,
+                            fontSize: "12px",
+                            minWidth: "180%",
+                          }),
+                          menu: (base) => ({
+                            ...base,
+                            fontSize: "12px",
+                          }),
+                        }}
+                        onChange={(selectedOption) => {
+                          handleAccountSelection(index, selectedOption);
+                        }}
+                        options={availableAccounts.map((coa) => ({
+                          value: coa.id,
+                          label: coa.name,
+                        }))}
+                        placeholder="Select Account..."
+                        isLoading={loadingCOA}
+                        isClearable
+                        classNamePrefix={
+                          hasFieldError(`items.${index}.coa_id`)
+                            ? "react-select-error"
+                            : "react-select"
+                        }
+                        isDisabled={isSubmitting || isEditMode}
+                      />
+                    </div>
+
+                    {/* Debit Input */}
+                    <div>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={item.debit}
+                        onChange={(e) =>
+                          updateItem(index, "debit", e.target.value)
+                        }
+                        disabled={isEditMode || isSubmitting}
+                        className="text-center text-xs   w-4/5 ml-25"
+                      />
+                    </div>
+
+                    {/* Credit Input */}
+                    <div>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={item.credit}
+                        onChange={(e) =>
+                          updateItem(index, "credit", e.target.value)
+                        }
+                        disabled={isEditMode || isSubmitting}
+                        className="text-center text-xs w-4/5 ml-25"
+                      />
+                    </div>
+
+                    {/* Remove Button */}
+                    <div className="flex justify-center ml-10">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeItem(index)}
+                        disabled={isEditMode || isSubmitting}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1"
+                      >
+                        <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
+                        </svg>
+                      </Button>
+                    </div>
+
+                    {/* Item-level Errors */}
+                    {getFieldErrors(`items.${index}`).length > 0 && (
+                      <div className="col-span-5 mt-1">
+                        <ErrorMessage
+                          errors={getFieldErrors(`items.${index}`)}
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
 
             {/* Totals Row */}
             <div className="grid grid-cols-5 gap-4 py-3 border-t-2 border-gray-300 font-semibold">
               <div className="col-span-2">Totals</div>
-              <div className="text-center ml-100">
+              <div className="text-center ml-45">
                 {calculateTotalDebit(items).toFixed(2)}
               </div>
-              <div className="text-center">
+              <div className="text-center ml-45">
                 {calculateTotalCredit(items).toFixed(2)}
               </div>
               <div></div>

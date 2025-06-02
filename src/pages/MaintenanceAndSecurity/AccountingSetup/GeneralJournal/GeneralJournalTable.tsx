@@ -195,7 +195,9 @@ export default function GeneralJournalTable() {
       fetchData();
     } catch (error) {
       console.error("Failed to delete entry:", error);
-         toast.error("Cannot Delete DataThis data is currently used in another module and cannot be deleted." );
+      toast.error(
+        "Cannot Delete DataThis data is currently used in another module and cannot be deleted."
+      );
     }
   }, [entryToDelete, fetchData]);
 
@@ -391,8 +393,7 @@ export default function GeneralJournalTable() {
 
         if (!data || data.length === 0) {
           toast.error("No Data to Export", {
-            description:
-              "No entries available for CSV export",
+            description: "No entries available for CSV export",
             duration: 5000,
           });
           return;
@@ -512,13 +513,13 @@ export default function GeneralJournalTable() {
   };
 
   const handlePdfExport = useCallback(async () => {
-    if (!data || data.length === 0) {
-    toast.error("No Data to Export", {
-      description: "No entries available for PDF export.",
-      duration: 5000,
-    });
-    return;
-  }
+    if (data.length === 0) {
+      toast.error("No Data to Export", {
+        description: "No entries available for PDF export.",
+        duration: 5000,
+      });
+      return;
+    }
     setIsExporting(true);
     try {
       const url = await exportPdf();

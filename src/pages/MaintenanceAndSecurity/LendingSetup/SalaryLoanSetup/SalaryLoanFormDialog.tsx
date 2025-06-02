@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
@@ -414,6 +414,17 @@ export function SalaryLoanFormDialog({
     return allOptions.filter((account) => !usedValues.includes(account.id))
   }
 
+  const scrollableDivRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToTop = () => {
+    if (scrollableDivRef.current) {
+      scrollableDivRef.current.scrollTo({
+        top: 0,
+        behavior: 'smooth' // use 'auto' for immediate jump
+      });
+    }
+  };
+
   const getCoaFieldCode = (id: string) => {
     if (!id) return ""
 
@@ -776,7 +787,7 @@ export function SalaryLoanFormDialog({
         }
       }}
     >
-      <DialogContent className="min-w-5xl h-5/6 flex flex-col overflow-x-hidden overflow-y-auto">
+      <DialogContent className="min-w-5xl h-5/6 flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">{isEditing ? "Edit" : "Add New"} Salary Loan</DialogTitle>
         </DialogHeader>
@@ -789,178 +800,66 @@ export function SalaryLoanFormDialog({
           </div>
         )}
 
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(
-              (data) => {
-                // Valid submission
-                onFormSubmit(data)
-              },
-              (errors) => {
-                // This is called AFTER validation fails
-                const errorKeys = Object.keys(errors)
-                for (const key of errorKeys) {
-                  if (nonCOAFields.includes(key)) {
-                    setActiveTab("basic-info")
-                    return
+        <div className="overflow-x-hidden overflow-y-auto" ref={scrollableDivRef}>
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(
+                (data) => {
+                  // Valid submission
+                  onFormSubmit(data)
+                },
+                (errors) => {
+                  // This is called AFTER validation fails
+                  const errorKeys = Object.keys(errors)
+                  for (const key of errorKeys) {
+                    if (nonCOAFields.includes(key)) {
+                      setActiveTab("basic-info")
+                      return
+                    }
                   }
-                }
-                if (activeTab != "chart-of-accounts") {
-                  // If no specific match, default tab
-                  form.clearErrors()
-                  setActiveTab("chart-of-accounts")
-                }
-              },
-            )}
-            className="space-y-6"
-          >
-            <Tabs defaultValue="basic-info" value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="border-b w-full justify-start rounded-none h-auto p-0 mb-6">
-                <TabsTrigger
-                  disabled={isFormDisabled}
-                  value="basic-info"
-                  className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-blue-500 data-[state=active]:shadow-none px-4 py-2"
-                >
-                  Basic Info
-                </TabsTrigger>
-                <TabsTrigger
-                  disabled={isFormDisabled}
-                  value="chart-of-accounts"
-                  className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-blue-500 data-[state=active]:shadow-none px-4 py-2"
-                >
-                  Chart of Accounts
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="basic-info" className="space-y-6 mt-0 w-full">
-                {/* Basic Info Section */}
-                <div className="grid grid-cols-2 gap-6 w-full">
-                  <FormField
+                  if (activeTab != "chart-of-accounts") {
+                    // If no specific match, default tab
+                    form.clearErrors()
+                    setActiveTab("chart-of-accounts")
+                  }
+                },
+              )}
+              className="space-y-6"
+            >
+              <Tabs defaultValue="basic-info" value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="border-b w-full justify-start rounded-none h-auto p-0 mb-2">
+                  <TabsTrigger
                     disabled={isFormDisabled}
-                    control={form.control}
-                    name="code"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-medium">
-                          Salary Loan Code <span className="text-red-500">*</span>
-                        </FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter loan code" {...field} />
-                        </FormControl>
-                        <FormDescription>A unique code to identify this loan product</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
+                    value="basic-info"
+                    className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-blue-500 data-[state=active]:shadow-none px-4 py-2"
+                  >
+                    Basic Info
+                  </TabsTrigger>
+                  <TabsTrigger
                     disabled={isFormDisabled}
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-medium">
-                          Loan Name <span className="text-red-500">*</span>
-                        </FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter loan name" {...field} />
-                        </FormControl>
-                        <FormDescription>The descriptive name of this loan product</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    value="chart-of-accounts"
+                    className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-blue-500 data-[state=active]:shadow-none px-4 py-2"
+                  >
+                    Chart of Accounts
+                  </TabsTrigger>
+                </TabsList>
 
-                  <FormField
-                    disabled={isFormDisabled}
-                    control={form.control}
-                    name="interest_rate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-medium">
-                          Interest Rate (%) <span className="text-red-500">*</span>
-                        </FormLabel>
-                        <FormControl>
-                          <Input type="number" step="0.01" placeholder="0.00" {...field} />
-                        </FormControl>
-                        <FormDescription>Annual interest rate percentage</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    disabled={isFormDisabled}
-                    control={form.control}
-                    name="surcharge_rate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-medium">
-                          Surcharge Rate (%) <span className="text-red-500">*</span>
-                        </FormLabel>
-                        <FormControl>
-                          <Input type="number" step="0.01" placeholder="0.00" {...field} />
-                        </FormControl>
-                        <FormDescription>Penalty rate for late payments</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    disabled={isFormDisabled}
-                    control={form.control}
-                    name="min_amount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-medium">
-                          Minimum Amount <span className="text-red-500">*</span>
-                        </FormLabel>
-                        <FormControl>
-                          <Input type="number" step="0.01" placeholder="0.00" {...field} />
-                        </FormControl>
-                        <FormDescription>Minimum loan amount allowed</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    disabled={isFormDisabled}
-                    control={form.control}
-                    name="max_amount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-medium">
-                          Maximum Amount <span className="text-red-500">*</span>
-                        </FormLabel>
-                        <FormControl>
-                          <Input type="number" step="0.01" placeholder="0.00" {...field} />
-                        </FormControl>
-                        <FormDescription>Maximum loan amount allowed</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* Client-Visible Fees Section */}
-                <div>
-                  <h3 className="text-lg font-medium mb-4">Client-Visible Fees</h3>
-                  <div className="grid grid-cols-3 gap-6">
+                <TabsContent value="basic-info" className="space-y-6 mt-0 w-full">
+                  {/* Basic Info Section */}
+                  <div className="grid grid-cols-2 gap-6 w-full">
                     <FormField
                       disabled={isFormDisabled}
                       control={form.control}
-                      name="vis_service"
+                      name="code"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-base font-medium">
-                            Service Charge (%) <span className="text-red-500">*</span>
+                            Salary Loan Code <span className="text-red-500">*</span>
                           </FormLabel>
                           <FormControl>
-                            <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                            <Input placeholder="Enter loan code" {...field} />
                           </FormControl>
-                          <FormDescription>Percentage charged as service fee</FormDescription>
+                          <FormDescription>A unique code to identify this loan product</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -969,16 +868,16 @@ export function SalaryLoanFormDialog({
                     <FormField
                       disabled={isFormDisabled}
                       control={form.control}
-                      name="vis_insurance"
+                      name="name"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-base font-medium">
-                            Insurance (%) <span className="text-red-500">*</span>
+                            Loan Name <span className="text-red-500">*</span>
                           </FormLabel>
                           <FormControl>
-                            <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                            <Input placeholder="Enter loan name" {...field} />
                           </FormControl>
-                          <FormDescription>Percentage charged for insurance</FormDescription>
+                          <FormDescription>The descriptive name of this loan product</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -987,16 +886,16 @@ export function SalaryLoanFormDialog({
                     <FormField
                       disabled={isFormDisabled}
                       control={form.control}
-                      name="vis_notarial"
+                      name="interest_rate"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-base font-medium">
-                            Notarial Fee (%) <span className="text-red-500">*</span>
+                            Interest Rate (%) <span className="text-red-500">*</span>
                           </FormLabel>
                           <FormControl>
                             <Input type="number" step="0.01" placeholder="0.00" {...field} />
                           </FormControl>
-                          <FormDescription>Percentage charged for notarial services</FormDescription>
+                          <FormDescription>Annual interest rate percentage</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -1005,16 +904,16 @@ export function SalaryLoanFormDialog({
                     <FormField
                       disabled={isFormDisabled}
                       control={form.control}
-                      name="vis_gross_reciept"
+                      name="surcharge_rate"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-base font-medium">
-                            GRT (%) <span className="text-red-500">*</span>
+                            Surcharge Rate (%) <span className="text-red-500">*</span>
                           </FormLabel>
                           <FormControl>
                             <Input type="number" step="0.01" placeholder="0.00" {...field} />
                           </FormControl>
-                          <FormDescription>Gross Receipts Tax percentage</FormDescription>
+                          <FormDescription>Penalty rate for late payments</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -1023,16 +922,16 @@ export function SalaryLoanFormDialog({
                     <FormField
                       disabled={isFormDisabled}
                       control={form.control}
-                      name="vis_computer"
+                      name="min_amount"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-base font-medium">
-                            Computer Charges (%) <span className="text-red-500">*</span>
+                            Minimum Amount <span className="text-red-500">*</span>
                           </FormLabel>
                           <FormControl>
                             <Input type="number" step="0.01" placeholder="0.00" {...field} />
                           </FormControl>
-                          <FormDescription>Percentage charged for computer processing</FormDescription>
+                          <FormDescription>Minimum loan amount allowed</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -1041,273 +940,387 @@ export function SalaryLoanFormDialog({
                     <FormField
                       disabled={isFormDisabled}
                       control={form.control}
-                      name="vis_other_charges"
+                      name="max_amount"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-base font-medium">
-                            Other Charges <span className="text-red-500">*</span>
+                            Maximum Amount <span className="text-red-500">*</span>
                           </FormLabel>
                           <FormControl>
-                            <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value} />
+                            <Input type="number" step="0.01" placeholder="0.00" {...field} />
                           </FormControl>
-                          <FormDescription className="select-none text-white">
-                            This is for layout alignment
-                          </FormDescription>
+                          <FormDescription>Maximum loan amount allowed</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
-                </div>
 
-                {/* PGA Fees & Surcharge Section */}
-                <div>
-                  <h3 className="text-lg font-medium mb-4">PGA Fees & Surcharge</h3>
-                  <div className="grid grid-cols-2 gap-6">
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="pga_service_charge"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            PGA Service Charge (%) <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input type="number" step="0.01" placeholder="0.00" {...field} />
-                          </FormControl>
-                          <FormDescription>PGA service charge percentage</FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  {/* Client-Visible Fees Section */}
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">Client-Visible Fees</h3>
+                    <div className="grid grid-cols-3 gap-6">
+                      <FormField
+                        disabled={isFormDisabled}
+                        control={form.control}
+                        name="vis_service"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-base font-medium">
+                              Service Charge (%) <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <FormControl>
+                              <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                            </FormControl>
+                            <FormDescription>Percentage charged as service fee</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="pga_insurance"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            PGA Insurance (%) <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input type="number" step="0.01" placeholder="0.00" {...field} />
-                          </FormControl>
-                          <FormDescription>PGA insurance percentage</FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                      <FormField
+                        disabled={isFormDisabled}
+                        control={form.control}
+                        name="vis_insurance"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-base font-medium">
+                              Insurance (%) <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <FormControl>
+                              <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                            </FormControl>
+                            <FormDescription>Percentage charged for insurance</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="pga_notarial"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            PGA Notarial Fee (%) <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input type="number" step="0.01" placeholder="0.00" {...field} />
-                          </FormControl>
-                          <FormDescription>PGA notarial fee percentage</FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                      <FormField
+                        disabled={isFormDisabled}
+                        control={form.control}
+                        name="vis_notarial"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-base font-medium">
+                              Notarial Fee (%) <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <FormControl>
+                              <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                            </FormControl>
+                            <FormDescription>Percentage charged for notarial services</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="pga_gross_reciept"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            PGA Gross Receipt Tax (%) <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input type="number" step="0.01" placeholder="0.00" {...field} />
-                          </FormControl>
-                          <FormDescription className="select-none text-white">
-                            This is for layout alignment
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                      <FormField
+                        disabled={isFormDisabled}
+                        control={form.control}
+                        name="vis_gross_reciept"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-base font-medium">
+                              GRT (%) <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <FormControl>
+                              <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                            </FormControl>
+                            <FormDescription>Gross Receipts Tax percentage</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        disabled={isFormDisabled}
+                        control={form.control}
+                        name="vis_computer"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-base font-medium">
+                              Computer Charges (%) <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <FormControl>
+                              <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                            </FormControl>
+                            <FormDescription>Percentage charged for computer processing</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        disabled={isFormDisabled}
+                        control={form.control}
+                        name="vis_other_charges"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-base font-medium">
+                              Other Charges <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <FormControl>
+                              <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value} />
+                            </FormControl>
+                            <FormDescription className="select-none text-white">
+                              This is for layout alignment
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
-                </div>
 
-                {/* Branch other charges Section */}
-                <div>
-                  <h3 className="text-lg font-medium mb-4">Branch Other Charges</h3>
-                  <div className="grid grid-cols-3 gap-6">
-                    <FormField
-                      disabled
-                      control={form.control}
-                      name="def_interest"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            Interest Income (%) <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input type="number" step="0.01" placeholder="0.00" {...field} value={3.0} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      disabled
-                      control={form.control}
-                      name="def_charge"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            Service Charge Income (%) <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input type="number" step="0.01" placeholder="0.00" {...field} value={1.5} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      disabled
-                      control={form.control}
-                      name="def_computer"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            Computer Charges (%) <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input type="number" step="0.01" placeholder="0.00" {...field} value={0.1} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  {/* PGA Fees & Surcharge Section */}
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">PGA Fees & Surcharge</h3>
+                    <div className="grid grid-cols-2 gap-6">
+                      <FormField
+                        disabled={isFormDisabled}
+                        control={form.control}
+                        name="pga_service_charge"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-base font-medium">
+                              PGA Service Charge (%) <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <FormControl>
+                              <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                            </FormControl>
+                            <FormDescription>PGA service charge percentage</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        disabled={isFormDisabled}
+                        control={form.control}
+                        name="pga_insurance"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-base font-medium">
+                              PGA Insurance (%) <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <FormControl>
+                              <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                            </FormControl>
+                            <FormDescription>PGA insurance percentage</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        disabled={isFormDisabled}
+                        control={form.control}
+                        name="pga_notarial"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-base font-medium">
+                              PGA Notarial Fee (%) <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <FormControl>
+                              <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                            </FormControl>
+                            <FormDescription>PGA notarial fee percentage</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        disabled={isFormDisabled}
+                        control={form.control}
+                        name="pga_gross_reciept"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-base font-medium">
+                              PGA Gross Receipt Tax (%) <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <FormControl>
+                              <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                            </FormControl>
+                            <FormDescription className="select-none text-white">
+                              This is for layout alignment
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
-                </div>
 
-                {/* List of Groups Section */}
-                <div className="w-full">
-                  <h3 className="text-lg font-medium mb-4">
-                    List of Groups <span className="text-red-500">*</span>
-                  </h3>
-                  <FormField
-                    disabled={isFormDisabled}
-                    control={form.control}
-                    name="eligible_groups"
-                    render={() => (
-                      <FormItem>
-                        <Table className="w-full">
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="w-[200px]">Group</TableHead>
-                              <TableHead className="text-right">Can Avail of SL</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody className="w-full">
-                            {groupsData?.data.groups.map((group) => (
-                              <TableRow className="justify-between w-full" key={group.id}>
-                                <TableCell className="w-full">{group.name}</TableCell>
-                                <TableCell className="flex justify-end mr-2">
-                                  <FormField
-                                    disabled={isFormDisabled}
-                                    control={form.control}
-                                    name="eligible_groups"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormControl>
-                                          <Checkbox
-                                            checked={field.value?.includes(group.id)}
-                                            onCheckedChange={(checked) => {
-                                              const currentValue = field.value || []
-                                              if (checked) {
-                                                field.onChange([...currentValue, group.id])
-                                              } else {
-                                                field.onChange(currentValue.filter((id) => id !== group.id))
-                                              }
-                                            }}
-                                          />
-                                        </FormControl>
-                                      </FormItem>
-                                    )}
-                                  />
-                                </TableCell>
+                  {/* Branch other charges Section */}
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">Branch Other Charges</h3>
+                    <div className="grid grid-cols-3 gap-6">
+                      <FormField
+                        disabled
+                        control={form.control}
+                        name="def_interest"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-base font-medium">
+                              Interest Income (%) <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <FormControl>
+                              <Input type="number" step="0.01" placeholder="0.00" {...field} value={3.0} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        disabled
+                        control={form.control}
+                        name="def_charge"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-base font-medium">
+                              Service Charge Income (%) <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <FormControl>
+                              <Input type="number" step="0.01" placeholder="0.00" {...field} value={1.5} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        disabled
+                        control={form.control}
+                        name="def_computer"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-base font-medium">
+                              Computer Charges (%) <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <FormControl>
+                              <Input type="number" step="0.01" placeholder="0.00" {...field} value={0.1} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  {/* List of Groups Section */}
+                  <div className="w-full">
+                    <h3 className="text-lg font-medium mb-4">
+                      List of Groups <span className="text-red-500">*</span>
+                    </h3>
+                    <FormField
+                      disabled={isFormDisabled}
+                      control={form.control}
+                      name="eligible_groups"
+                      render={() => (
+                        <FormItem>
+                          <Table className="w-full">
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="w-[200px]">Group</TableHead>
+                                <TableHead className="text-right">Can Avail of SL</TableHead>
                               </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </TabsContent>
-
-              <TabsContent value="chart-of-accounts" className="space-y-6">
-                <div className="space-y-4">
-                  <h2 className="text-xl font-bold">Chart of Accounts</h2>
-                  <div className="space-y-4">
-                    {renderCoaField("coa_service_charge", "Service Charge Account", true)}
-                    {renderCoaField("coa_notarial", "Notarial Account", true)}
-                    {renderCoaField("coa_gross_receipt", "Gross Receipt Account", true)}
-                    {renderCoaField("coa_computer", "Computer Charges Account", true)}
-                    {renderCoaField("coa_pga_accounts_payable", "A/P PGA Account", true)}
+                            </TableHeader>
+                            <TableBody className="w-full">
+                              {groupsData?.data.groups.map((group) => (
+                                <TableRow className="justify-between w-full" key={group.id}>
+                                  <TableCell className="w-full">{group.name}</TableCell>
+                                  <TableCell className="flex justify-end mr-2">
+                                    <FormField
+                                      disabled={isFormDisabled}
+                                      control={form.control}
+                                      name="eligible_groups"
+                                      render={({ field }) => (
+                                        <FormItem>
+                                          <FormControl>
+                                            <Checkbox
+                                              checked={field.value?.includes(group.id)}
+                                              onCheckedChange={(checked) => {
+                                                const currentValue = field.value || []
+                                                if (checked) {
+                                                  field.onChange([...currentValue, group.id])
+                                                } else {
+                                                  field.onChange(currentValue.filter((id) => id !== group.id))
+                                                }
+                                              }}
+                                            />
+                                          </FormControl>
+                                        </FormItem>
+                                      )}
+                                    />
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                </div>
+                </TabsContent>
 
-                <div className="space-y-4">
-                  <h2 className="text-xl font-bold">Loan Accounts</h2>
+                <TabsContent value="chart-of-accounts" className="space-y-6">
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-bold">Chart of Accounts</h2>
+                    <div className="space-y-4">
+                      {renderCoaField("coa_service_charge", "Service Charge Account", true)}
+                      {renderCoaField("coa_notarial", "Notarial Account", true)}
+                      {renderCoaField("coa_gross_receipt", "Gross Receipt Account", true)}
+                      {renderCoaField("coa_computer", "Computer Charges Account", true)}
+                      {renderCoaField("coa_pga_accounts_payable", "A/P PGA Account", true)}
+                    </div>
+                  </div>
 
                   <div className="space-y-4">
-                    {renderCoaField("coa_sl_receivable", "Loans Receivable Account", true)}
-                    {renderCoaField("coa_sl_interest_income", "Interest Income Account", true)}
-                    {renderCoaField("coa_sl_interest_receivable", "Interest Receivable Account", true)}
-                    {renderCoaField("coa_sl_unearned_interest_income", "Unearned Interest Income Account", true)}
-                    {renderCoaField("coa_sl_other_income_penalty", "Other Income Penalty Account", true)}
-                    {renderCoaField("coa_sl_allowance_doubtful_account", "Allowance for Doubtful Account", true)}
-                    {renderCoaField("coa_sl_bad_dept_expense", "Bad Debt Expense Account", true)}
-                    {renderCoaField("coa_sl_garnished", "Garnished Expense Account", true)}
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
+                    <h2 className="text-xl font-bold">Loan Accounts</h2>
 
-            <div className="flex justify-end gap-2">
-              <Button
-                disabled={isFormDisabled}
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  onCancel()
-                  onOpenChange(false)
-                  form.reset()
-                  setSearchedCoaOptions({})
-                  setSearchLoading({})
-                  setActiveField(null)
-                }}
-              >
-                Cancel
-              </Button>
-              <Button disabled={isFormDisabled} type="submit">
-                {activeTab === "basic-info" ? "Continue" : isEditing ? "Update" : "Save"} Salary Loan{" "}
-                {isFormDisabled && (
-                  <span>
-                    <Loader2 className="animate-spin ml-2" />
-                  </span>
-                )}
-              </Button>
-            </div>
-          </form>
-        </Form>
+                    <div className="space-y-4">
+                      {renderCoaField("coa_sl_receivable", "Loans Receivable Account", true)}
+                      {renderCoaField("coa_sl_interest_income", "Interest Income Account", true)}
+                      {renderCoaField("coa_sl_interest_receivable", "Interest Receivable Account", true)}
+                      {renderCoaField("coa_sl_unearned_interest_income", "Unearned Interest Income Account", true)}
+                      {renderCoaField("coa_sl_other_income_penalty", "Other Income Penalty Account", true)}
+                      {renderCoaField("coa_sl_allowance_doubtful_account", "Allowance for Doubtful Account", true)}
+                      {renderCoaField("coa_sl_bad_dept_expense", "Bad Debt Expense Account", true)}
+                      {renderCoaField("coa_sl_garnished", "Garnished Expense Account", true)}
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  disabled={isFormDisabled}
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    onCancel()
+                    onOpenChange(false)
+                    form.reset()
+                    setSearchedCoaOptions({})
+                    setSearchLoading({})
+                    setActiveField(null)
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={() => { scrollToTop() }} disabled={isFormDisabled} type="submit">
+                  {activeTab === "basic-info" ? "Continue" : isEditing ? "Update" : "Save"} Salary Loan{" "}
+                  {isFormDisabled && (
+                    <span>
+                      <Loader2 className="animate-spin ml-2" />
+                    </span>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </div>
       </DialogContent>
     </Dialog>
   )

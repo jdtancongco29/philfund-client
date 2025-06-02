@@ -113,7 +113,7 @@ const AccountField = ({
       </div>
       <div className="space-y-2">
         <div className="flex gap-2">
-          <div className="w-1/3">
+          <div className="w-1/2">
             <Select<{ value: string; label: string }>
               value={
                 selectedAccount

@@ -794,8 +794,29 @@ export default function AddEditEntryDialog({
                   : "Add New General Journal"}
               </DialogTitle>
             </DialogHeader>
+
+                      <p className="text-xs text-gray-600 mt-1">
+              Create a new general journal entry setting that will be available on this current branch
+            </p>
+            <h3 className="tex font-semibold mt-6">General Info</h3>
             <div className="space-y-4 py-4">
               <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                  <Label>
+                    Reference Code <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    value={refCode}
+                    readOnly
+                    placeholder="Reference ID"
+                    disabled={isEditMode || isSubmitting}
+                    className={hasFieldError("ref_id") ? "border-red-500" : ""}
+                  />
+                            <p className="text-xs text-gray-600 mt-1">
+              Auto-generated reference Code
+            </p>
+                  <ErrorMessage errors={getFieldErrors("ref_id")} />
+                </div>
                 <div className="space-y-2">
                   <Label>
                     Reference Number <span className="text-red-500">*</span>
@@ -816,21 +837,12 @@ export default function AddEditEntryDialog({
                     disabled={isEditMode || isSubmitting}
                     className={hasFieldError("ref_num") ? "border-red-500" : ""}
                   />
+                                 <p className="text-xs text-gray-600 mt-1">
+              Auto-generated reference number
+            </p>
                   <ErrorMessage errors={getFieldErrors("ref_num")} />
                 </div>
-                <div className="space-y-2">
-                  <Label>
-                    Reference Code <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    value={refCode}
-                    readOnly
-                    placeholder="Reference ID"
-                    disabled={isEditMode || isSubmitting}
-                    className={hasFieldError("ref_id") ? "border-red-500" : ""}
-                  />
-                  <ErrorMessage errors={getFieldErrors("ref_id")} />
-                </div>
+               
 
                 <div className="space-y-2">
                   <Label>
@@ -850,6 +862,9 @@ export default function AddEditEntryDialog({
                       hasFieldError("transaction_date") ? "border-red-500" : ""
                     }
                   />
+                  <p className="text-xs text-gray-600 mt-1">
+              The date of the transaction
+            </p>
                   <ErrorMessage errors={getFieldErrors("transaction_date")} />
                 </div>
 
@@ -867,6 +882,9 @@ export default function AddEditEntryDialog({
                     disabled={isEditMode || isSubmitting}
                     className={hasFieldError("name") ? "border-red-500" : ""}
                   />
+                  <p className="text-xs text-gray-600 mt-1">
+              A descriptive name for this journal entry
+            </p>
                   <ErrorMessage errors={getFieldErrors("name")} />
                 </div>
 

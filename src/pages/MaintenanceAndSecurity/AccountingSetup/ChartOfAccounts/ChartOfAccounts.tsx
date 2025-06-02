@@ -211,8 +211,7 @@ export default function ChartOfAccounts() {
       try {
         if (!accounts || accounts.length === 0) {
           toast.error("No Data to Export", {
-            description:
-              "No entries available for CSV export.",
+            description: "No entries available for CSV export.",
             duration: 5000,
           });
           return;
@@ -273,14 +272,15 @@ export default function ChartOfAccounts() {
   };
 
   const handlePdfExport = useCallback(async () => {
-      if (!accounts || accounts.length === 0) {
-          toast.error("No Data to Export", {
-            description:
-              "No entries available for PDF export.",
-            duration: 5000,
-          });
-          return;
-        }
+    // Check if there's actual data to export
+    if (!accounts || accounts.length === 0) {
+      toast.error("No Data to Export", {
+        description: "No entries available for PDF export.",
+        duration: 5000,
+      });
+      return;
+    }
+
     setIsExporting(true);
     try {
       const url = await exportPdf();
@@ -306,7 +306,7 @@ export default function ChartOfAccounts() {
     } finally {
       setIsExporting(false);
     }
-  }, []);
+  }, [accounts]);
 
   const fetchAccounts = async () => {
     setLoading(true);
@@ -436,7 +436,7 @@ export default function ChartOfAccounts() {
   ];
   const filters: FilterDefinition[] = [
     {
-      id: "accountType",
+      id: "special_classification",
       label: "Filter by Classification",
       placeholder: "Select...",
       type: "select",
@@ -595,14 +595,14 @@ export default function ChartOfAccounts() {
       console.error("Error deleting account:", err);
       const apiError = err as { response?: { data?: ApiErrorResponse } };
 
-  const errorMessage =
-    apiError.response?.data?.message ||
-    err.message ||
-    "An error occurred while deleting the account";
+      const errorMessage =
+        apiError.response?.data?.message ||
+        err.message ||
+        "An error occurred while deleting the account";
 
-  toast.error("Failed to delete account", {
-    description: errorMessage,
-  });
+      toast.error("Failed to delete account", {
+        description: errorMessage,
+      });
     } finally {
       setDeleteDialogOpen(false);
       setAccountToDelete(null);

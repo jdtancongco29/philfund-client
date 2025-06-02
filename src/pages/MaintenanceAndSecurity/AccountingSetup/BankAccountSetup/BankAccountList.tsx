@@ -1,49 +1,53 @@
-"use client"
+"use client";
 
-import { useEffect, useState, useCallback } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { CircleCheck, Download } from "lucide-react"
-import { apiRequest } from "@/lib/api"
-import { DataTable, type ColumnDefinition, type FilterDefinition } from "@/components/data-table/data-table"
-import { toast } from "sonner"
-import { EditBankDialog, type FormValues } from "./EditBankDialog"
-import { DeleteDataDialog } from "./DeleteDataDialog"
+import { useEffect, useState, useCallback } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { CircleCheck, Download } from "lucide-react";
+import { apiRequest } from "@/lib/api";
+import {
+  DataTable,
+  type ColumnDefinition,
+  type FilterDefinition,
+} from "@/components/data-table/data-table";
+import { toast } from "sonner";
+import { EditBankDialog, type FormValues } from "./EditBankDialog";
+import { DeleteDataDialog } from "./DeleteDataDialog";
 
 interface Coa {
-  id: string
-  code: string
-  name: string
+  id: string;
+  code: string;
+  name: string;
 }
 
 interface Bank {
-  id: string
-  branch_id: string
-  branch_name: string
-  coa: Coa
-  code: string
-  name: string
-  address: string
-  account_type: string
-  status: number
+  id: string;
+  branch_id: string;
+  branch_name: string;
+  coa: Coa;
+  code: string;
+  name: string;
+  address: string;
+  account_type: string;
+  status: number;
 }
 
 interface Pagination {
-  current_page: number
-  per_page: number
-  total_pages: number
-  total_items: number
+  current_page: number;
+  per_page: number;
+  total_pages: number;
+  total_items: number;
 }
 
 interface BankDataPayload {
-  count: number
-  banks: Bank[]
-  pagination: Pagination
+  count: number;
+  banks: Bank[];
+  pagination: Pagination;
 }
 
 interface ApiResponse {
-  status: string
-  message: string
-  data: BankDataPayload
+  status: string;
+  message: string;
+  data: BankDataPayload;
 }
 type ApiErrorResponse = {
   status: string;
@@ -52,37 +56,37 @@ type ApiErrorResponse = {
 };
 
 export default function BankAccountsTable() {
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [item, setItem] = useState<Bank[]>([])
-  const [loading, setLoading] = useState(true)
-  const [reset, setReset] = useState(false)
-  const [selectedItem, setSelectedItem] = useState<FormValues | null>(null)
-  const [selectedItemId, setSelectedItemId] = useState("")
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [itemToDeleteId, setItemToDeleteId] = useState("")
-  const [itemToDelete, setItemToDelete] = useState("")
-  const [onResetTable, setOnResetTable] = useState(false)
-  const [isExporting, setIsExporting] = useState(false)
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [item, setItem] = useState<Bank[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [reset, setReset] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<FormValues | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [itemToDeleteId, setItemToDeleteId] = useState("");
+  const [itemToDelete, setItemToDelete] = useState("");
+  const [onResetTable, setOnResetTable] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const fetchData = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
       const response = await apiRequest<ApiResponse>("get", "/bank/", null, {
         useAuth: true,
         useBranchId: true,
-      })
-      setItem(response.data.data.banks)
-      setOnResetTable(true)
+      });
+      setItem(response.data.data.banks);
+      setOnResetTable(true);
     } catch (err) {
-      console.error(err)
+      console.error(err);
       toast.error("Failed to Load Data", {
         description: "Could not fetch bank accounts. Please try again.",
         duration: 5000,
-      })
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const columns: ColumnDefinition<Bank>[] = [
     {
@@ -135,20 +139,20 @@ export default function BankAccountsTable() {
         },
       ],
     },
-  ]
+  ];
 
-  const filters: FilterDefinition[] = []
+  const filters: FilterDefinition[] = [];
 
   const resetTable = () => {
-    setOnResetTable(true)
-    setTimeout(() => setOnResetTable(false), 100)
-  }
+    setOnResetTable(true);
+    setTimeout(() => setOnResetTable(false), 100);
+  };
 
   const search = {
     title: "Search",
     placeholder: "Search Bank Account",
     enableSearch: true,
-  }
+  };
 
   const handleEdit = (bank: Bank) => {
     setSelectedItem({
@@ -161,53 +165,53 @@ export default function BankAccountsTable() {
       coa_id: bank.coa.id,
       account_type: bank.account_type,
       status: bank.status,
-    })
-    setSelectedItemId(bank.id)
-    setDialogOpen(true)
-  }
+    });
+    setSelectedItemId(bank.id);
+    setDialogOpen(true);
+  };
 
   const handleConfirmDelete = async () => {
     try {
       await apiRequest("delete", `/bank/${itemToDeleteId}`, null, {
         useAuth: true,
         useBranchId: true,
-      })
+      });
 
       toast.success("Bank Deleted", {
         description: `${itemToDelete} has been successfully deleted.`,
         icon: <CircleCheck className="h-5 w-5" />,
         duration: 5000,
-      })
+      });
 
-      resetTable()
-      fetchData()
+      resetTable();
+      fetchData();
     } catch (err: any) {
-      console.error("Error deleting Bank:", err)
+      console.error("Error deleting Bank:", err);
       const apiError = err as { response?: { data?: ApiErrorResponse } };
-    
+
       const errorMessage =
         apiError.response?.data?.message ||
         err.message ||
         "An error occurred while deleting the account";
-    
+
       toast.error("Failed to delete account", {
         description: errorMessage,
       });
     } finally {
-      setDeleteDialogOpen(false)
+      setDeleteDialogOpen(false);
     }
-  }
+  };
 
   const handleDelete = (bank: Bank) => {
-    setDeleteDialogOpen(true)
-    setItemToDeleteId(bank.id)
-    setItemToDelete(bank.name)
-  }
+    setDeleteDialogOpen(true);
+    setItemToDeleteId(bank.id);
+    setItemToDelete(bank.name);
+  };
 
   const handleSaveItem = async (values: FormValues) => {
     try {
-      const method = selectedItemId ? "put" : "post"
-      const endpoint = selectedItemId ? `/bank/${selectedItemId}` : "/bank/"
+      const method = selectedItemId ? "put" : "post";
+      const endpoint = selectedItemId ? `/bank/${selectedItemId}` : "/bank/";
       const payloadData = {
         code: values.code,
         name: values.name,
@@ -216,73 +220,91 @@ export default function BankAccountsTable() {
         coa_id: values.coa_id,
         account_type: values.account_type,
         status: values.status,
-      }
+      };
 
-      const response = await apiRequest<{ data: { name: string } }>(method, endpoint, payloadData, {
-        useAuth: true,
-        useBranchId: true,
-      })
+      const response = await apiRequest<{ data: { name: string } }>(
+        method,
+        endpoint,
+        payloadData,
+        {
+          useAuth: true,
+          useBranchId: true,
+        }
+      );
 
-      toast.success(selectedItemId ? "Bank Account Updated" : "Bank Account Added", {
-        description: `${response.data.data.name} has been successfully ${selectedItemId ? "updated" : "added"}.`,
-        icon: <CircleCheck className="h-5 w-5" />,
-        duration: 5000,
-      })
+      toast.success(
+        selectedItemId ? "Bank Account Updated" : "Bank Account Added",
+        {
+          description: `${response.data.data.name} has been successfully ${
+            selectedItemId ? "updated" : "added"
+          }.`,
+          icon: <CircleCheck className="h-5 w-5" />,
+          duration: 5000,
+        }
+      );
 
-      setReset(true)
-      resetTable()
-      fetchData()
+      setReset(true);
+      resetTable();
+      fetchData();
     } catch (err) {
-      console.error("Error saving Bank Account:", err)
-      throw err
+      console.error("Error saving Bank Account:", err);
+      throw err;
     }
-  }
+  };
 
   const handleNew = () => {
-    setReset(false)
-    setSelectedItem(null)
-    setSelectedItemId("")
-    setDialogOpen(true)
-  }
+    setReset(false);
+    setSelectedItem(null);
+    setSelectedItemId("");
+    setDialogOpen(true);
+  };
 
   // Export functionality
   const getAuthHeaders = useCallback(() => {
-    const authToken = localStorage.getItem("authToken")
-    const branchId = localStorage.getItem("branchId")
+    const authToken = localStorage.getItem("authToken");
+    const branchId = localStorage.getItem("branchId");
 
     if (!authToken) {
-      throw new Error("Authentication token not found")
+      throw new Error("Authentication token not found");
     }
 
     return {
       Authorization: `Bearer ${authToken}`,
       "X-Branch-ID": branchId || "",
       "Content-Type": "application/json",
-    }
-  }, [])
+    };
+  }, []);
 
   const downloadFile = useCallback((blob: Blob, filename: string) => {
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.href = url
-    link.download = filename
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
-  }, [])
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  }, []);
 
   const safeCsvValue = useCallback((value: any): string => {
-    if (value === null || value === undefined) return '""'
-    const stringValue = String(value).replace(/"/g, '""')
-    return `"${stringValue}"`
-  }, [])
+    if (value === null || value === undefined) return '""';
+    const stringValue = String(value).replace(/"/g, '""');
+    return `"${stringValue}"`;
+  }, []);
 
   const generateCsvFromData = useCallback(() => {
     try {
-      const headers = ["Code", "Name", "Branch", "Chart of Account", "Type", "Address", "Status"]
+      const headers = [
+        "Code",
+        "Name",
+        "Branch",
+        "Chart of Account",
+        "Type",
+        "Address",
+        "Status",
+      ];
 
-      const csvRows = [headers.join(",")]
+      const csvRows = [headers.join(",")];
 
       // Process each bank account entry
       item.forEach((bank) => {
@@ -295,10 +317,14 @@ export default function BankAccountsTable() {
             safeCsvValue(bank.account_type || ""),
             safeCsvValue(bank.address || ""),
             bank.status === 1 ? "Active" : "Inactive",
-          ]
-          csvRows.push(row.join(","))
+          ];
+          csvRows.push(row.join(","));
         } catch (entryError) {
-          console.warn("Error processing bank entry for CSV:", entryError, bank)
+          console.warn(
+            "Error processing bank entry for CSV:",
+            entryError,
+            bank
+          );
           // Add a basic row even if there's an error
           csvRows.push(
             [
@@ -309,151 +335,172 @@ export default function BankAccountsTable() {
               '""',
               '""',
               "Unknown",
-            ].join(","),
-          )
+            ].join(",")
+          );
         }
-      })
+      });
 
       // Add summary row
-      csvRows.push(['"TOTAL ACCOUNTS"', `"${item.length}"`, '""', '""', '""', '""', '""'].join(","))
+      csvRows.push(
+        [
+          '"TOTAL ACCOUNTS"',
+          `"${item.length}"`,
+          '""',
+          '""',
+          '""',
+          '""',
+          '""',
+        ].join(",")
+      );
 
-      return csvRows.join("\n")
+      return csvRows.join("\n");
     } catch (error) {
-      console.error("Error generating CSV data:", error)
+      console.error("Error generating CSV data:", error);
       // Return minimal CSV with headers only
-      return 'Code,Name,Branch,Chart of Account,Type,Address,Status\n"Error generating data","","","","","",""'
+      return 'Code,Name,Branch,Chart of Account,Type,Address,Status\n"Error generating data","","","","","",""';
     }
-  }, [item, safeCsvValue])
+  }, [item, safeCsvValue]);
 
   const handleCsvExport = useCallback(async () => {
-    setIsExporting(true)
+    setIsExporting(true);
     try {
       // First try the API endpoint
-      const headers = getAuthHeaders()
+      const headers = getAuthHeaders();
       const response = await fetch("/bank/export-csv", {
         method: "GET",
         headers,
-      })
+      });
 
       if (response.ok) {
-        const blob = await response.blob()
-        const currentDate = new Date().toISOString().split("T")[0]
-        downloadFile(blob, `bank-accounts-${currentDate}.csv`)
+        const blob = await response.blob();
+        const currentDate = new Date().toISOString().split("T")[0];
+        downloadFile(blob, `bank-accounts-${currentDate}.csv`);
 
         toast.success("CSV Export Successful", {
           description: "Bank Accounts have been exported to CSV successfully.",
           icon: <Download className="h-5 w-5" />,
           duration: 5000,
-        })
-        return // Success, exit early
+        });
+        return; // Success, exit early
       } else {
-        throw new Error(`API endpoint returned status: ${response.status}`)
+        throw new Error(`API endpoint returned status: ${response.status}`);
       }
     } catch (apiError) {
-      console.warn("API CSV export failed, using fallback:", apiError)
+      console.warn("API CSV export failed, using fallback:", apiError);
 
       // Fallback: Generate CSV from current data
       try {
-        console.log("Attempting CSV fallback with data:", item.length, "entries")
+        console.log(
+          "Attempting CSV fallback with data:",
+          item.length,
+          "entries"
+        );
 
         if (!item || item.length === 0) {
           toast.error("No Data to Export", {
             description: "No entries available for CSV export.",
             duration: 5000,
-          })
-          return
+          });
+          return;
         }
 
-        const csvContent = generateCsvFromData()
-        console.log("Generated CSV content length:", csvContent.length)
+        const csvContent = generateCsvFromData();
+        console.log("Generated CSV content length:", csvContent.length);
 
         if (!csvContent || csvContent.length < 50) {
           // Basic sanity check
-          throw new Error("Generated CSV content appears to be empty or invalid")
+          throw new Error(
+            "Generated CSV content appears to be empty or invalid"
+          );
         }
 
         // Create blob with explicit UTF-8 BOM for Excel compatibility
-        const BOM = "\uFEFF"
+        const BOM = "\uFEFF";
         const blob = new Blob([BOM + csvContent], {
           type: "text/csv;charset=utf-8;",
-        })
+        });
 
-        const currentDate = new Date().toISOString().split("T")[0]
-        downloadFile(blob, `bank-accounts-${currentDate}.csv`)
+        const currentDate = new Date().toISOString().split("T")[0];
+        downloadFile(blob, `bank-accounts-${currentDate}.csv`);
 
         toast.success("CSV Export Successful", {
           description: `Bank Accounts exported successfully (${item.length} entries).`,
           icon: <Download className="h-5 w-5" />,
           duration: 5000,
-        })
+        });
       } catch (fallbackError) {
-        console.error("Fallback CSV generation failed:", fallbackError)
-        console.error("Data structure:", item)
+        console.error("Fallback CSV generation failed:", fallbackError);
+        console.error("Data structure:", item);
 
         toast.error("CSV Export Failed", {
-          description: "Failed to export Bank Accounts to CSV. Please check the data and try again.",
+          description:
+            "Failed to export Bank Accounts to CSV. Please check the data and try again.",
           duration: 5000,
-        })
+        });
       }
     } finally {
-      setIsExporting(false)
+      setIsExporting(false);
     }
-  }, [getAuthHeaders, downloadFile, generateCsvFromData, item])
+  }, [getAuthHeaders, downloadFile, generateCsvFromData, item]);
 
-const exportPdf = async (): Promise<string> => {
-  const endpoint = `/bank/export-pdf` // adjust endpoint if needed
-  try {
-    const response = await apiRequest<{ url: string }>("get", endpoint, null, {
-      useAuth: true,
-      useBranchId: true,
-    })
-    return response.data.url
-  } catch (error: any) {
-    const errorMessage = error.response?.data?.message || "Failed to export PDF"
-    throw new Error(errorMessage)
-  }
-}
+  const exportPdf = async (): Promise<string> => {
+    const endpoint = `/bank/export-pdf`; // adjust endpoint if needed
+    try {
+      const response = await apiRequest<{ url: string }>(
+        "get",
+        endpoint,
+        null,
+        {
+          useAuth: true,
+          useBranchId: true,
+        }
+      );
+      return response.data.url;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || "Failed to export PDF";
+      throw new Error(errorMessage);
+    }
+  };
 
-const handlePdfExport = useCallback(async () => {
-  
+  const handlePdfExport = useCallback(async () => {
     if (!item || item.length === 0) {
-    toast.error("No Data to Export", {
-      description: "No entries available for PDF export.",
-      duration: 5000,
-    });
-    return;
-  }
-  setIsExporting(true)
-  try {
-    const url = await exportPdf()
-    
-    const newTab = window.open(url, "_blank")
-    if (newTab) {
-      newTab.focus()
-    } else {
-      // fallback for popup blockers
-      const link = document.createElement("a")
-      link.href = url
-      link.target = "_blank"
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
+      toast.error("No Data to Export", {
+        description: "No entries available for PDF export.",
+        duration: 5000,
+      });
+      return;
     }
+    setIsExporting(true);
+    try {
+      const url = await exportPdf();
 
-    toast.success("PDF opened in new tab")
-  } catch (error: any) {
-    toast.error("PDF Export Failed", {
-      description: error.message || "Could not export General Journal PDF.",
-    })
-  } finally {
-    setIsExporting(false)
-  }
-}, [])
+      const newTab = window.open(url, "_blank");
+      if (newTab) {
+        newTab.focus();
+      } else {
+        // fallback for popup blockers
+        const link = document.createElement("a");
+        link.href = url;
+        link.target = "_blank";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
 
+      toast.success("PDF opened in new tab");
+    } catch (error: any) {
+      toast.error("PDF Export Failed", {
+        description: error.message || "Could not export General Journal PDF.",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  }, [item]);
 
   useEffect(() => {
-    fetchData()
-  }, [])
+    fetchData();
+  }, []);
 
   return (
     <Card className="overflow-hidden">
@@ -495,5 +542,5 @@ const handlePdfExport = useCallback(async () => {
         itemName={itemToDelete}
       />
     </Card>
-  )
+  );
 }

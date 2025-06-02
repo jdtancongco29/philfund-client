@@ -137,7 +137,7 @@ export function AddEditAccountDialog({
   const [isBranchLoading, setIsBranchLoading] = useState(false);
 
   // Header account management states
-  const [headerAccounts, setHeaderAccounts] = useState<ChartOfAccount[]>([]);
+  const [, setHeaderAccounts] = useState<ChartOfAccount[]>([]);
   const [headerAccountOptions, setHeaderAccountOptions] = useState<
     HeaderAccountOption[]
   >([]);

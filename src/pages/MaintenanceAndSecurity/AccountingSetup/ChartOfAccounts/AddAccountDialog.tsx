@@ -16,6 +16,7 @@ import Select from "react-select";
 import { COADialog } from "./COADialog";
 import { apiRequest } from "@/lib/api";
 import { MultiValue, ActionMeta } from "react-select";
+
 interface ChartOfAccount {
   id: string;
   code: string;
@@ -64,6 +65,12 @@ interface BranchOption {
   value: string;
   label: string;
   branch: Branch;
+}
+
+interface HeaderAccountOption {
+  value: string;
+  label: string;
+  account: ChartOfAccount;
 }
 
 interface AddEditAccountDialogProps {
@@ -124,10 +131,17 @@ export function AddEditAccountDialog({
   const [selectedBranches, setSelectedBranches] = useState<Branch[]>([]);
   const [selectedBranchIds, setSelectedBranchIds] = useState<string[]>([]);
 
-  // New states for branch management
+  // Branch management states
   const [, setBranches] = useState<Branch[]>([]);
   const [branchOptions, setBranchOptions] = useState<BranchOption[]>([]);
   const [isBranchLoading, setIsBranchLoading] = useState(false);
+
+  // Header account management states
+  const [, setHeaderAccounts] = useState<ChartOfAccount[]>([]);
+  const [headerAccountOptions, setHeaderAccountOptions] = useState<
+    HeaderAccountOption[]
+  >([]);
+  const [isHeaderAccountLoading, setIsHeaderAccountLoading] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -135,10 +149,11 @@ export function AddEditAccountDialog({
 
   const isEditMode = mode === "edit" && editingAccount;
 
-  // Fetch branches when dialog opens
+  // Fetch branches and header accounts when dialog opens
   useEffect(() => {
     if (open) {
       fetchBranches();
+      fetchHeaderAccounts();
     }
   }, [open]);
 
@@ -168,6 +183,34 @@ export function AddEditAccountDialog({
       console.error("Error fetching branches:", error);
     } finally {
       setIsBranchLoading(false);
+    }
+  };
+
+  const fetchHeaderAccounts = async () => {
+    setIsHeaderAccountLoading(true);
+    try {
+      const response = await apiRequest<{
+        data: { chartOfAccounts: ChartOfAccount[] };
+      }>("get", "/coa?only_headers=true", null, {
+        useAuth: true,
+        useBranchId: true,
+      });
+      const headerAccountData = response.data.data.chartOfAccounts;
+      setHeaderAccounts(headerAccountData);
+
+      // Convert header accounts to react-select options
+      const options: HeaderAccountOption[] = headerAccountData.map(
+        (account) => ({
+          value: account.id,
+          label: `${account.code} - ${account.name}`,
+          account: account,
+        })
+      );
+      setHeaderAccountOptions(options);
+    } catch (error) {
+      console.error("Error fetching header accounts:", error);
+    } finally {
+      setIsHeaderAccountLoading(false);
     }
   };
 
@@ -284,6 +327,24 @@ export function AddEditAccountDialog({
     }
   };
 
+  const handleHeaderAccountSelection = (
+    selectedOption: HeaderAccountOption | null
+  ) => {
+    if (selectedOption) {
+      setSelectedHeader({
+        id: selectedOption.account.id,
+        code: selectedOption.account.code,
+        name: selectedOption.account.name,
+      });
+      setHeaderAccountLabel(
+        `${selectedOption.account.code} - ${selectedOption.account.name}`
+      );
+    } else {
+      setSelectedHeader(null);
+      setHeaderAccountLabel("");
+    }
+  };
+
   const removeBranch = (branchId: string) => {
     const updatedBranches = selectedBranches.filter(
       (branch) => branch.id !== branchId
@@ -373,6 +434,13 @@ export function AddEditAccountDialog({
   const selectedBranchOptions = branchOptions.filter((option) =>
     selectedBranchIds.includes(option.value)
   );
+
+  // Get selected header account option for react-select
+  const selectedHeaderAccountOption = selectedHeader
+    ? headerAccountOptions.find(
+        (option) => option.value === selectedHeader.id
+      ) || null
+    : null;
 
   return (
     <>
@@ -487,33 +555,31 @@ export function AddEditAccountDialog({
                   >
                     Header account <span className="text-red-500 mb-3">*</span>
                   </Label>
-                  <div className="flex gap-2">
-                    <select
-                      value={selectedHeader?.id || ""}
-                      onChange={(e) => {
-                        const selectedId = e.target.value;
-                        if (selectedId) {
-                          // This would need to be populated with actual header accounts
-                          // For now, using placeholder logic
-                          setHeaderAccountLabel("Selected Header Account");
-                          setSelectedHeader({
-                            id: selectedId,
-                            code: "",
-                            name: "Selected Header Account",
-                          });
-                        } else {
-                          setHeaderAccountLabel("");
-                          setSelectedHeader(null);
-                        }
-                      }}
-                      className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
-                        errors.headerAccount ? "border-red-500" : ""
-                      }`}
-                    >
-                      <option value="">Select...</option>
-                      {/* Header accounts would be populated here */}
-                    </select>
-                  </div>
+                  <Select
+                    options={headerAccountOptions}
+                    value={selectedHeaderAccountOption}
+                    onChange={handleHeaderAccountSelection}
+                    placeholder="Select header account..."
+                    isLoading={isHeaderAccountLoading}
+                    isSearchable
+                    className={`${
+                      errors.headerAccount ? "border-red-500" : ""
+                    }`}
+                    classNamePrefix="react-select"
+                    styles={{
+                      control: (provided) => ({
+                        ...provided,
+                        borderColor: errors.headerAccount
+                          ? "#ef4444"
+                          : provided.borderColor,
+                        "&:hover": {
+                          borderColor: errors.headerAccount
+                            ? "#ef4444"
+                            : provided.borderColor,
+                        },
+                      }),
+                    }}
+                  />
                   {errors.headerAccount && (
                     <p className="text-sm text-red-600">
                       {errors.headerAccount}
@@ -701,11 +767,6 @@ export function AddEditAccountDialog({
                           />
                         </Badge>
                       ))}
-                         {errors.special_classification && (
-                  <p className="text-sm text-red-600">
-                    {errors.branches}
-                  </p>
-                )}
                     </div>
                   )}
 

@@ -40,11 +40,10 @@ import {
 } from "@/components/ui/select";
 import { format } from "date-fns";
 import { DataTableFilterDialog } from "./data-table-filter-dialog";
-// import { DataTableFilters } from "./data-table-filters"
 import { Label } from "../ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Calendar } from "../ui/calendar";
-import { DateRange } from "react-day-picker";
+import type { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
 
 export type SearchDefinition = {
@@ -96,6 +95,11 @@ export type DataTableProps<T> = {
   onLoading?: boolean;
   onResetTable?: boolean;
 };
+
+// Helper function to get nested property value
+function getNestedValue(obj: any, path: string): any {
+  return path.split(".").reduce((current, key) => current?.[key], obj);
+}
 
 export function DataTable<T>({
   title,
@@ -160,35 +164,30 @@ export function DataTable<T>({
   });
 
   // Apply active filters
-  // Updated filter logic in the DataTable component
-  // Replace the existing filteredData logic with this:
-
   const filteredData = filteredBySearch.filter((item) => {
     // If no filters are active, return all items
     if (Object.keys(activeFilters).length === 0) return true;
 
     // Check each active filter
     return Object.entries(activeFilters).every(([filterId, filterValue]) => {
-      if (!filterValue) return true;
+      if (!filterValue || filterValue === "all") return true;
 
       const filter = filters.find((f) => f.id === filterId);
       if (!filter) return true;
 
-      // Try to find the column first
-      let column = columns.find((col) => col.id === filterId);
-
-      // If no column found, check if the filterId exists as a property on the item
-      let itemValue;
-      if (column) {
-        itemValue = item[column.accessorKey];
+      // Handle nested property access for major_classification_code
+      let itemValue: any;
+      if (filterId === "major_classification_code") {
+        itemValue = getNestedValue(item, "major_classification.code");
       } else {
-        // Direct property access for filters without corresponding columns
-        itemValue = item[filterId as keyof typeof item];
+        const column = columns.find((col) => col.id === filterId);
+        if (!column) return true;
+        itemValue = item[column.accessorKey];
       }
 
       switch (filter.type) {
         case "select":
-          return itemValue === filterValue;
+          return String(itemValue) === String(filterValue);
         case "input":
           return String(itemValue)
             .toLowerCase()
@@ -219,8 +218,17 @@ export function DataTable<T>({
     const column = columns.find((col) => col.id === sortColumn);
     if (!column) return 0;
 
-    const aValue = a[column.accessorKey];
-    const bValue = b[column.accessorKey];
+    let aValue: any;
+    let bValue: any;
+
+    // Handle nested property access for sorting
+    if (sortColumn === "major_classification_code") {
+      aValue = getNestedValue(a, "major_classification.code");
+      bValue = getNestedValue(b, "major_classification.code");
+    } else {
+      aValue = a[column.accessorKey];
+      bValue = b[column.accessorKey];
+    }
 
     if (aValue === bValue) return 0;
 
@@ -336,7 +344,10 @@ export function DataTable<T>({
                       <Select
                         value={activeFilters[filter.id] || ""}
                         onValueChange={(value) =>
-                          handleFilterChange(filter.id, value)
+                          handleFilterChange(
+                            filter.id,
+                            value === "all" ? "" : value
+                          )
                         }
                       >
                         <SelectTrigger id={filter.id} className=" w-[300px]">
@@ -472,7 +483,7 @@ export function DataTable<T>({
           <div className="flex flex-wrap gap-2">
             {Object.entries(activeFilters).map(([filterId, value]) => {
               const filter = filters.find((f) => f.id === filterId);
-              if (!filter) return null;
+              if (!filter || !value) return null;
 
               let displayValue = "";
               if (filter.type === "select") {

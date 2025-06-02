@@ -370,7 +370,7 @@ export default function ChartOfAccounts() {
       enableSorting: true,
     },
     {
-      id: "major_classification",
+      id: "major_classification_code",
       header: "Classification",
       accessorKey: "major_classification",
       enableSorting: true,
@@ -378,7 +378,7 @@ export default function ChartOfAccounts() {
         <Badge
           variant="outline"
           className={getClassificationBadgeColor(
-            account.special_classification
+            account.major_classification.code
           )}
         >
           {account.major_classification.name}
@@ -434,37 +434,19 @@ export default function ChartOfAccounts() {
       ),
     },
   ];
+
   const filters: FilterDefinition[] = [
     {
-      id: "special_classification",
+      id: "major_classification_code",
       label: "Filter by Classification",
       placeholder: "Select...",
       type: "select",
       options: [
-        { label: "Regular account", value: "regular account" },
-        { label: "Cash account", value: "cash account" },
-        { label: "Cash in bank account", value: "cash in bank account" },
-        { label: "Receivable account", value: "receivable account" },
-        { label: "Payable account", value: "payable account" },
-        { label: "Allowance for bad debts", value: "allowance for bad debts" },
-        {
-          label: "Properties and equipment",
-          value: "properties and equipment",
-        },
-        {
-          label: "Accumulated depreciation",
-          value: "accumulated depreciation",
-        },
-        {
-          label: "Accumulated amortization",
-          value: "accumulated amortization",
-        },
-        { label: "Cost of sales", value: "cost of sales" },
-        { label: "Sales debits", value: "sales debits" },
-        { label: "Sales", value: "sales" },
-        { label: "Sales discount", value: "sales discount" },
-        { label: "Other income", value: "other income" },
-        { label: "Retained income", value: "retained income" },
+        { label: "Assets", value: "1" },
+        { label: "Liabilities", value: "2" },
+        { label: "Owner's Equity", value: "3" },
+        { label: "Revenue", value: "4" },
+        { label: "Expenses", value: "5" },
       ],
     },
   ];
@@ -627,7 +609,7 @@ export default function ChartOfAccounts() {
             </div>
             <div>
               <h2 className="text-sm font-medium">
-                Chart of Accounts Maangement
+                Chart of Accounts Management
               </h2>
               <p className="text-sm text-muted-foreground">
                 Add, edit, and delete accounts in your chart of accounts.

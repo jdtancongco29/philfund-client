@@ -782,6 +782,9 @@ export default function AddEditEntryDialog({
         !selectedIds.includes(account.id) || account.id === currentItemAccountId
     );
   };
+
+
+  
   return (
     <>
       <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -850,23 +853,34 @@ export default function AddEditEntryDialog({
                   <Label>
                     Transaction Date <span className="text-red-500">*</span>
                   </Label>
-                  <Input
-                    type="date"
-                    value={
-                      formattedDate || new Date().toISOString().slice(0, 10)
-                    }
-                    onChange={(e) => {
-                      setTransactionDate(e.target.value);
-                      clearFieldError("transaction_date");
-                    }}
-                    disabled={isEditMode || isSubmitting}
-                    className={
-                      hasFieldError("transaction_date") ? "border-red-500" : ""
-                    }
-                  />
+                <Input
+                  type="date"
+                  value={formattedDate || new Date().toISOString().slice(0, 10)}
+                  onChange={(e) => {
+                    setTransactionDate(e.target.value);
+                    clearFieldError("transaction_date");
+                  }}
+                  disabled={isEditMode || isSubmitting}
+                  className={`
+                    pr-10
+                    relative
+                    [&::-webkit-calendar-picker-indicator]:absolute
+                    [&::-webkit-calendar-picker-indicator]:right-3
+                    [&::-webkit-calendar-picker-indicator]:top-1/2
+                    [&::-webkit-calendar-picker-indicator]:-translate-y-1/2
+                    [&::-webkit-calendar-picker-indicator]:cursor-pointer
+                    [&::-webkit-calendar-picker-indicator]:text-black
+                    ${hasFieldError("transaction_date") ? "border-red-500" : ""}
+                  `}
+                  style={{
+                    colorScheme: 'light'
+                  }}
+                />
+
                   <p className="text-xs text-gray-600 mt-1">
               The date of the transaction
             </p>
+            
                   <ErrorMessage errors={getFieldErrors("transaction_date")} />
                 </div>
 
@@ -880,7 +894,7 @@ export default function AddEditEntryDialog({
                       setName(e.target.value);
                       clearFieldError("name");
                     }}
-                    placeholder="Entry name"
+                    placeholder="Enter name"
                     disabled={isEditMode || isSubmitting}
                     className={hasFieldError("name") ? "border-red-500" : ""}
                   />
@@ -895,6 +909,7 @@ export default function AddEditEntryDialog({
                     type="hidden"
                     name="branch_id"
                     value={
+
                       selectedBranch
                         ? selectedBranch.id
                         : branchId || cookieBranchId

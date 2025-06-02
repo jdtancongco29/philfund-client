@@ -114,17 +114,23 @@ export const CashAdvanceSetupService = {
    * Delete a cash advance setup
    */
   deleteCashAdvanceSetup: async (id: string): Promise<ApiResponse<null>> => {
-    const endpoint = `/cash-advance-setup/${id}`;
-    const response = await apiRequest<ApiResponse<null>>(
-      "delete",
-      endpoint,
-      null,
-      {
-        useAuth: true,
-        useBranchId: true,
-      }
-    );
-    return response.data;
+    try {
+      const endpoint = `/cash-advance-setup/${id}`;
+      const response = await apiRequest<ApiResponse<null>>(
+        "delete",
+        endpoint,
+        null,
+        {
+          useAuth: true,
+          useBranchId: true,
+        }
+      );
+      toast.success("Record successfully deleted");
+      return response.data;
+    } catch (error: any) {
+      toast.error(error.response.data.message);
+      throw new Error(error.response.data.message);
+    }
   },
 
   /**

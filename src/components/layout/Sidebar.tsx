@@ -40,6 +40,94 @@ const menuConfig = [
     ],
   },
   {
+    sectionTitle: "Lending",
+    value: "lending",
+    items: [
+          {
+       title: "Loan Processing",
+        value: "loan-processing",
+        links: [
+          
+        ],
+      },
+          {
+       title: "Cash Advance Processing", 
+        value: "cash-advance-processing",
+        links: [
+          
+        ],
+      },
+          {
+       title: "Loan Structuring",
+        value: "loan-structuring",
+        links: [
+          
+        ],
+      },
+          {
+       title: "Cash Processing",
+        value: "cash-processing",
+        links: [
+          
+        ],
+      },
+         {
+       title: "Payments & Collections",
+        value: "payments-and-collections",
+        links: [
+          
+        ],
+      },
+         {
+       title: "Loan Pay Off",
+        value: "loan-pay-off",
+        links: [
+          
+        ],
+      },
+         {
+       title: "Card Custody Log",
+        value: "card-custody-log",
+        links: [
+          
+        ],
+      },
+         {
+       title: "Unsold / No Accounts Recording",
+        value: "unsold-no-accounts-recording",
+        links: [
+          
+        ],
+      },
+      {
+        title: "Borrowers",
+        value: "borrowers",
+        links: [
+          {
+            label: "Borrower's Master List",
+            path: "/lending",
+          },
+          {
+            label: "Bulk Upload Borrowers Profile",
+            path: "/lending/borrowers/bulk-upload-profile",
+          },
+          {
+            label: "Beginning Balance",
+            path: "/lending/borrowers/beginning-balance",
+          },
+          {
+            label: "Pre-Loan Application",
+            path: "/lending/borrowers/pre-loan-application",
+          },
+        ],
+      },
+   
+   
+      
+    ],
+
+  },
+  {
     sectionTitle: "Maintenance & Security",
     value: "maintenance-security",
     items: [
@@ -184,9 +272,13 @@ export default function Sidebar() {
     return {
       sectionToRender: currentPath.startsWith("/dashboard")
         ? menuConfig[0]
-        : menuConfig[1],
+        : currentPath.startsWith("/lending")
+        ? menuConfig[1]
+        : menuConfig[2],
       activeAccordion: currentPath.startsWith("/dashboard")
         ? "more-actions-group"
+        : currentPath.startsWith("/lending")
+        ? "borrowers"
         : "",
     };
   }, [currentPath]);

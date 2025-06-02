@@ -701,6 +701,11 @@ export function AddEditAccountDialog({
                           />
                         </Badge>
                       ))}
+                         {errors.special_classification && (
+                  <p className="text-sm text-red-600">
+                    {errors.branches}
+                  </p>
+                )}
                     </div>
                   )}
 

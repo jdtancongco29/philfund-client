@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Card, CardContent } from "@/components/ui/card"
+import { CardContent } from "@/components/ui/card"
 import { FileText, Upload } from 'lucide-react'
 import { CircleCheck } from 'lucide-react'
 import { toast } from "sonner"
@@ -18,12 +18,18 @@ export function BorrowerProfileUploadDialog({ open, onOpenChange }: BorrowerProf
     const [isUploading, setIsUploading] = useState(false)
 
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0]
-        if (file) {
-            setSelectedFile(file)
+    const file = event.target.files?.[0]
+    if (file) {
+        if (file.type !== "text/csv" && !file.name.endsWith(".csv")) {
+            toast.error("Invalid file type", {
+                description: "Only CSV files are allowed.",
+                duration: 3000,
+            })
+            return
         }
+        setSelectedFile(file)
     }
-
+}
     const handleFileUpload = async () => {
         if (!selectedFile) {
             toast.error("No file selected", {
@@ -48,6 +54,8 @@ export function BorrowerProfileUploadDialog({ open, onOpenChange }: BorrowerProf
         }, 2000)
     }
 
+     
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-md">
@@ -55,7 +63,7 @@ export function BorrowerProfileUploadDialog({ open, onOpenChange }: BorrowerProf
                     <DialogTitle className="text-xl font-bold">Upload Borrower Profiles</DialogTitle>
                 </DialogHeader>
 
-                <Card className="w-full">
+                <div className="w-full">
                     <CardContent className="p-8">
                         <div className="flex flex-col items-center text-center space-y-6">
                             <div className="w-16 h-16 flex items-center justify-center">
@@ -65,9 +73,9 @@ export function BorrowerProfileUploadDialog({ open, onOpenChange }: BorrowerProf
                             <div>
                                 <h3 className="font-semibold text-lg">Upload Borrower Profiles</h3>
                                <p className="text-sm text-gray-500 mt-2">
-  Excel file must follow a specific format. You may download<br />
-  the file <a href="#" className="text-blue-600 underline hover:text-blue-800">here</a>
-</p>
+                            Excel file must follow a specific format. You may download<br />
+                            the file <a href="#" className="text-blue-600 underline hover:text-blue-800">here</a>
+                            </p>
 
                             </div>
 
@@ -76,20 +84,17 @@ export function BorrowerProfileUploadDialog({ open, onOpenChange }: BorrowerProf
                                     <label className="text-sm font-medium text-left block mb-2">CSV File *</label>
                                     <div className="flex items-center gap-3">
                                         <input
-                                            type="file"
-                                            accept=".xlsx,.xls,.csv"
+                                             type="file"
+                                            accept=".csv"
                                             onChange={handleFileSelect}
                                             className="hidden"
                                             id="borrower-file-input"
                                         />
-                                        <label
-                                            htmlFor="borrower-file-input"
-                                            className="cursor-pointer"
-                                        >
-                                            <Button variant="outline" size="sm" type="button" className="bg-gray-50">
-                                                Choose File
-                                            </Button>
+                                        <Button asChild variant="outline" size="sm" type="button" className="bg-gray-50">
+                                        <label htmlFor="borrower-file-input" className="cursor-pointer">
+                                            Choose File
                                         </label>
+                                    </Button>
                                         <span className="text-sm text-gray-500">
                                             {selectedFile ? selectedFile.name : "No file chosen"}
                                         </span>
@@ -110,7 +115,7 @@ export function BorrowerProfileUploadDialog({ open, onOpenChange }: BorrowerProf
                             </div>
                         </div>
                     </CardContent>
-                </Card>
+                </div>
             </DialogContent>
         </Dialog>
     )

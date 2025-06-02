@@ -194,7 +194,7 @@ export default function BankAccountsTable() {
         err.message ||
         "An error occurred while deleting the account";
 
-      toast.error("Failed to delete account", {
+      toast.error("Unable to delete", {
         description: errorMessage,
       });
     } finally {

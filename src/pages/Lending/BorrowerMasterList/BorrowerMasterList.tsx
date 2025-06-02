@@ -4,14 +4,12 @@ import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Upload, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ColumnDefinition, FilterDefinition, SearchDefinition } from "@/components/data-table/data-table"
 
 import { AddBorrowerDialog } from "../BarrowerProfileMaintenance/AddBorrowerDialog"
-import { BulkUploadDialog } from "../BarrowerProfileMaintenance/dialog/BulkUploadDialog"
+import { BorrowerProfileUploadDialog } from "../BarrowerProfileMaintenance/dialog/BorrowerProfileUploadDialog"
+import { BeginningBalanceUploadDialog } from "../BarrowerProfileMaintenance/dialog/BeginningBalanceUploadDialog"
 import { DataTableV3 } from "@/components/data-table/data-table-v3"
-
-
 
 interface BorrowerData {
   id: string
@@ -170,10 +168,11 @@ export default function BorrowersMasterList() {
   const [currentPage, setCurrentPage] = useState(1)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false)
-  const [uploadType, setUploadType] = useState<"borrower-profiles" | "beginning-balance">("borrower-profiles")
+  const [isBorrowerProfileUploadOpen, setIsBorrowerProfileUploadOpen] = useState(false)
+  const [isBeginningBalanceUploadOpen, setIsBeginningBalanceUploadOpen] = useState(false)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
 
-  // Define columns for the DataTableV2
+  // Define columns for the DataTableV3
   const columns: ColumnDefinition<BorrowerData>[] = [
     {
       id: "name",
@@ -329,13 +328,17 @@ export default function BorrowersMasterList() {
     console.log("Export to CSV")
   }
 
-  const handleBulkUpload = (type: "borrower-profiles" | "beginning-balance") => {
-    setUploadType(type)
-    setIsBulkUploadOpen(true)
+  const handleBorrowerProfileUpload = () => {
+    console.log("Opening Borrower Profile Upload Dialog")
+    setIsBorrowerProfileUploadOpen(true)
+    setDropdownOpen(false)
   }
 
-
-
+  const handleBeginningBalanceUpload = () => {
+    console.log("Opening Beginning Balance Upload Dialog")
+    setIsBeginningBalanceUploadOpen(true)
+    setDropdownOpen(false)
+  }
 
   return (
     <div className="w-full p-6">
@@ -365,27 +368,48 @@ export default function BorrowersMasterList() {
         onRowCountChange={setRowsPerPage}
         actionButtons={[]}
         customHeaderActions={
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
+          <>
+            <div className="relative">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+              >
                 <Upload className="h-4 w-4 mr-2" />
-                Bulk Import
+                Bulk Import 
                 <ChevronDown className="h-4 w-4 ml-2" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onSelect={() => handleBulkUpload("borrower-profiles")}>
-                Borrower's Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => handleBulkUpload("beginning-balance")}>
-                Beginning Balance
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              {dropdownOpen && (
+                <div className="absolute right-0 top-full mt-1 bg-white border rounded-md shadow-lg z-50 min-w-[160px]">
+                  <button 
+                    className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
+                    onClick={handleBorrowerProfileUpload}
+                  >
+                    Borrower's Profile
+                  </button>
+                  <button 
+                    className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
+                    onClick={handleBeginningBalanceUpload}
+                  >
+                    Beginning Balance
+                  </button>
+                </div>
+              )}
+            </div>
+          </>
         }
       />
+      
+      {/* Dialogs */}
       <AddBorrowerDialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} />
-      <BulkUploadDialog open={isBulkUploadOpen} onOpenChange={setIsBulkUploadOpen} uploadType={uploadType} />
+      <BorrowerProfileUploadDialog 
+        open={isBorrowerProfileUploadOpen} 
+        onOpenChange={setIsBorrowerProfileUploadOpen} 
+      />
+      <BeginningBalanceUploadDialog 
+        open={isBeginningBalanceUploadOpen} 
+        onOpenChange={setIsBeginningBalanceUploadOpen} 
+      />
     </div>
   )
 }

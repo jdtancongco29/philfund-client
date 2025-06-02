@@ -169,8 +169,27 @@ export default function ReferenceManagement() {
       resetTable();
       fetchReference();
     } catch (err) {
-      console.error("Error deleting Reference:", err);
-      toast.error("Failed to delete Reference.");
+     let errorMessage = "Failed to delete reference";
+
+    // Try to extract a more specific message from the error response
+    if (
+      typeof err === "object" &&
+      err !== null &&
+      "response" in err &&
+      typeof (err as any).response?.data?.message === "string"
+    ) {
+      errorMessage = (err as any).response.data.message;
+    } else if (err instanceof Error && err.message) {
+      errorMessage = err.message;
+    }
+
+    toast.error("Delete Failed", {
+      description: errorMessage,
+    });
+
+    toast.error("Delete Failed", {
+      description: errorMessage,
+    });
     } finally {
       setDeleteDialogOpen(false);
     }

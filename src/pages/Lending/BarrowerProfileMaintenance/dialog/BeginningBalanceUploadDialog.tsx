@@ -55,10 +55,10 @@ export function BeginningBalanceUploadDialog({ open, onOpenChange }: BeginningBa
                     <DialogTitle className="text-xl font-bold">Upload Beginning Balance</DialogTitle>
                 </DialogHeader>
 
-                <Card className="w-full ">
+                <div className="w-full ">
                     <CardContent className="p-8">
                         <div className="flex flex-col items-center text-center space-y-6">
-                            <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                            <div className="w-16 h-16  flex items-center justify-center">
                                 <FileText className="w-8 h-8 text-gray-600" />
                             </div>
                             
@@ -66,8 +66,7 @@ export function BeginningBalanceUploadDialog({ open, onOpenChange }: BeginningBa
                                 <h3 className="font-semibold text-lg">Upload Beginning Balance</h3>
                                 <p className="text-sm text-gray-500 mt-2">
                                     Excel file must follow a specific format. You may download<br />
-                                    the file  <a href="#" className="text-blue-600 underline hover:text-blue-800">here</a>
-
+                                    the file here
                                 </p>
                             </div>
 
@@ -110,7 +109,7 @@ export function BeginningBalanceUploadDialog({ open, onOpenChange }: BeginningBa
                             </div>
                         </div>
                     </CardContent>
-                </Card>
+                </div>
             </DialogContent>
         </Dialog>
     )

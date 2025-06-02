@@ -1024,6 +1024,7 @@ export function CashAdvanceFormDialog({
                 </TabsContent>
 
                 <TabsContent value="chart-of-accounts" className="space-y-6 mt-0 overflow-hidden">
+                  <h2 className="text-xl font-bold">Chart of Accounts</h2>
                   <div className="space-y-6">
                     {/* Required COA Fields with enhanced search */}
                     {renderCoaField("coa_loan_receivable", "Loans Receivable", true)}
@@ -1061,7 +1062,7 @@ export function CashAdvanceFormDialog({
               </Button>
               <Button disabled={isFormDisabled} type="submit" className="bg-blue-500 hover:bg-blue-600 px-6">
                 {isFormDisabled && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {activeTab === "basic-info" ? "Continue" : isEditing ? "Update Cash Advance" : "Save Cash Advance"}
+                {activeTab === "basic-info" ? "Continue CA Loan" : isEditing ? "Update CA Loan" : "Save CA Loan"}
               </Button>
             </div>
           </form>

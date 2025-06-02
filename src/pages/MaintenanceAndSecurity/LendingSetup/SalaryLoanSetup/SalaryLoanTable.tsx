@@ -91,6 +91,12 @@ export function SalaryLoanTable() {
       id: "interest_rate",
       header: "Interest Rate",
       accessorKey: "interest_rate",
+      cell: (item) => {
+        const rate = item.interest_rate;
+        if (rate == null) return "-";
+        const parsed = parseFloat(rate);
+        return Number.isInteger(parsed) ? `${parsed}%` : `${parsed.toFixed(2)}%`;
+      },
       enableSorting: true,
     },
     {

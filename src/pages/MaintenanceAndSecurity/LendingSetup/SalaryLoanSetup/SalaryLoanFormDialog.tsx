@@ -1254,8 +1254,7 @@ export function SalaryLoanFormDialog({
 
               <TabsContent value="chart-of-accounts" className="space-y-6">
                 <div className="space-y-4">
-                  <h2 className="text-xl font-bold">Fee Accounts</h2>
-
+                  <h2 className="text-xl font-bold">Chart of Accounts</h2>
                   <div className="space-y-4">
                     {renderCoaField("coa_service_charge", "Service Charge Account", true)}
                     {renderCoaField("coa_notarial", "Notarial Account", true)}
@@ -1299,7 +1298,7 @@ export function SalaryLoanFormDialog({
                 Cancel
               </Button>
               <Button disabled={isFormDisabled} type="submit">
-                {activeTab === "basic-info" ? "Continue" : isEditing ? "Update" : "Save"} Loan Product{" "}
+                {activeTab === "basic-info" ? "Continue" : isEditing ? "Update" : "Save"} Salary Loan{" "}
                 {isFormDisabled && (
                   <span>
                     <Loader2 className="animate-spin ml-2" />

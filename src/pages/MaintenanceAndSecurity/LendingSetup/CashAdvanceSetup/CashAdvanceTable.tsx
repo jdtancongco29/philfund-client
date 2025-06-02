@@ -108,14 +108,24 @@ export function CashAdvanceTable() {
       header: "Interest Rate",
       accessorKey: "interest_rate",
       enableSorting: true,
-      cell: (item) => `${item.interest_rate}%`,
+      cell: (item) => {
+        const rate = item.interest_rate;
+        if (rate == null) return "-";
+        const parsed = parseFloat(rate);
+        return Number.isInteger(parsed) ? `${parsed}%` : `${parsed.toFixed(2)}%`;
+      },
     },
     {
       id: "surcharge_rate",
       header: "Surcharge Rate",
       accessorKey: "surcharge_rate",
       enableSorting: true,
-      cell: (item) => `${item.surcharge_rate}%`,
+      cell: (item) => {
+        const rate = item.surcharge_rate;
+        if (rate == null) return "-";
+        const parsed = parseFloat(rate);
+        return Number.isInteger(parsed) ? `${parsed}%` : `${parsed.toFixed(2)}%`;
+      },
     },
     {
       id: "max_amt",
@@ -133,7 +143,10 @@ export function CashAdvanceTable() {
       accessorKey: "max_rate",
       enableSorting: true,
       cell: (item) => {
-        return item.max_rate ? `${item.max_rate}%` : "-"
+        const rate = item.max_rate;
+        if (rate == null) return "-";
+        const parsed = parseFloat(rate);
+        return Number.isInteger(parsed) ? `${parsed}%` : `${parsed.toFixed(2)}%`;
       },
     },
   ]

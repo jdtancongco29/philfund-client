@@ -66,7 +66,6 @@ export const apiRequest = async <T = any>(
   }
 
   const fullUrl = `${API_URL}${endpoint}`;
-  console.log(headers);
   const config = {
     method,
     url: fullUrl,

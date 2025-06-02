@@ -485,7 +485,7 @@ export function AddEditAccountDialog({
                       errors.headerAccount ? "text-red-500" : undefined
                     }
                   >
-                    Header account <span className="text-red-500">*</span>
+                    Header account <span className="text-red-500 mb-3">*</span>
                   </Label>
                   <div className="flex gap-2">
                     <select

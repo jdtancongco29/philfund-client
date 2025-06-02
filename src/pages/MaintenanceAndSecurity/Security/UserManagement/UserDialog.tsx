@@ -392,7 +392,7 @@ export function UserDialog({
     { key: "thursday", label: "Thursday", dayOfWeek: 4 },
     { key: "friday", label: "Friday", dayOfWeek: 5 },
     { key: "saturday", label: "Saturday", dayOfWeek: 6 },
-    { key: "sunday", label: "Sunday", dayOfWeek: 0 },
+    { key: "sunday", label: "Sunday", dayOfWeek: 7 },
   ] as const
 
   const toggleSchedule = (dayOfWeek: number, enabled: boolean) => {
@@ -409,6 +409,10 @@ export function UserDialog({
         form.setValue(`access_schedules.${scheduleIndex}.start_time`, undefined)
         form.setValue(`access_schedules.${scheduleIndex}.end_time`, undefined)
       }
+    }else{
+      form.setValue(`access_schedules.${dayOfWeek - 1}.day_of_week`, dayOfWeek)
+      form.setValue(`access_schedules.${dayOfWeek - 1}.start_time`, "08:00:00")
+      form.setValue(`access_schedules.${dayOfWeek - 1}.end_time`, "17:00:00")
     }
   }
 

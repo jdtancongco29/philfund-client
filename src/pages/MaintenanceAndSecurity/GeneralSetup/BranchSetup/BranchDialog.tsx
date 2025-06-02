@@ -151,8 +151,7 @@ export function BranchDialog({ item, open, isEditing, onOpenChange, onSuccess }:
 
   // Clear server errors when user starts typing in a field
   useEffect(() => {
-    const subscription = form.watch((value, { name }) => {
-      console.log(value);
+    const subscription = form.watch(({ name }) => {
       if (name && serverErrors[name]) {
         setServerErrors((prev) => {
           const newErrors = { ...prev }

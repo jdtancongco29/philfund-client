@@ -24,7 +24,8 @@ export interface UserManagement {
   username: string
   position: string
   mobile: string
-  inactive_period: string
+  inactive_from?: string
+  inactive_to?: string
   password: string
   password_confirmation: string
   special_approver: boolean
@@ -104,6 +105,8 @@ export interface CreateUserPayload {
   password: string
   password_confirmation: string
   branches: string[]
+  inactive_from?: string
+  inactive_to?: string
   access_schedules: Schedules[]
 }
 
@@ -123,5 +126,7 @@ export interface UpdateUserPayload {
   password?: string
   password_confirmation?: string
   branches: string[]
+  inactive_from?: string
+  inactive_to?: string
   access_schedules: Schedules[]
 }

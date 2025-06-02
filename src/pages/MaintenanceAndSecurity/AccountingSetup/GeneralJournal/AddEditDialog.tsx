@@ -961,7 +961,8 @@ export default function AddEditEntryDialog({
                 <ErrorMessage errors={getFieldErrors("items")} />
 
                 {/* Table Header */}
-                <div className="border border-gray-300 rounded-md">
+                <div className="border border-gray-300 rounded-t-md">
+
                   {/* Header Row */}
                   <div className="grid grid-cols-5 gap-3 px-2 py-2 text-xs font-medium text-gray-600 border-b">
                     <div className="col-span-1">Account Code</div>
@@ -1137,7 +1138,7 @@ export default function AddEditEntryDialog({
                 </div>
 
                 {/* Totals Row */}
-                <div className="grid grid-cols-5 gap-4 py-3 border-t-2 border-gray-300 font-semibold">
+                <div className="grid grid-cols-5 gap-4 py-3 border-l-2  border-r-2  border-b-2 border-gray-300 font-semibold pl-2 rounded-b-md">
                   <div className="col-span-2">Totals</div>
                   <div className="text-center ml-45">
                     {calculateTotalDebit(items).toFixed(2)}

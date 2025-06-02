@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Card, CardContent } from "@/components/ui/card"
+import { CardContent } from "@/components/ui/card"
 import { FileText, Upload } from 'lucide-react'
 import { CircleCheck } from 'lucide-react'
 import { toast } from "sonner"
@@ -21,6 +21,14 @@ export function BeginningBalanceUploadDialog({ open, onOpenChange }: BeginningBa
         const file = event.target.files?.[0]
         if (file) {
             setSelectedFile(file)
+            console.log("File selected:", file.name) // Debug log
+        }
+    }
+
+    const handleChooseFileClick = () => {
+        const fileInput = document.getElementById("balance-file-input") as HTMLInputElement
+        if (fileInput) {
+            fileInput.click()
         }
     }
 
@@ -48,17 +56,26 @@ export function BeginningBalanceUploadDialog({ open, onOpenChange }: BeginningBa
         }, 2000)
     }
 
+    // Reset file when dialog closes
+    const handleDialogOpenChange = (open: boolean) => {
+        if (!open) {
+            setSelectedFile(null)
+            setIsUploading(false)
+        }
+        onOpenChange(open)
+    }
+
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={open} onOpenChange={handleDialogOpenChange}>
             <DialogContent className="max-w-md">
                 <DialogHeader>
                     <DialogTitle className="text-xl font-bold">Upload Beginning Balance</DialogTitle>
                 </DialogHeader>
 
-                <div className="w-full ">
+                <div className="w-full">
                     <CardContent className="p-8">
                         <div className="flex flex-col items-center text-center space-y-6">
-                            <div className="w-16 h-16  flex items-center justify-center">
+                            <div className="w-16 h-16 flex items-center justify-center">
                                 <FileText className="w-8 h-8 text-gray-600" />
                             </div>
                             
@@ -66,7 +83,7 @@ export function BeginningBalanceUploadDialog({ open, onOpenChange }: BeginningBa
                                 <h3 className="font-semibold text-lg">Upload Beginning Balance</h3>
                                 <p className="text-sm text-gray-500 mt-2">
                                     Excel file must follow a specific format. You may download<br />
-                                    the file here
+                                    the file <a href="#" className="text-blue-600 underline hover:text-blue-800">here</a>
                                 </p>
                             </div>
 
@@ -81,15 +98,16 @@ export function BeginningBalanceUploadDialog({ open, onOpenChange }: BeginningBa
                                             className="hidden"
                                             id="balance-file-input"
                                         />
-                                        <label
-                                            htmlFor="balance-file-input"
-                                            className="cursor-pointer"
+                                        <Button 
+                                            variant="outline" 
+                                            size="sm" 
+                                            type="button" 
+                                            className="bg-gray-50"
+                                            onClick={handleChooseFileClick}
                                         >
-                                            <Button variant="outline" size="sm" type="button" className="bg-gray-50">
-                                                Choose File
-                                            </Button>
-                                        </label>
-                                        <span className="text-sm text-gray-500">
+                                            Choose File
+                                        </Button>
+                                        <span className="text-sm text-gray-500 flex-1 text-left">
                                             {selectedFile ? selectedFile.name : "No file chosen"}
                                         </span>
                                     </div>

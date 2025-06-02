@@ -16,23 +16,27 @@ export function BasicInfoTab() {
   const [birthDate, setBirthDate] = useState<Date>()
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-8 p-6">
+     <div className="space-y-8 p-6">
+      
       <div className="grid gap-6">
         <div>
           <Label htmlFor="risk-level">Risk Level</Label>
           <Select>
-            <SelectTrigger className="w-full">
+           <SelectTrigger className="w-1/3 mt-2 mr-auto">
               <SelectValue placeholder="Select..." />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="low">Low</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="high">High</SelectItem>
+              <SelectItem value="4">Super-Prime</SelectItem>
+              <SelectItem value="3">Prime </SelectItem>
+              <SelectItem value="2">Non-Prime</SelectItem>
+                <SelectItem value="1">Declined </SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="grid grid-cols-3 gap-6">
+
+          
           <div>
             <Label htmlFor="last-name">Last Name *</Label>
             <Input id="last-name" placeholder="Enter cash advance code" className="mt-2" />
@@ -127,8 +131,8 @@ export function BasicInfoTab() {
           <div className="grid grid-cols-3 gap-6">
             <div>
               <Label htmlFor="blood-type">Blood Type *</Label>
-              <Select>
-                <SelectTrigger className="mt-2">
+              <Select >
+                <SelectTrigger className="mt-2 w-full">
                   <SelectValue placeholder="Select..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -146,7 +150,7 @@ export function BasicInfoTab() {
             <div>
               <Label htmlFor="health-condition">Health Condition *</Label>
               <Select>
-                <SelectTrigger className="mt-2">
+                <SelectTrigger className="mt-2 w-full">
                   <SelectValue placeholder="Select..." />
                 </SelectTrigger>
                 <SelectContent>

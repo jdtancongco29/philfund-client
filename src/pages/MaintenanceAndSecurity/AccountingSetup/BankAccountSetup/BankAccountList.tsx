@@ -344,7 +344,7 @@ export default function BankAccountsTable() {
 
         if (!item || item.length === 0) {
           toast.error("No Data to Export", {
-            description: "There are no bank accounts to export. Please refresh and try again.",
+            description: "No entries available for CSV export.",
             duration: 5000,
           })
           return
@@ -401,6 +401,14 @@ const exportPdf = async (): Promise<string> => {
 }
 
 const handlePdfExport = useCallback(async () => {
+  
+    if (!item || item.length === 0) {
+    toast.error("No Data to Export", {
+      description: "No entries available for PDF export.",
+      duration: 5000,
+    });
+    return;
+  }
   setIsExporting(true)
   try {
     const url = await exportPdf()

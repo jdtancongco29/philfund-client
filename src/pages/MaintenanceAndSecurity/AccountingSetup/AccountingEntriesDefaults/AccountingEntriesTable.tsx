@@ -341,7 +341,7 @@ export default function AccountEntriesTable() {
         if (!data || data.length === 0) {
           toast.error("No Data to Export", {
             description:
-              "There are no entries to export. Please refresh and try again.",
+              "No entries available for CSV export.",
             duration: 5000,
           });
           return;
@@ -407,6 +407,13 @@ export default function AccountEntriesTable() {
   };
 
   const handlePdfExport = useCallback(async () => {
+        if (!data || data.length === 0) {
+    toast.error("No Data to Export", {
+      description: "No entries available for PDF export.",
+      duration: 5000,
+    });
+    return;
+  }
     setIsExporting(true);
     try {
       const url = await exportPdf();

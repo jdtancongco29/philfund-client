@@ -395,7 +395,7 @@ export default function GeneralJournalTable() {
         if (!data || data.length === 0) {
           toast.error("No Data to Export", {
             description:
-              "There are no entries to export. Please refresh and try again.",
+              "No entries available for CSV export",
             duration: 5000,
           });
           return;
@@ -515,6 +515,13 @@ export default function GeneralJournalTable() {
   };
 
   const handlePdfExport = useCallback(async () => {
+    if (!data || data.length === 0) {
+    toast.error("No Data to Export", {
+      description: "No entries available for PDF export.",
+      duration: 5000,
+    });
+    return;
+  }
     setIsExporting(true);
     try {
       const url = await exportPdf();

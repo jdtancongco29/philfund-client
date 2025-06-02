@@ -10,7 +10,7 @@ import {
   DataTable,
   type ColumnDefinition,
   type FilterDefinition,
-} from "@/components/data-table/data-table";
+} from "@/components/data-table/data-table-coa";
 import { DdeleteDialog } from "./DeleteCOADialog";
 import { AddEditAccountDialog } from "./AddAccountDialog";
 

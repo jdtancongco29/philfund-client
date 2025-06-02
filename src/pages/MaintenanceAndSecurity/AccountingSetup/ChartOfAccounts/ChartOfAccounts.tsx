@@ -63,6 +63,11 @@ interface ApiResponse {
   message: string;
   data: DataPayload;
 }
+type ApiErrorResponse = {
+  status: string;
+  message: string;
+  data: any | null;
+};
 
 export default function ChartOfAccounts() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -588,10 +593,16 @@ export default function ChartOfAccounts() {
       }
     } catch (err: any) {
       console.error("Error deleting account:", err);
-      toast.error("Failed to delete account", {
-        description:
-          err.message || "An error occurred while deleting the account",
-      });
+      const apiError = err as { response?: { data?: ApiErrorResponse } };
+
+  const errorMessage =
+    apiError.response?.data?.message ||
+    err.message ||
+    "An error occurred while deleting the account";
+
+  toast.error("Failed to delete account", {
+    description: errorMessage,
+  });
     } finally {
       setDeleteDialogOpen(false);
       setAccountToDelete(null);

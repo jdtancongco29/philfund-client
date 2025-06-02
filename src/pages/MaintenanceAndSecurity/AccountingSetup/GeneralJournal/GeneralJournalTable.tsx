@@ -195,10 +195,7 @@ export default function GeneralJournalTable() {
       fetchData();
     } catch (error) {
       console.error("Failed to delete entry:", error);
-      toast.error("Delete Failed", {
-        description: "Failed to delete the entry. Please try again.",
-        duration: 5000,
-      });
+         toast.error("Cannot Delete DataThis data is currently used in another module and cannot be deleted." );
     }
   }, [entryToDelete, fetchData]);
 

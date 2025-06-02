@@ -45,6 +45,11 @@ interface ApiResponse {
   message: string
   data: BankDataPayload
 }
+type ApiErrorResponse = {
+  status: string;
+  message: string;
+  data: any | null;
+};
 
 export default function BankAccountsTable() {
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -176,9 +181,18 @@ export default function BankAccountsTable() {
 
       resetTable()
       fetchData()
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error deleting Bank:", err)
-      toast.error("Failed to delete Bank.")
+      const apiError = err as { response?: { data?: ApiErrorResponse } };
+    
+      const errorMessage =
+        apiError.response?.data?.message ||
+        err.message ||
+        "An error occurred while deleting the account";
+    
+      toast.error("Failed to delete account", {
+        description: errorMessage,
+      });
     } finally {
       setDeleteDialogOpen(false)
     }

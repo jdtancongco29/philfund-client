@@ -23,7 +23,7 @@ import { ClassificationSetupService } from "../ClassificationSetup/Service/Class
 import { BonusLoanSetupService } from "../BonusLoanSetup/Service/BonusLoanSetupService"
 import { SalaryLoanSetupService } from "../SalaryLoanSetup/Service/SalaryLoanSetupService"
 import { Loader2 } from "lucide-react"
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import { AxiosError } from "axios"
 import Select from "react-select"
 import { debounce } from "lodash"
@@ -328,6 +328,17 @@ export function CashAdvanceFormDialog({
     const usedValues = watchedCoaValues.filter((value) => value && value !== currentFieldValue)
     return allOptions.filter((account) => !usedValues.includes(account.id))
   }
+
+  const scrollableDivRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToTop = () => {
+    if (scrollableDivRef.current) {
+      scrollableDivRef.current.scrollTo({
+        top: 0,
+        behavior: 'smooth' // use 'auto' for immediate jump
+      });
+    }
+  };
 
   const getCoaFieldCode = (id: string) => {
     if (!id) return ""
@@ -667,199 +678,137 @@ export function CashAdvanceFormDialog({
           </div>
         )}
 
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(
-              (data) => {
-                // Valid submission
-                onFormSubmit(data)
-              },
-              (errors) => {
-                // This is called AFTER validation fails
-                const errorKeys = Object.keys(errors)
-                for (const key of errorKeys) {
-                  if (basicInfoFields.includes(key)) {
-                    setActiveTab("basic-info")
-                    return
+        <div className="overflow-x-hidden overflow-y-auto" ref={scrollableDivRef}>
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(
+                (data) => {
+                  // Valid submission
+                  onFormSubmit(data)
+                },
+                (errors) => {
+                  // This is called AFTER validation fails
+                  const errorKeys = Object.keys(errors)
+                  for (const key of errorKeys) {
+                    if (basicInfoFields.includes(key)) {
+                      setActiveTab("basic-info")
+                      return
+                    }
                   }
-                }
-                if (activeTab != "chart-of-accounts") {
-                  // If no specific match, default tab
-                  form.clearErrors()
-                  setActiveTab("chart-of-accounts")
-                }
-              },
-            )}
-            className="flex flex-col h-full"
-          >
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-              <TabsList className="border-b w-full justify-start rounded-none h-auto p-0 mb-6">
-                <TabsTrigger
-                  disabled={isFormDisabled}
-                  value="basic-info"
-                  className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-blue-500 data-[state=active]:shadow-none px-4 py-2"
-                >
-                  Basic Info
-                </TabsTrigger>
-                <TabsTrigger
-                  disabled={isFormDisabled}
-                  value="chart-of-accounts"
-                  className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-blue-500 data-[state=active]:shadow-none px-4 py-2"
-                >
-                  Chart of Accounts
-                </TabsTrigger>
-              </TabsList>
+                  if (activeTab != "chart-of-accounts") {
+                    // If no specific match, default tab
+                    form.clearErrors()
+                    setActiveTab("chart-of-accounts")
+                  }
+                },
+              )}
+              className="flex flex-col h-full"
+            >
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+                <TabsList className="border-b w-full justify-start rounded-none h-auto p-0 mb-2">
+                  <TabsTrigger
+                    disabled={isFormDisabled}
+                    value="basic-info"
+                    className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-blue-500 data-[state=active]:shadow-none px-4 py-2"
+                  >
+                    Basic Info
+                  </TabsTrigger>
+                  <TabsTrigger
+                    disabled={isFormDisabled}
+                    value="chart-of-accounts"
+                    className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-b-blue-500 data-[state=active]:shadow-none px-4 py-2"
+                  >
+                    Chart of Accounts
+                  </TabsTrigger>
+                </TabsList>
 
-              <div className="flex-1 overflow-y-auto">
-                <TabsContent value="basic-info" className="space-y-6 mt-0">
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-2 gap-6">
-                      <FormField
-                        disabled={isFormDisabled}
-                        control={form.control}
-                        name="code"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-base font-medium">
-                              Cash Advance Code
-                              <span className="text-red-500">*</span>
-                            </FormLabel>
-                            <FormControl>
-                              <Input placeholder="Enter cash advance code" {...field} className="h-11" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        disabled={isFormDisabled}
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-base font-medium">
-                              Cash Advance Name
-                              <span className="text-red-500">*</span>
-                            </FormLabel>
-                            <FormControl>
-                              <Input placeholder="Enter cash advance name" {...field} className="h-11" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="type"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            Loan Type <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <div className="flex gap-6">
-                              <div className="flex items-center space-x-2">
-                                <input
-                                  type="radio"
-                                  id="bonus-loan"
-                                  value="bonus loan"
-                                  checked={field.value === "bonus loan"}
-                                  onChange={() => {
-                                    field.onChange("bonus loan")
-                                    form.setValue("loan_code", "")
-                                  }}
-                                  disabled={isFormDisabled}
-                                  className="w-4 h-4"
-                                />
-                                <label htmlFor="bonus-loan" className="text-sm font-medium">
-                                  Bonus Loan
-                                </label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <input
-                                  type="radio"
-                                  id="salary-loan"
-                                  value="salary loan"
-                                  checked={field.value === "salary loan"}
-                                  onChange={() => {
-                                    field.onChange("salary loan")
-                                    form.setValue("loan_code", "")
-                                  }}
-                                  disabled={isFormDisabled}
-                                  className="w-4 h-4"
-                                />
-                                <label htmlFor="salary-loan" className="text-sm font-medium">
-                                  Salary Loan
-                                </label>
-                              </div>
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      disabled={isFormDisabled}
-                      control={form.control}
-                      name="loan_code"
-                      render={({ field }) => {
-                        return (
-                          <FormItem key={field.value}>
-                            <FormLabel className="text-base font-medium">
-                              Loan Code
-                              <span className="text-red-500">*</span>
-                            </FormLabel>
-                            <ShadSelect disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
+                <div className="flex-1 overflow-y-auto">
+                  <TabsContent value="basic-info" className="space-y-6 mt-0">
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-2 gap-6">
+                        <FormField
+                          disabled={isFormDisabled}
+                          control={form.control}
+                          name="code"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-base font-medium">
+                                Cash Advance Code
+                                <span className="text-red-500">*</span>
+                              </FormLabel>
                               <FormControl>
-                                <SelectTrigger className="h-11 w-full">
-                                  <SelectValue placeholder="Select..." />
-                                </SelectTrigger>
+                                <Input placeholder="Enter cash advance code" {...field} className="h-11" />
                               </FormControl>
-                              <SelectContent>
-                                {getAvailableLoans().map((loan) => (
-                                  <SelectItem key={loan.id} value={loan.id}>
-                                    {loan.code}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </ShadSelect>
-                            <FormMessage />
-                          </FormItem>
-                        )
-                      }}
-                    />
-                    <div className="grid grid-cols-2 gap-6">
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          disabled={isFormDisabled}
+                          control={form.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-base font-medium">
+                                Cash Advance Name
+                                <span className="text-red-500">*</span>
+                              </FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter cash advance name" {...field} className="h-11" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
                       <FormField
                         disabled={isFormDisabled}
                         control={form.control}
-                        name="interest_rate"
+                        name="type"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-base font-medium">
-                              Interest Rate (%) <span className="text-red-500">*</span>
+                              Loan Type <span className="text-red-500">*</span>
                             </FormLabel>
                             <FormControl>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                placeholder="0.00"
-                                value={field.value === 0 ? "" : field.value.toString()}
-                                onChange={(e) => {
-                                  const value = e.target.value
-                                  if (value === "") {
-                                    field.onChange(0)
-                                  } else {
-                                    const numValue = Number.parseFloat(value)
-                                    field.onChange(isNaN(numValue) ? 0 : numValue)
-                                  }
-                                }}
-                                className="h-11"
-                              />
+                              <div className="flex gap-6">
+                                <div className="flex items-center space-x-2">
+                                  <input
+                                    type="radio"
+                                    id="bonus-loan"
+                                    value="bonus loan"
+                                    checked={field.value === "bonus loan"}
+                                    onChange={() => {
+                                      field.onChange("bonus loan")
+                                      form.setValue("loan_code", "")
+                                    }}
+                                    disabled={isFormDisabled}
+                                    className="w-4 h-4"
+                                  />
+                                  <label htmlFor="bonus-loan" className="text-sm font-medium">
+                                    Bonus Loan
+                                  </label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <input
+                                    type="radio"
+                                    id="salary-loan"
+                                    value="salary loan"
+                                    checked={field.value === "salary loan"}
+                                    onChange={() => {
+                                      field.onChange("salary loan")
+                                      form.setValue("loan_code", "")
+                                    }}
+                                    disabled={isFormDisabled}
+                                    className="w-4 h-4"
+                                  />
+                                  <label htmlFor="salary-loan" className="text-sm font-medium">
+                                    Salary Loan
+                                  </label>
+                                </div>
+                              </div>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -869,203 +818,267 @@ export function CashAdvanceFormDialog({
                       <FormField
                         disabled={isFormDisabled}
                         control={form.control}
-                        name="surcharge_rate"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-base font-medium">
-                              Surcharge Rate (%) <span className="text-red-500">*</span>
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                placeholder="0.00"
-                                value={field.value === 0 ? "" : field.value.toString()}
-                                onChange={(e) => {
-                                  const value = e.target.value
-                                  if (value === "") {
-                                    field.onChange(0)
-                                  } else {
-                                    const numValue = Number.parseFloat(value)
-                                    field.onChange(isNaN(numValue) ? 0 : numValue)
-                                  }
-                                }}
-                                className="h-11"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-6">
-                      <FormField
-                        disabled={isFormDisabled || form.watch("max_rate") != null}
-                        control={form.control}
-                        name="max_amt"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-base font-medium">Maximum Amount</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                placeholder="Enter maximum amount"
-                                value={field.value === null || field.value === undefined ? "" : field.value.toString()}
-                                onChange={(e) => {
-                                  const value = e.target.value
-                                  if (value === "") {
-                                    field.onChange(null)
-                                  } else {
-                                    const numValue = Number.parseFloat(value)
-                                    field.onChange(isNaN(numValue) ? null : numValue)
-                                  }
-                                }}
-                                disabled={isFormDisabled || form.watch("max_rate") != null}
-                                className="h-11"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        disabled={isFormDisabled}
-                        control={form.control}
-                        name="max_rate"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-base font-medium">Maximum Rate (%)</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                placeholder="0.00"
-                                value={field.value === null || field.value === undefined ? "" : field.value.toString()}
-                                onChange={(e) => {
-                                  const value = e.target.value
-                                  if (value === "") {
-                                    field.onChange(null)
-                                  } else {
-                                    const numValue = Number.parseFloat(value)
-                                    field.onChange(isNaN(numValue) ? null : numValue)
-                                  }
-                                }}
-                                disabled={isFormDisabled || form.watch("max_amt") != null}
-                                className="h-11"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    {/* Classifications */}
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold">
-                        List of Classifications <span className="text-red-500">*</span>
-                      </h3>
-                      <FormField
-                        disabled={isFormDisabled}
-                        control={form.control}
-                        name="eligible_class"
-                        render={() => (
-                          <FormItem>
-                            <div className="border rounded-lg">
-                              <Table>
-                                <TableHeader>
-                                  <TableRow className="bg-gray-50">
-                                    <TableHead className="font-medium">Classification</TableHead>
-                                    <TableHead className="text-end font-medium">Can Avail of CA</TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {classificationsData?.data.classifications.map((classification) => (
-                                    <TableRow key={classification.id}>
-                                      <TableCell className="font-medium">{classification.name}</TableCell>
-                                      <TableCell className="flex w-full justify-end">
-                                        <FormField
-                                          control={form.control}
-                                          name="eligible_class"
-                                          render={({ field }) => (
-                                            <FormItem>
-                                              <FormControl>
-                                                <Checkbox
-                                                  checked={field.value?.includes(classification.id)}
-                                                  onCheckedChange={(checked) => {
-                                                    const current = field.value || []
-                                                    if (checked) {
-                                                      field.onChange([...current, classification.id])
-                                                    } else {
-                                                      field.onChange(current.filter((id) => id !== classification.id))
-                                                    }
-                                                  }}
-                                                  className="mr-22 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-                                                />
-                                              </FormControl>
-                                            </FormItem>
-                                          )}
-                                        />
-                                      </TableCell>
-                                    </TableRow>
+                        name="loan_code"
+                        render={({ field }) => {
+                          return (
+                            <FormItem key={field.value}>
+                              <FormLabel className="text-base font-medium">
+                                Loan Code
+                                <span className="text-red-500">*</span>
+                              </FormLabel>
+                              <ShadSelect disabled={isFormDisabled} onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger className="h-11 w-full">
+                                    <SelectValue placeholder="Select..." />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {getAvailableLoans().map((loan) => (
+                                    <SelectItem key={loan.id} value={loan.id}>
+                                      {loan.code}
+                                    </SelectItem>
                                   ))}
-                                </TableBody>
-                              </Table>
-                            </div>
-                            <FormMessage />
-                          </FormItem>
-                        )}
+                                </SelectContent>
+                              </ShadSelect>
+                              <FormMessage />
+                            </FormItem>
+                          )
+                        }}
                       />
+                      <div className="grid grid-cols-2 gap-6">
+                        <FormField
+                          disabled={isFormDisabled}
+                          control={form.control}
+                          name="interest_rate"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-base font-medium">
+                                Interest Rate (%) <span className="text-red-500">*</span>
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="0.00"
+                                  value={field.value === 0 ? "" : field.value.toString()}
+                                  onChange={(e) => {
+                                    const value = e.target.value
+                                    if (value === "") {
+                                      field.onChange(0)
+                                    } else {
+                                      const numValue = Number.parseFloat(value)
+                                      field.onChange(isNaN(numValue) ? 0 : numValue)
+                                    }
+                                  }}
+                                  className="h-11"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          disabled={isFormDisabled}
+                          control={form.control}
+                          name="surcharge_rate"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-base font-medium">
+                                Surcharge Rate (%) <span className="text-red-500">*</span>
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="0.00"
+                                  value={field.value === 0 ? "" : field.value.toString()}
+                                  onChange={(e) => {
+                                    const value = e.target.value
+                                    if (value === "") {
+                                      field.onChange(0)
+                                    } else {
+                                      const numValue = Number.parseFloat(value)
+                                      field.onChange(isNaN(numValue) ? 0 : numValue)
+                                    }
+                                  }}
+                                  className="h-11"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-6">
+                        <FormField
+                          disabled={isFormDisabled || form.watch("max_rate") != null}
+                          control={form.control}
+                          name="max_amt"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-base font-medium">Maximum Amount</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="Enter maximum amount"
+                                  value={field.value === null || field.value === undefined ? "" : field.value.toString()}
+                                  onChange={(e) => {
+                                    const value = e.target.value
+                                    if (value === "") {
+                                      field.onChange(null)
+                                    } else {
+                                      const numValue = Number.parseFloat(value)
+                                      field.onChange(isNaN(numValue) ? null : numValue)
+                                    }
+                                  }}
+                                  disabled={isFormDisabled || form.watch("max_rate") != null}
+                                  className="h-11"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          disabled={isFormDisabled}
+                          control={form.control}
+                          name="max_rate"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-base font-medium">Maximum Rate (%)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="0.00"
+                                  value={field.value === null || field.value === undefined ? "" : field.value.toString()}
+                                  onChange={(e) => {
+                                    const value = e.target.value
+                                    if (value === "") {
+                                      field.onChange(null)
+                                    } else {
+                                      const numValue = Number.parseFloat(value)
+                                      field.onChange(isNaN(numValue) ? null : numValue)
+                                    }
+                                  }}
+                                  disabled={isFormDisabled || form.watch("max_amt") != null}
+                                  className="h-11"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {/* Classifications */}
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">
+                          List of Classifications <span className="text-red-500">*</span>
+                        </h3>
+                        <FormField
+                          disabled={isFormDisabled}
+                          control={form.control}
+                          name="eligible_class"
+                          render={() => (
+                            <FormItem>
+                              <div className="border rounded-lg">
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow className="bg-gray-50">
+                                      <TableHead className="font-medium">Classification</TableHead>
+                                      <TableHead className="text-end font-medium">Can Avail of CA</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {classificationsData?.data.classifications.map((classification) => (
+                                      <TableRow key={classification.id}>
+                                        <TableCell className="font-medium">{classification.name}</TableCell>
+                                        <TableCell className="flex w-full justify-end">
+                                          <FormField
+                                            control={form.control}
+                                            name="eligible_class"
+                                            render={({ field }) => (
+                                              <FormItem>
+                                                <FormControl>
+                                                  <Checkbox
+                                                    checked={field.value?.includes(classification.id)}
+                                                    onCheckedChange={(checked) => {
+                                                      const current = field.value || []
+                                                      if (checked) {
+                                                        field.onChange([...current, classification.id])
+                                                      } else {
+                                                        field.onChange(current.filter((id) => id !== classification.id))
+                                                      }
+                                                    }}
+                                                    className="mr-22 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                                                  />
+                                                </FormControl>
+                                              </FormItem>
+                                            )}
+                                          />
+                                        </TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                     </div>
-                  </div>
-                </TabsContent>
+                  </TabsContent>
+                  <TabsContent value="chart-of-accounts" className="space-y-6 mt-0 overflow-hidden">
+                    <h2 className="text-xl font-bold">Chart of Accounts</h2>
+                    <div className="space-y-6">
+                      {/* Required COA Fields with enhanced search */}
+                      {renderCoaField("coa_loan_receivable", "Loans Receivable", true)}
+                      {renderCoaField("coa_interest_receivable", "Interest Receivable", true)}
+                      {renderCoaField("coa_interest_income", "Interest Income", true)}
+                      {renderCoaField("coa_garnished", "Garnished Expense", true)}
 
-                <TabsContent value="chart-of-accounts" className="space-y-6 mt-0 overflow-hidden">
-                  <div className="space-y-6">
-                    {/* Required COA Fields with enhanced search */}
-                    {renderCoaField("coa_loan_receivable", "Loans Receivable", true)}
-                    {renderCoaField("coa_interest_receivable", "Interest Receivable", true)}
-                    {renderCoaField("coa_interest_income", "Interest Income", true)}
-                    {renderCoaField("coa_garnished", "Garnished Expense", true)}
+                      {/* Optional COA Fields with enhanced search */}
+                      {renderCoaField("coa_unearned_interest", "Unearned Interest")}
+                      {renderCoaField("coa_other_income_penalty", "Other Income Penalty")}
+                      {renderCoaField("coa_allowance_doubtful", "Allowance for Doubtful Account")}
+                      {renderCoaField("coa_bad_dept_expense", "Bad Debt Expense")}
+                    </div>
+                  </TabsContent>
+                </div>
+              </Tabs>
 
-                    {/* Optional COA Fields with enhanced search */}
-                    {renderCoaField("coa_unearned_interest", "Unearned Interest")}
-                    {renderCoaField("coa_other_income_penalty", "Other Income Penalty")}
-                    {renderCoaField("coa_allowance_doubtful", "Allowance for Doubtful Account")}
-                    {renderCoaField("coa_bad_dept_expense", "Bad Debt Expense")}
-                  </div>
-                </TabsContent>
+              <div className="flex justify-end gap-3 pt-6">
+                <Button
+                  disabled={isFormDisabled}
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    onCancel()
+                    onOpenChange(false)
+                    setActiveTab("basic-info")
+                    form.reset()
+                    setSearchedCoaOptions({})
+                    setSearchLoading({})
+                    setActiveField(null)
+                  }}
+                  className="px-6"
+                >
+                  Cancel
+                </Button>
+                <Button onClick={scrollToTop} disabled={isFormDisabled} type="submit" className="bg-blue-500 hover:bg-blue-600 px-6">
+                  {isFormDisabled && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {activeTab === "basic-info" ? "Continue CA Loan" : isEditing ? "Update CA Loan" : "Save CA Loan"}
+                </Button>
               </div>
-            </Tabs>
-
-            <div className="flex justify-end gap-3 pt-6">
-              <Button
-                disabled={isFormDisabled}
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  onCancel()
-                  onOpenChange(false)
-                  setActiveTab("basic-info")
-                  form.reset()
-                  setSearchedCoaOptions({})
-                  setSearchLoading({})
-                  setActiveField(null)
-                }}
-                className="px-6"
-              >
-                Cancel
-              </Button>
-              <Button disabled={isFormDisabled} type="submit" className="bg-blue-500 hover:bg-blue-600 px-6">
-                {isFormDisabled && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {activeTab === "basic-info" ? "Continue" : isEditing ? "Update Cash Advance" : "Save Cash Advance"}
-              </Button>
-            </div>
-          </form>
-        </Form>
+            </form>
+          </Form>
+        </div>
       </DialogContent>
     </Dialog>
   )

@@ -84,21 +84,11 @@ export function UserManagementTable() {
       if (shouldGoToPreviousPage) {
         // Update the page first, then invalidate queries
         setCurrentPage((prev) => prev - 1)
-        // Invalidate with the new page number
-        setTimeout(() => {
-          queryClient.invalidateQueries({
-            queryKey: ["user-management-table"],
-            exact: false,
-          })
-        }, 0)
-      } else {
-        // Just invalidate the current query
-        queryClient.invalidateQueries({
-          queryKey: ["user-management-table", currentPage, rowsPerPage, searchQuery],
-          exact: true,
-        })
       }
-
+      queryClient.invalidateQueries({
+        queryKey: ["user-management-table"],
+        exact: false,
+      })
       setOpenDeleteModal(false)
       setSelectedItem(null)
     },
@@ -274,7 +264,7 @@ export function UserManagementTable() {
 
   // Handle change password
   const handleChangePassword = (item: UserManagement) => {
-    setSelectedItem(item)
+    fetchUserById(item.id)
     setIsEditing(true)
     setActiveTabOnOpen("basic-info")
     setIsDialogOpen(true)

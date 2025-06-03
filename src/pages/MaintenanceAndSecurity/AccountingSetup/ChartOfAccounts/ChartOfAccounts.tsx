@@ -10,7 +10,7 @@ import {
   DataTable,
   type ColumnDefinition,
   type FilterDefinition,
-} from "@/components/data-table/data-table";
+} from "@/components/data-table/data-table-coa";
 import { DdeleteDialog } from "./DeleteCOADialog";
 import { AddEditAccountDialog } from "./AddAccountDialog";
 
@@ -211,8 +211,7 @@ export default function ChartOfAccounts() {
       try {
         if (!accounts || accounts.length === 0) {
           toast.error("No Data to Export", {
-            description:
-              "No entries available for CSV export.",
+            description: "No entries available for CSV export.",
             duration: 5000,
           });
           return;
@@ -273,14 +272,15 @@ export default function ChartOfAccounts() {
   };
 
   const handlePdfExport = useCallback(async () => {
-      if (!accounts || accounts.length === 0) {
-          toast.error("No Data to Export", {
-            description:
-              "No entries available for PDF export.",
-            duration: 5000,
-          });
-          return;
-        }
+    // Check if there's actual data to export
+    if (!accounts || accounts.length === 0) {
+      toast.error("No Data to Export", {
+        description: "No entries available for PDF export.",
+        duration: 5000,
+      });
+      return;
+    }
+
     setIsExporting(true);
     try {
       const url = await exportPdf();
@@ -306,7 +306,7 @@ export default function ChartOfAccounts() {
     } finally {
       setIsExporting(false);
     }
-  }, []);
+  }, [accounts]);
 
   const fetchAccounts = async () => {
     setLoading(true);
@@ -370,7 +370,7 @@ export default function ChartOfAccounts() {
       enableSorting: true,
     },
     {
-      id: "major_classification",
+      id: "major_classification_code",
       header: "Classification",
       accessorKey: "major_classification",
       enableSorting: true,
@@ -378,7 +378,7 @@ export default function ChartOfAccounts() {
         <Badge
           variant="outline"
           className={getClassificationBadgeColor(
-            account.special_classification
+            account.major_classification.code
           )}
         >
           {account.major_classification.name}
@@ -434,37 +434,19 @@ export default function ChartOfAccounts() {
       ),
     },
   ];
+
   const filters: FilterDefinition[] = [
     {
-      id: "accountType",
+      id: "major_classification_code",
       label: "Filter by Classification",
       placeholder: "Select...",
       type: "select",
       options: [
-        { label: "Regular account", value: "regular account" },
-        { label: "Cash account", value: "cash account" },
-        { label: "Cash in bank account", value: "cash in bank account" },
-        { label: "Receivable account", value: "receivable account" },
-        { label: "Payable account", value: "payable account" },
-        { label: "Allowance for bad debts", value: "allowance for bad debts" },
-        {
-          label: "Properties and equipment",
-          value: "properties and equipment",
-        },
-        {
-          label: "Accumulated depreciation",
-          value: "accumulated depreciation",
-        },
-        {
-          label: "Accumulated amortization",
-          value: "accumulated amortization",
-        },
-        { label: "Cost of sales", value: "cost of sales" },
-        { label: "Sales debits", value: "sales debits" },
-        { label: "Sales", value: "sales" },
-        { label: "Sales discount", value: "sales discount" },
-        { label: "Other income", value: "other income" },
-        { label: "Retained income", value: "retained income" },
+        { label: "Assets", value: "1" },
+        { label: "Liabilities", value: "2" },
+        { label: "Owner's Equity", value: "3" },
+        { label: "Revenue", value: "4" },
+        { label: "Expenses", value: "5" },
       ],
     },
   ];
@@ -595,14 +577,14 @@ export default function ChartOfAccounts() {
       console.error("Error deleting account:", err);
       const apiError = err as { response?: { data?: ApiErrorResponse } };
 
-  const errorMessage =
-    apiError.response?.data?.message ||
-    err.message ||
-    "An error occurred while deleting the account";
+      const errorMessage =
+        apiError.response?.data?.message ||
+        err.message ||
+        "An error occurred while deleting the account";
 
-  toast.error("Failed to delete account", {
-    description: errorMessage,
-  });
+      toast.error("Unable to delete", {
+        description: errorMessage,
+      });
     } finally {
       setDeleteDialogOpen(false);
       setAccountToDelete(null);
@@ -627,7 +609,7 @@ export default function ChartOfAccounts() {
             </div>
             <div>
               <h2 className="text-sm font-medium">
-                Chart of Accounts Maangement
+                Chart of Accounts Management
               </h2>
               <p className="text-sm text-muted-foreground">
                 Add, edit, and delete accounts in your chart of accounts.

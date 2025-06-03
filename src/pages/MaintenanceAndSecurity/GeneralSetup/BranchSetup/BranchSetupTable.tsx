@@ -65,20 +65,12 @@ export function BranchSetupTable() {
       if (shouldGoToPreviousPage) {
         // Update the page first, then invalidate queries
         setCurrentPage((prev) => prev - 1)
-        // Invalidate with the new page number
-        setTimeout(() => {
-          queryClient.invalidateQueries({
-            queryKey: ["branch-setup-table"],
-            exact: false,
-          })
-        }, 0)
-      } else {
-        // Just invalidate the current query
-        queryClient.invalidateQueries({
-          queryKey: ["branch-setup-table", currentPage, rowsPerPage, searchQuery],
-          exact: true,
-        })
       }
+      
+      queryClient.invalidateQueries({
+        queryKey: ["branch-setup-table"],
+        exact: false,
+      })
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to delete branch")

@@ -60,7 +60,7 @@ export function SalaryLoanTable() {
     onSuccess: (csvData: Blob) => {
       try {
         const currentDate = new Date().toISOString().split("T")[0]
-        downloadFile(csvData, `Salary Loans ${currentDate}.csv`)
+        downloadFile(csvData, `Salary Loan ${currentDate}.csv`)
         toast.success("CSV generated successfully")
       } catch (error: unknown) {
         console.error(error);
@@ -91,6 +91,12 @@ export function SalaryLoanTable() {
       id: "interest_rate",
       header: "Interest Rate",
       accessorKey: "interest_rate",
+      cell: (item) => {
+        const rate = item.interest_rate;
+        if (rate == null) return "-";
+        const parsed = parseFloat(rate);
+        return Number.isInteger(parsed) ? `${parsed}%` : `${parsed.toFixed(2)}%`;
+      },
       enableSorting: true,
     },
     {

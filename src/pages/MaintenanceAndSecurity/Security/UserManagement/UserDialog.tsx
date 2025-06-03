@@ -21,7 +21,6 @@ import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialo
 import type { ColumnDefinition } from "@/components/data-table/data-table"
 import { format, parseISO } from "date-fns"
 import ReactSelect from "react-select"
-import { DateRangePicker } from "@/components/date-range-picker"
 
 // Define the form schema with Zod
 const formSchema = (isEditing: boolean) =>
@@ -33,14 +32,16 @@ const formSchema = (isEditing: boolean) =>
       position: z.string().min(1, "Position is required"),
       branches: z.array(z.object({ id: z.string(), name: z.string() })).min(1, "At least one branch is required"),
       email: z.string().email("Invalid email address"),
-      mobile: z.string()
-      .min(11, "Mobile number must be 11 digits")
-      .max(11, "Mobile number must be 11 digits")
-      .regex(/^\d+$/, "Mobile number must contain only digits"),
+      mobile: z
+        .string()
+        .min(11, "Mobile number must be 11 digits")
+        .max(11, "Mobile number must be 11 digits")
+        .regex(/^\d+$/, "Mobile number must contain only digits"),
       password: isEditing ? z.string().optional() : z.string().min(16, "Password must be at least 16 characters"),
       password_confirmation: z.string().optional(),
       status: z.boolean(),
-      inactive_period: z.string().optional(),
+      inactive_from: z.string().optional(),
+      inactive_to: z.string().optional(),
       special_approver: z.boolean(),
       loan_approver: z.boolean(),
       disbursement_approver: z.boolean(),
@@ -60,7 +61,6 @@ const formSchema = (isEditing: boolean) =>
         if (data.password && data.password_confirmation) {
           return data.password === data.password_confirmation
         }
-
         return true
       },
       {
@@ -74,12 +74,50 @@ const formSchema = (isEditing: boolean) =>
         if (!isEditing && data.password && !data.password_confirmation) {
           return false
         }
-
         return true
       },
       {
         message: "Password confirmation is required",
         path: ["password_confirmation"],
+      },
+    )
+    .refine(
+      (data) => {
+        // If inactive_to is filled but inactive_from is not, show error on inactive_from
+        if (data.inactive_to && !data.inactive_from) {
+          return false
+        }
+        return true
+      },
+      {
+        message: "Inactive from date is required when inactive to date is set",
+        path: ["inactive_from"],
+      },
+    )
+    .refine(
+      (data) => {
+        // If inactive_from is filled but inactive_to is not, show error on inactive_to
+        if (data.inactive_from && !data.inactive_to) {
+          return false
+        }
+        return true
+      },
+      {
+        message: "Inactive to date is required when inactive from date is set",
+        path: ["inactive_to"],
+      },
+    )
+    .refine(
+      (data) => {
+        // If both dates are filled, inactive_from must be before inactive_to
+        if (data.inactive_from && data.inactive_to) {
+          return new Date(data.inactive_from) < new Date(data.inactive_to)
+        }
+        return true
+      },
+      {
+        message: "Inactive from date must be before inactive to date",
+        path: ["inactive_to"],
       },
     )
 
@@ -109,6 +147,7 @@ export function UserDialog({
   const [devicesData, setDevicesData] = useState<UserDevice[]>([])
   const [selectedDevice, setSelectedDevice] = useState<UserDevice | null>(null)
   const [openDeleteModal, setOpenDeleteModal] = useState(false)
+  const [serverErrors, setServerErrors] = useState<Record<string, string[]>>({})
   const queryClient = useQueryClient()
 
   // Fetch user code mutation
@@ -162,9 +201,15 @@ export function UserDialog({
       queryClient.invalidateQueries({ queryKey: ["user-management-table"] })
       onSuccess?.()
       onOpenChange(false)
+      setServerErrors({})
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to create user")
+      // Handle server validation errors
+      if (error.response?.data?.errors) {
+        setServerErrors(error.response.data.errors)
+      } else {
+        toast.error(error.message || "Failed to create user")
+      }
     },
   })
 
@@ -176,9 +221,15 @@ export function UserDialog({
       queryClient.invalidateQueries({ queryKey: ["user-management-table"] })
       onSuccess?.()
       onOpenChange(false)
+      setServerErrors({})
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to update user")
+      // Handle server validation errors
+      if (error.response?.data?.errors) {
+        setServerErrors(error.response.data.errors)
+      } else {
+        toast.error(error.message || "Failed to update user")
+      }
     },
   })
 
@@ -211,7 +262,8 @@ export function UserDialog({
       password: "",
       password_confirmation: "",
       status: true,
-      inactive_period: "",
+      inactive_from: "",
+      inactive_to: "",
       special_approver: false,
       loan_approver: false,
       disbursement_approver: false,
@@ -225,6 +277,7 @@ export function UserDialog({
   useEffect(() => {
     if (open) {
       setActiveTab(activeTabOnOpen)
+      setServerErrors({}) // Clear server errors when opening dialog
       fetchBranches()
 
       if (isEditing && item) {
@@ -246,7 +299,8 @@ export function UserDialog({
           password: "",
           password_confirmation: "",
           status: item.status ?? true,
-          inactive_period: item.inactive_period || "",
+          inactive_from: item.inactive_from || "",
+          inactive_to: item.inactive_to || "",
           special_approver: item.special_approver ?? false,
           loan_approver: item.loan_approver ?? false,
           disbursement_approver: item.disbursement_approver ?? false,
@@ -279,7 +333,8 @@ export function UserDialog({
           password: "",
           password_confirmation: "",
           status: true,
-          inactive_period: "",
+          inactive_from: "",
+          inactive_to: "",
           special_approver: false,
           loan_approver: false,
           disbursement_approver: false,
@@ -323,9 +378,9 @@ export function UserDialog({
   useEffect(() => {
     if (!open) {
       setActiveTab("basic-info") // Reset to basic-info when dialog closes
-      // Also reset delete modal state when main dialog closes
       setOpenDeleteModal(false)
       setSelectedDevice(null)
+      setServerErrors({}) // Clear server errors when dialog closes
     }
   }, [open])
 
@@ -333,8 +388,32 @@ export function UserDialog({
     return branchesData ?? []
   }, [branchesData])
 
+  // Helper function to get server error for a field
+  const getServerError = (fieldName: string): string | undefined => {
+    return serverErrors[fieldName]?.[0]
+  }
+
+  // Helper function to check if field has any error (server or zod)
+  const hasFieldError = (fieldName: string, fieldState: any): boolean => {
+    return !!getServerError(fieldName) || !!fieldState.invalid
+  }
+
+  // Helper function to clear server error for a specific field
+  const clearServerError = (fieldName: string) => {
+    if (serverErrors[fieldName]) {
+      setServerErrors((prev) => {
+        const newErrors = { ...prev }
+        delete newErrors[fieldName]
+        return newErrors
+      })
+    }
+  }
+
   // Handle form submission
   const handleSubmit = (values: FormValues) => {
+    // Clear previous server errors
+    setServerErrors({})
+
     const payload = {
       code: values.code,
       username: values.username,
@@ -351,13 +430,15 @@ export function UserDialog({
       password: values.password ?? "",
       password_confirmation: values.password_confirmation ?? "",
       branches: values.branches.map((branch) => branch.id),
+      inactive_from: values.inactive_from || "",
+      inactive_to: values.inactive_to || "",
       access_schedules: values.access_schedules
         .filter((schedule) => schedule.start_time && schedule.end_time)
         .map((schedule) => ({
           day_of_week: schedule.day_of_week,
           start_time: schedule.start_time!,
           end_time: schedule.end_time!,
-        })),
+        })),  
     }
 
     if (isEditing && item) {
@@ -392,7 +473,7 @@ export function UserDialog({
     { key: "thursday", label: "Thursday", dayOfWeek: 4 },
     { key: "friday", label: "Friday", dayOfWeek: 5 },
     { key: "saturday", label: "Saturday", dayOfWeek: 6 },
-    { key: "sunday", label: "Sunday", dayOfWeek: 0 },
+    { key: "sunday", label: "Sunday", dayOfWeek: 7 },
   ] as const
 
   const toggleSchedule = (dayOfWeek: number, enabled: boolean) => {
@@ -409,6 +490,10 @@ export function UserDialog({
         form.setValue(`access_schedules.${scheduleIndex}.start_time`, undefined)
         form.setValue(`access_schedules.${scheduleIndex}.end_time`, undefined)
       }
+    } else {
+      form.setValue(`access_schedules.${dayOfWeek - 1}.day_of_week`, dayOfWeek)
+      form.setValue(`access_schedules.${dayOfWeek - 1}.start_time`, "08:00:00")
+      form.setValue(`access_schedules.${dayOfWeek - 1}.end_time`, "17:00:00")
     }
   }
 
@@ -600,30 +685,58 @@ export function UserDialog({
                       <FormField
                         control={form.control}
                         name="code"
-                        render={({ field }) => (
+                        render={({ field, fieldState }) => (
                           <FormItem className="flex flex-col flex-1 space-y-1">
-                            <FormLabel className="text-sm">
+                            <FormLabel className={`text-sm ${hasFieldError("code", fieldState) ? "text-red-500" : ""}`}>
                               User ID <span className="text-red-500">*</span>
                             </FormLabel>
                             <FormControl>
-                              <Input {...field} disabled className="focus-visible:outline-none bg-gray-50" />
+                              <Input
+                                {...field}
+                                disabled
+                                className={`focus-visible:outline-none bg-gray-50 ${hasFieldError("code", fieldState) ? "border-red-500" : ""}`}
+                                onChange={(e) => {
+                                  field.onChange(e)
+                                  clearServerError("code")
+                                }}
+                              />
                             </FormControl>
-                            <FormMessage />
+                            {/* Show server error with priority, otherwise show Zod error */}
+                            {getServerError("code") ? (
+                              <p className="text-sm text-red-500">{getServerError("code")}</p>
+                            ) : (
+                              <FormMessage />
+                            )}
                           </FormItem>
                         )}
                       />
                       <FormField
                         control={form.control}
                         name="username"
-                        render={({ field }) => (
+                        render={({ field, fieldState }) => (
                           <FormItem className="flex flex-col flex-1 space-y-1">
-                            <FormLabel className="text-sm">
+                            <FormLabel
+                              className={`text-sm ${hasFieldError("username", fieldState) ? "text-red-500" : ""}`}
+                            >
                               Username<span className="text-red-500">*</span>
                             </FormLabel>
                             <FormControl>
-                              <Input placeholder="Enter Username" {...field} className="focus-visible:outline-none" />
+                              <Input
+                                placeholder="Enter Username"
+                                {...field}
+                                className={`focus-visible:outline-none ${hasFieldError("username", fieldState) ? "border-red-500" : ""}`}
+                                onChange={(e) => {
+                                  field.onChange(e)
+                                  clearServerError("username")
+                                }}
+                              />
                             </FormControl>
-                            <FormMessage />
+                            {/* Show server error with priority, otherwise show Zod error */}
+                            {getServerError("username") ? (
+                              <p className="text-sm text-red-500">{getServerError("username")}</p>
+                            ) : (
+                              <FormMessage />
+                            )}
                           </FormItem>
                         )}
                       />
@@ -632,15 +745,30 @@ export function UserDialog({
                     <FormField
                       control={form.control}
                       name="full_name"
-                      render={({ field }) => (
+                      render={({ field, fieldState }) => (
                         <FormItem>
-                          <FormLabel className="text-sm">
+                          <FormLabel
+                            className={`text-sm ${hasFieldError("full_name", fieldState) ? "text-red-500" : ""}`}
+                          >
                             Name <span className="text-red-500">*</span>
                           </FormLabel>
                           <FormControl>
-                            <Input placeholder="Enter name" {...field} className="focus-visible:outline-none" />
+                            <Input
+                              placeholder="Enter name"
+                              {...field}
+                              className={`focus-visible:outline-none ${hasFieldError("full_name", fieldState) ? "border-red-500" : ""}`}
+                              onChange={(e) => {
+                                field.onChange(e)
+                                clearServerError("full_name")
+                              }}
+                            />
                           </FormControl>
-                          <FormMessage />
+                          {/* Show server error with priority, otherwise show Zod error */}
+                          {getServerError("full_name") ? (
+                            <p className="text-sm text-red-500">{getServerError("full_name")}</p>
+                          ) : (
+                            <FormMessage />
+                          )}
                         </FormItem>
                       )}
                     />
@@ -651,15 +779,21 @@ export function UserDialog({
                         name="position"
                         render={({ field, fieldState }) => (
                           <FormItem className="flex flex-col flex-1 space-y-1">
-                            <FormLabel className="text-sm">
+                            <FormLabel
+                              className={`text-sm ${hasFieldError("position", fieldState) ? "text-red-500" : ""}`}
+                            >
                               Position <span className="text-red-500">*</span>
                             </FormLabel>
                             <FormControl>
-                              <Select onValueChange={field.onChange} value={field.value}>
+                              <Select
+                                onValueChange={(value) => {
+                                  field.onChange(value)
+                                  clearServerError("position")
+                                }}
+                                value={field.value}
+                              >
                                 <SelectTrigger
-                                  className={`w-full ${
-                                    fieldState.invalid ? "border border-red-500 focus:ring-red-500" : ""
-                                  }`}
+                                  className={`w-full ${hasFieldError("position", fieldState) ? "border border-red-500 focus:ring-red-500" : ""}`}
                                 >
                                   <SelectValue placeholder="Select..." />
                                 </SelectTrigger>
@@ -686,7 +820,12 @@ export function UserDialog({
                                 </SelectContent>
                               </Select>
                             </FormControl>
-                            <FormMessage />
+                            {/* Show server error with priority, otherwise show Zod error */}
+                            {getServerError("position") ? (
+                              <p className="text-sm text-red-500">{getServerError("position")}</p>
+                            ) : (
+                              <FormMessage />
+                            )}
                           </FormItem>
                         )}
                       />
@@ -696,7 +835,9 @@ export function UserDialog({
                         name="branches"
                         render={({ field, fieldState }) => (
                           <FormItem className="flex flex-col flex-1 space-y-1">
-                            <FormLabel className="text-sm">
+                            <FormLabel
+                              className={`text-sm ${hasFieldError("branches", fieldState) ? "text-red-500" : ""}`}
+                            >
                               Branch <span className="text-red-500">*</span>
                             </FormLabel>
                             <FormControl>
@@ -718,15 +859,16 @@ export function UserDialog({
                                     name: option.label,
                                   }))
                                   field.onChange(selectedBranches)
+                                  clearServerError("branches")
                                 }}
                                 placeholder="Select branches..."
                                 classNamePrefix="react-select"
-                                className={fieldState.invalid ? "border-red-500" : ""}
+                                className={hasFieldError("branches", fieldState) ? "border-red-500" : ""}
                                 styles={{
                                   control: (provided, state) => ({
                                     ...provided,
                                     minHeight: "36px",
-                                    border: fieldState.invalid
+                                    border: hasFieldError("branches", fieldState)
                                       ? "1px solid red"
                                       : state.isFocused
                                         ? "1px solid #3b82f6"
@@ -736,11 +878,11 @@ export function UserDialog({
                                     boxShadow: state.isFocused ? "0 0 0 1px #3b82f6" : "none",
                                     backgroundColor: state.isFocused ? "#fff" : "#fff",
                                     "&:hover": {
-                                      backgroundColor: "#f3f4f6", // bg-gray-100
-                                      borderColor: fieldState.invalid ? "red" : "#9ca3af",
+                                      backgroundColor: "#f3f4f6",
+                                      borderColor: hasFieldError("branches", fieldState) ? "red" : "#9ca3af",
                                     },
                                     "&:active": {
-                                      backgroundColor: "#f3f4f6", // bg-gray-100
+                                      backgroundColor: "#f3f4f6",
                                     },
                                     fontSize: "14px",
                                   }),
@@ -754,7 +896,7 @@ export function UserDialog({
                                     backgroundColor: state.isFocused || state.isSelected ? "#f3f4f6" : "#fff",
                                     color: "#111827",
                                     cursor: "pointer",
-                                    fontWeight: "400"
+                                    fontWeight: "400",
                                   }),
                                   multiValue: (provided) => ({
                                     ...provided,
@@ -781,7 +923,12 @@ export function UserDialog({
                                 }}
                               />
                             </FormControl>
-                            <FormMessage />
+                            {/* Show server error with priority, otherwise show Zod error */}
+                            {getServerError("branches") ? (
+                              <p className="text-sm text-red-500">{getServerError("branches")}</p>
+                            ) : (
+                              <FormMessage />
+                            )}
                           </FormItem>
                         )}
                       />
@@ -791,19 +938,30 @@ export function UserDialog({
                       <FormField
                         control={form.control}
                         name="email"
-                        render={({ field }) => (
+                        render={({ field, fieldState }) => (
                           <FormItem className="flex flex-col flex-1 space-y-1">
-                            <FormLabel className="text-sm">
+                            <FormLabel
+                              className={`text-sm ${hasFieldError("email", fieldState) ? "text-red-500" : ""}`}
+                            >
                               Email <span className="text-red-500">*</span>
                             </FormLabel>
                             <FormControl>
                               <Input
                                 placeholder="Add email address"
                                 {...field}
-                                className="focus-visible:outline-none"
+                                className={`focus-visible:outline-none ${hasFieldError("email", fieldState) ? "border-red-500" : ""}`}
+                                onChange={(e) => {
+                                  field.onChange(e)
+                                  clearServerError("email")
+                                }}
                               />
                             </FormControl>
-                            <FormMessage />
+                            {/* Show server error with priority, otherwise show Zod error */}
+                            {getServerError("email") ? (
+                              <p className="text-sm text-red-500">{getServerError("email")}</p>
+                            ) : (
+                              <FormMessage />
+                            )}
                           </FormItem>
                         )}
                       />
@@ -811,9 +969,11 @@ export function UserDialog({
                         control={form.control}
                         name="mobile"
                         rules={{ pattern: /^[0-9]+$/, required: "Contact number is required" }}
-                        render={({ field }) => (
+                        render={({ field, fieldState }) => (
                           <FormItem className="flex flex-col flex-1 space-y-1">
-                            <FormLabel className="text-sm">
+                            <FormLabel
+                              className={`text-sm ${hasFieldError("mobile", fieldState) ? "text-red-500" : ""}`}
+                            >
                               Mobile Number <span className="text-red-500">*</span>
                             </FormLabel>
                             <FormControl>
@@ -824,11 +984,17 @@ export function UserDialog({
                                 onChange={(e) => {
                                   const digitsOnly = e.target.value.replace(/\D/g, "")
                                   field.onChange(digitsOnly)
+                                  clearServerError("mobile")
                                 }}
-                                className="focus-visible:outline-none"
+                                className={`focus-visible:outline-none ${hasFieldError("mobile", fieldState) ? "border-red-500" : ""}`}
                               />
                             </FormControl>
-                            <FormMessage />
+                            {/* Show server error with priority, otherwise show Zod error */}
+                            {getServerError("mobile") ? (
+                              <p className="text-sm text-red-500">{getServerError("mobile")}</p>
+                            ) : (
+                              <FormMessage />
+                            )}
                           </FormItem>
                         )}
                       />
@@ -858,9 +1024,11 @@ export function UserDialog({
                         <FormField
                           control={form.control}
                           name="password"
-                          render={({ field }) => (
+                          render={({ field, fieldState }) => (
                             <FormItem className="flex flex-col flex-1 space-y-1">
-                              <FormLabel className="text-sm">
+                              <FormLabel
+                                className={`text-sm ${hasFieldError("password", fieldState) ? "text-red-500" : ""}`}
+                              >
                                 Password {!isEditing && <span className="text-red-500">*</span>}
                               </FormLabel>
                               <FormControl>
@@ -868,19 +1036,30 @@ export function UserDialog({
                                   placeholder="Enter Password"
                                   type="password"
                                   {...field}
-                                  className="focus-visible:outline-none"
+                                  className={`focus-visible:outline-none ${hasFieldError("password", fieldState) ? "border-red-500" : ""}`}
+                                  onChange={(e) => {
+                                    field.onChange(e)
+                                    clearServerError("password")
+                                  }}
                                 />
                               </FormControl>
-                              <FormMessage />
+                              {/* Show server error with priority, otherwise show Zod error */}
+                              {getServerError("password") ? (
+                                <p className="text-sm text-red-500">{getServerError("password")}</p>
+                              ) : (
+                                <FormMessage />
+                              )}
                             </FormItem>
                           )}
                         />
                         <FormField
                           control={form.control}
                           name="password_confirmation"
-                          render={({ field }) => (
+                          render={({ field, fieldState }) => (
                             <FormItem className="flex flex-col flex-1 space-y-1">
-                              <FormLabel className="text-sm">
+                              <FormLabel
+                                className={`text-sm ${hasFieldError("password_confirmation", fieldState) ? "text-red-500" : ""}`}
+                              >
                                 Confirm Password {!isEditing && <span className="text-red-500">*</span>}
                               </FormLabel>
                               <FormControl>
@@ -888,10 +1067,19 @@ export function UserDialog({
                                   placeholder="Confirm Password"
                                   type="password"
                                   {...field}
-                                  className="focus-visible:outline-none"
+                                  className={`focus-visible:outline-none ${hasFieldError("password_confirmation", fieldState) ? "border-red-500" : ""}`}
+                                  onChange={(e) => {
+                                    field.onChange(e)
+                                    clearServerError("password_confirmation")
+                                  }}
                                 />
                               </FormControl>
-                              <FormMessage />
+                              {/* Show server error with priority, otherwise show Zod error */}
+                              {getServerError("password_confirmation") ? (
+                                <p className="text-sm text-red-500">{getServerError("password_confirmation")}</p>
+                              ) : (
+                                <FormMessage />
+                              )}
                             </FormItem>
                           )}
                         />
@@ -924,28 +1112,96 @@ export function UserDialog({
                           )}
                         />
 
-                        <FormField
-                          control={form.control}
-                          name="inactive_period"
-                          render={({ field }) => (
-                            <FormItem className="w-full">
-                              <FormLabel className="text-sm">Inactive Period (Optional)</FormLabel>
-                              <FormControl className="w-full">
-                                {/* <Input
-                                  placeholder="mm / dd / yyyy - mm / dd / yyyy"
-                                  {...field}
-                                  className="focus-visible:outline-none"
-                                /> */}
-                                <DateRangePicker {...field} />
-                              </FormControl>
-                              <FormDescription>
-                                Set a date range to automatically mark the user as inactive. Useful for temporary
-                                suspensions or leaves of absence.
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        <div className="space-y-4">
+                          <FormLabel className="text-sm">Inactive Period (Optional)</FormLabel> 
+                          <div className="flex gap-4">
+                            <FormField
+                              control={form.control}
+                              name="inactive_from"
+                              render={({ field, fieldState }) => (
+                                <FormItem className="flex flex-col flex-1">
+                                  <FormLabel
+                                    className={`text-sm ${hasFieldError("inactive_from", fieldState) ? "text-red-500" : ""}`}
+                                  >
+                                    Inactive From
+                                  </FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      type="date"
+                                      {...field}
+                                      className={`
+                                        relative
+                                        [&::-webkit-calendar-picker-indicator]:absolute
+                                        [&::-webkit-calendar-picker-indicator]:right-3
+                                        [&::-webkit-calendar-picker-indicator]:top-1/2
+                                        [&::-webkit-calendar-picker-indicator]:-translate-y-1/2
+                                        [&::-webkit-calendar-picker-indicator]:cursor-pointer
+                                        [&::-webkit-calendar-picker-indicator]:text-black
+                                        focus-visible:outline-none 
+                                        ${hasFieldError("inactive_from", fieldState) ? "border-red-500" : ""}
+                                        `}
+                                      onChange={(e) => {
+                                        field.onChange(e)
+                                        clearServerError("inactive_from")
+                                      }}
+                                    />
+                                  </FormControl>
+                                  {/* Show server error with priority, otherwise show Zod error */}
+                                  {getServerError("inactive_from") ? (
+                                    <p className="text-sm text-red-500">{getServerError("inactive_from")}</p>
+                                  ) : (
+                                    <FormMessage />
+                                  )}
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={form.control}
+                              name="inactive_to"
+                              render={({ field, fieldState }) => (
+                                <FormItem className="flex flex-col flex-1">
+                                  <FormLabel
+                                    className={`text-sm ${hasFieldError("inactive_to", fieldState) ? "text-red-500" : ""}`}
+                                  >
+                                    Inactive To
+                                  </FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      type="date"
+                                      {...field}
+                                      className={`
+                                        relative
+                                        [&::-webkit-calendar-picker-indicator]:absolute
+                                        [&::-webkit-calendar-picker-indicator]:right-3
+                                        [&::-webkit-calendar-picker-indicator]:top-1/2
+                                        [&::-webkit-calendar-picker-indicator]:-translate-y-1/2
+                                        [&::-webkit-calendar-picker-indicator]:cursor-pointer
+                                        [&::-webkit-calendar-picker-indicator]:text-black
+                                        focus-visible:outline-none 
+                                        ${hasFieldError("inactive_to", fieldState) ? "border-red-500" : ""}
+                                        `}
+                                      onChange={(e) => {
+                                        field.onChange(e)
+                                        clearServerError("inactive_to")
+                                      }}
+                                    />
+                                  </FormControl>
+                                  {/* Show server error with priority, otherwise show Zod error */}
+                                  {getServerError("inactive_to") ? (
+                                    <p className="text-sm text-red-500">{getServerError("inactive_to")}</p>
+                                  ) : (
+                                    <FormMessage />
+                                  )}
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          <FormDescription>
+                            Set a date range to automatically mark the user as inactive. Useful for temporary
+                            suspensions or leaves of absence.
+                          </FormDescription>
+                        </div>
                       </div>
                     </div>
 

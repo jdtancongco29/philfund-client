@@ -125,10 +125,7 @@ export default function ReferenceManagement() {
     },
   ];
 
-  const filters: FilterDefinition[] = [
-
-];
-
+  const filters: FilterDefinition[] = [];
 
   const search: SearchDefinition = {
     title: "Search",
@@ -169,27 +166,23 @@ export default function ReferenceManagement() {
       resetTable();
       fetchReference();
     } catch (err) {
-     let errorMessage = "Failed to delete reference";
+      let errorMessage = "Failed to delete reference";
 
-    // Try to extract a more specific message from the error response
-    if (
-      typeof err === "object" &&
-      err !== null &&
-      "response" in err &&
-      typeof (err as any).response?.data?.message === "string"
-    ) {
-      errorMessage = (err as any).response.data.message;
-    } else if (err instanceof Error && err.message) {
-      errorMessage = err.message;
-    }
+      // Try to extract a more specific message from the error response
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "response" in err &&
+        typeof (err as any).response?.data?.message === "string"
+      ) {
+        errorMessage = (err as any).response.data.message;
+      } else if (err instanceof Error && err.message) {
+        errorMessage = err.message;
+      }
 
-    toast.error("Delete Failed", {
-      description: errorMessage,
-    });
-
-    toast.error("Delete Failed", {
-      description: errorMessage,
-    });
+      toast.error("Unable to delete", {
+        description: errorMessage,
+      });
     } finally {
       setDeleteDialogOpen(false);
     }
@@ -245,7 +238,6 @@ export default function ReferenceManagement() {
     }
   };
 
-  
   useEffect(() => {
     fetchReference();
     fetchModules();
@@ -253,8 +245,7 @@ export default function ReferenceManagement() {
 
   return (
     <>
-         
-        <div className="bg-white rounded-lg border p-4 mb-6">
+      <div className="bg-white rounded-lg border p-4 mb-6">
         <div className="flex items-start gap-3">
           <div className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
             <Info className="h-4 w-4" />
@@ -262,15 +253,14 @@ export default function ReferenceManagement() {
           <div>
             <h2 className="text-sm font-medium">Global Reference Data</h2>
             <p className="text-sm text-muted-foreground">
-              Reference settings defined here are globally accessible and applicable across all branches of the
-              application. Changes made here will affect all modules that use these references.
+              Reference settings defined here are globally accessible and
+              applicable across all branches of the application. Changes made
+              here will affect all modules that use these references.
             </p>
           </div>
         </div>
       </div>
 
-
-       
       <DataTable
         title="Reference Management"
         subtitle="Create, edit, and delete reference entries used throughout the system"

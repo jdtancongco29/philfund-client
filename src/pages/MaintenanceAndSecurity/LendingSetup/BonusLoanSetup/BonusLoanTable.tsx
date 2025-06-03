@@ -126,7 +126,24 @@ export function BonusLoanTable() {
       id: "max_rate",
       header: "Max Rate",
       accessorKey: "max_rate",
-      cell: (item) => item.max_rate == null ? "-" : item.max_rate,
+      cell: (item) => {
+        const rate = item.max_rate;
+        if (rate == null) return "-";
+        const parsed = parseFloat(rate);
+        return Number.isInteger(parsed) ? `${parsed}%` : `${parsed.toFixed(2)}%`;
+      },
+      enableSorting: true,
+    },
+    {
+      id: "surcharge_rate",
+      header: "Surcharge",
+      accessorKey: "surcharge_rate",
+      cell: (item) => {
+        const rate = item.surcharge_rate;
+        if (rate == null) return "-";
+        const parsed = parseFloat(rate);
+        return Number.isInteger(parsed) ? `${parsed}%` : `${parsed.toFixed(2)}%`;
+      },
       enableSorting: true,
     },
   ]

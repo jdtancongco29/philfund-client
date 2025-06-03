@@ -145,6 +145,7 @@ export const SalaryLoanSetupService = {
           useBranchId: true,
         }
       );
+      toast.success("Record successfully deleted");
       return response.data;
     } catch (error: any) {
       toast.error(error.response.data.message);

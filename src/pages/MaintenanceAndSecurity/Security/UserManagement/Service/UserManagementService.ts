@@ -37,15 +37,14 @@ export const UserManagementService = {
   },
 
   /**
-   * Get all users with paginationorder_by?: string,
-   * sort?: string
+   * Get all users with pagination
    */
   getAllUsers: async (
     page?: number,
     limit?: number,
     search?: string | null,
     order_by?: string | null,
-    sort?: string | null
+    sort?: string | null,
   ): Promise<ApiResponse<GetAllUserResponse>> => {
     const params = new URLSearchParams()
     if (page) params.append("page", page.toString())
@@ -89,8 +88,8 @@ export const UserManagementService = {
 
       return response.data
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || "Failed to create user"
-      throw new Error(errorMessage)
+      // Re-throw the error to preserve server validation errors structure
+      throw error
     }
   },
 
@@ -106,8 +105,8 @@ export const UserManagementService = {
       })
       return response.data
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || "Failed to update user"
-      throw new Error(errorMessage)
+      // Re-throw the error to preserve server validation errors structure
+      throw error
     }
   },
 

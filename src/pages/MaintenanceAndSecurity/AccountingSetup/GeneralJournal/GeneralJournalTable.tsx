@@ -545,7 +545,7 @@ export default function GeneralJournalTable() {
     } finally {
       setIsExporting(false);
     }
-  }, []);
+  }, [data]);
 
   return (
     <>

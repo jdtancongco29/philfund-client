@@ -264,7 +264,7 @@ export function UserManagementTable() {
 
   // Handle change password
   const handleChangePassword = (item: UserManagement) => {
-    setSelectedItem(item)
+    fetchUserById(item.id)
     setIsEditing(true)
     setActiveTabOnOpen("basic-info")
     setIsDialogOpen(true)

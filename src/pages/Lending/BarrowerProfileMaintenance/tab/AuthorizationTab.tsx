@@ -271,7 +271,7 @@ export function AuthorizationTab({ validationErrors = {}, onValidationChange }: 
                   value={currentPerson.validIdType} 
                   onValueChange={(value) => updateCurrentPerson('validIdType', value)}
                 >
-                  <SelectTrigger className={cn("mt-2", formErrors.validIdType && "border-red-500")}>
+                  <SelectTrigger className={cn("mt-2 w-full", formErrors.validIdType && "border-red-500")}>
                     <SelectValue placeholder="Select..." />
                   </SelectTrigger>
                   <SelectContent>

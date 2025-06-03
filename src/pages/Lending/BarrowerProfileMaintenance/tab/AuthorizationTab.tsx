@@ -143,10 +143,10 @@ export function AuthorizationTab() {
               </div>
             </div>
 
-            <div className="flex gap-2">
-              <Button variant="outline">Reset</Button>
-              <Button onClick={addAuthorizedPerson}>Add Person</Button>
-            </div>
+         <div className="flex justify-end gap-2">
+  <Button variant="outline">Reset</Button>
+  <Button onClick={addAuthorizedPerson}>Add Person</Button>
+</div>
           </div>
         </CardContent>
       </Card>

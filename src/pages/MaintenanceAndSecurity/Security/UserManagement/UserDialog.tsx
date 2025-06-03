@@ -430,15 +430,15 @@ export function UserDialog({
       password: values.password ?? "",
       password_confirmation: values.password_confirmation ?? "",
       branches: values.branches.map((branch) => branch.id),
-      inactive_from: values.inactive_from || undefined,
-      inactive_to: values.inactive_to || undefined,
+      inactive_from: values.inactive_from || "",
+      inactive_to: values.inactive_to || "",
       access_schedules: values.access_schedules
         .filter((schedule) => schedule.start_time && schedule.end_time)
         .map((schedule) => ({
           day_of_week: schedule.day_of_week,
           start_time: schedule.start_time!,
           end_time: schedule.end_time!,
-        })),
+        })),  
     }
 
     if (isEditing && item) {

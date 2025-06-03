@@ -193,7 +193,7 @@ export default function ChartOfAccounts() {
       if (response.ok) {
         const blob = await response.blob();
         const currentDate = new Date().toISOString().split("T")[0];
-        downloadFile(blob, `chart-of-accounts-${currentDate}.csv`);
+        downloadFile(blob, `Chart Of Accounts ${currentDate}.csv`);
 
         toast.success("CSV Export Successful", {
           description:
@@ -231,7 +231,7 @@ export default function ChartOfAccounts() {
         });
 
         const currentDate = new Date().toISOString().split("T")[0];
-        downloadFile(blob, `chart-of-accounts-${currentDate}.csv`);
+        downloadFile(blob, `Chart Of Accounts ${currentDate}.csv`);
 
         toast.success("CSV Export Successful", {
           description: `Chart of Accounts exported successfully (${accounts.length} entries).`,

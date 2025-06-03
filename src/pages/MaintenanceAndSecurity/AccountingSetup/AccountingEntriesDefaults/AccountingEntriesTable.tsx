@@ -315,7 +315,7 @@ export default function AccountEntriesTable() {
       if (response.ok) {
         const blob = await response.blob();
         const currentDate = new Date().toISOString().split("T")[0];
-        downloadFile(blob, `account-entries-${currentDate}.csv`);
+        downloadFile(blob, `Default Entries ${currentDate}.csv`);
 
         toast.success("CSV Export Successful", {
           description:
@@ -364,7 +364,7 @@ export default function AccountEntriesTable() {
         });
 
         const currentDate = new Date().toISOString().split("T")[0];
-        downloadFile(blob, `account-entries-${currentDate}.csv`);
+        downloadFile(blob, `Default Entries ${currentDate}.csv`);
 
         toast.success("CSV Export Successful", {
           description: `Account Entries exported successfully (${data.length} entries).`,

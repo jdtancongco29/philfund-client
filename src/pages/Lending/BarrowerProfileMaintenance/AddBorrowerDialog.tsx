@@ -91,6 +91,21 @@ export interface FormData {
   umid_type: string
   umid_card_no: string
   atm_bank_branch: string
+    authorizedPersons: AuthorizedPerson[]
+}
+interface AuthorizedPerson {
+  id: string
+  name: string
+  relationship: string
+  address: string
+  contactNumber: string
+  yearsKnown: string
+  validIdType: string
+  validIdNumber: string
+  placeIssued: string
+  dateIssued: Date | undefined
+  signature: File | null
+  photo: File | null
 }
 
 export interface ValidationErrors {
@@ -165,7 +180,7 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
     umid_type: "",
     umid_card_no: "",
     atm_bank_branch: "",
-
+  authorizedPersons: []
   })
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({})
 
@@ -400,7 +415,7 @@ const validateWorkInformation = (): boolean => {
       case "work-information":
         return validateWorkInformation()
       case "authorization":
-        return true
+        return validateAuthorization()
       case "philfund-cash-card":
         return true
       default:
@@ -468,6 +483,19 @@ const validateWorkInformation = (): boolean => {
     })
   }
 
+  
+
+  const validateAuthorization = (): boolean => {
+  const errors: ValidationErrors = {}
+
+  if (!formData.authorizedPersons || formData.authorizedPersons.length === 0) {
+    errors.authorization = "At least one authorized person is required"
+  }
+
+  setValidationErrors(errors)
+  return Object.keys(errors).length === 0
+}
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="!max-w-none w-[90vw] max-w-screen-2xl h-[75vh] flex flex-col overflow-y-auto">
@@ -521,7 +549,13 @@ const validateWorkInformation = (): boolean => {
             </TabsContent>
 
             <TabsContent value="authorization" className="mt-0 h-full">
-              <AuthorizationTab />
+               <AuthorizationTab 
+    validationErrors={validationErrors}
+    onValidationChange={() => {
+      // Update form data when authorized persons change
+      // This should be called from within AuthorizationTab when persons are added/removed
+    }}
+  />
             </TabsContent>
 
             <TabsContent value="philfund-cash-card" className="mt-0 h-full">

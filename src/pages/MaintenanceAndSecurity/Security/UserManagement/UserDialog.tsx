@@ -805,7 +805,7 @@ export function UserDialog({
                                     "Accounting Clerk",
                                     "Loan Officer",
                                     "Assistant Branch Manager",
-                                    "Branch Manager Executive",
+                                    "Branch Manager/ Executive",
                                     "Loans Executive",
                                     "Auditor",
                                     "Audit Manager",

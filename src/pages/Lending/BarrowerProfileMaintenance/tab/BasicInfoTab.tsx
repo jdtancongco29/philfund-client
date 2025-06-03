@@ -1,14 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import type { FormData, ValidationErrors } from "../AddBorrowerDialog"
@@ -22,7 +20,7 @@ interface BasicInfoTabProps {
 export function BasicInfoTab({ formData, validationErrors, onUpdateFormData }: BasicInfoTabProps) {
   const [dateOfDeath, setDateOfDeath] = useState<Date>()
 
-  // Calculate age when birth date changes
+
   useEffect(() => {
     if (formData.birthDate) {
       const today = new Date()
@@ -52,7 +50,7 @@ export function BasicInfoTab({ formData, validationErrors, onUpdateFormData }: B
     <div className="space-y-8 p-6">
       <div className="grid gap-5">
         <div>
-          <Label htmlFor="risk-level">Risk Level</Label>
+          <Label htmlFor="risk">Risk Level</Label>
           <Select value={formData.riskLevel} onValueChange={(value) => handleInputChange("riskLevel", value)}>
             <SelectTrigger className={cn("w-88 mt-2", getFieldError("riskLevel") && "border-red-500")}>
               <SelectValue placeholder="Select..." />
@@ -65,6 +63,9 @@ export function BasicInfoTab({ formData, validationErrors, onUpdateFormData }: B
             </SelectContent>
           </Select>
           {getFieldError("riskLevel") && <p className="text-sm text-red-500 mt-1">{getFieldError("riskLevel")}</p>}
+
+
+  
         </div>
 
         <div className="grid grid-cols-3 gap-6">
@@ -150,29 +151,24 @@ export function BasicInfoTab({ formData, validationErrors, onUpdateFormData }: B
         <div className="grid grid-cols-3 gap-6">
           <div>
             <Label>Birth Date *</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal mt-2",
-                    !formData.birthDate && "text-muted-foreground",
-                    getFieldError("birthDate") && "border-red-500",
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.birthDate ? format(formData.birthDate, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={formData.birthDate}
-                  onSelect={(date) => handleInputChange("birthDate", date)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+               <Input
+                    type="date"
+                    className={` mt-2
+                    pr-10
+                    relative
+                    [&::-webkit-calendar-picker-indicator]:absolute
+                    [&::-webkit-calendar-picker-indicator]:right-3
+                    [&::-webkit-calendar-picker-indicator]:top-1/2
+                    [&::-webkit-calendar-picker-indicator]:-translate-y-1/2
+                    [&::-webkit-calendar-picker-indicator]:cursor-pointer
+                    [&::-webkit-calendar-picker-indicator]:text-black
+                    ${getFieldError("birthDate") ? "border-red-500" : ""}
+                  `}
+                                    style={{
+                                      colorScheme: "light",
+                                    }}
+                                  />
+            
             {getFieldError("birthDate") && <p className="text-sm text-red-500 mt-1">{getFieldError("birthDate")}</p>}
           </div>
           <div>
@@ -263,17 +259,26 @@ export function BasicInfoTab({ formData, validationErrors, onUpdateFormData }: B
               <Label>Date of Death</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal mt-2",
-                      !dateOfDeath && "text-muted-foreground",
-                      getFieldError("dateOfDeath") && "border-red-500",
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateOfDeath ? format(dateOfDeath, "PPP") : <span>Select Date</span>}
-                  </Button>
+                 <Input
+                    type="date"
+                    onFocus={(e) => e.target.blur()}
+                    value={ dateOfDeath ? format(dateOfDeath, "yyyy-MM-dd") : ""}
+                    className={` mt-2
+                    pr-10
+                    relative
+                    [&::-webkit-calendar-picker-indicator]:absolute
+                    [&::-webkit-calendar-picker-indicator]:right-3
+                    [&::-webkit-calendar-picker-indicator]:top-1/2
+                    [&::-webkit-calendar-picker-indicator]:-translate-y-1/2
+                    [&::-webkit-calendar-picker-indicator]:cursor-pointer
+                    [&::-webkit-calendar-picker-indicator]:text-black
+                    ${getFieldError("dateOfDeath") ? "border-red-500" : ""}
+                  `}
+                                    style={{
+                                      colorScheme: "light",
+                                    }}
+                                  />
+               
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
                   <Calendar mode="single" selected={dateOfDeath} onSelect={setDateOfDeath} initialFocus />

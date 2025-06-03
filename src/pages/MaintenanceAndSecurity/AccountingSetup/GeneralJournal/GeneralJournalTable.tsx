@@ -369,7 +369,7 @@ export default function GeneralJournalTable() {
       if (response.ok) {
         const blob = await response.blob();
         const currentDate = new Date().toISOString().split("T")[0];
-        downloadFile(blob, `general-journal-${currentDate}.csv`);
+        downloadFile(blob, `General Journal ${currentDate}.csv`);
 
         toast.success("CSV Export Successful", {
           description: "General Journal has been exported to CSV successfully.",
@@ -416,7 +416,7 @@ export default function GeneralJournalTable() {
         });
 
         const currentDate = new Date().toISOString().split("T")[0];
-        downloadFile(blob, `general-journal-${currentDate}.csv`);
+        downloadFile(blob, `General Journal ${currentDate}.csv`);
 
         toast.success("CSV Export Successful", {
           description: `General Journal exported successfully (${data.length} entries).`,

@@ -374,7 +374,7 @@ export default function BankAccountsTable() {
       if (response.ok) {
         const blob = await response.blob();
         const currentDate = new Date().toISOString().split("T")[0];
-        downloadFile(blob, `bank-accounts-${currentDate}.csv`);
+        downloadFile(blob, `Banks ${currentDate}.csv`);
 
         toast.success("CSV Export Successful", {
           description: "Bank Accounts have been exported to CSV successfully.",
@@ -421,7 +421,7 @@ export default function BankAccountsTable() {
         });
 
         const currentDate = new Date().toISOString().split("T")[0];
-        downloadFile(blob, `bank-accounts-${currentDate}.csv`);
+        downloadFile(blob, `Banks ${currentDate}.csv`);
 
         toast.success("CSV Export Successful", {
           description: `Bank Accounts exported successfully (${item.length} entries).`,

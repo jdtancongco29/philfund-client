@@ -92,6 +92,10 @@ export interface FormData {
   umid_card_no: string
   atm_bank_branch: string
     authorizedPersons: AuthorizedPerson[]
+    bankName: string
+  cardNumber: string
+  accountNumber: string
+  cardExpiryDate: Date | undefined
 }
 interface AuthorizedPerson {
   id: string
@@ -180,7 +184,11 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
     umid_type: "",
     umid_card_no: "",
     atm_bank_branch: "",
-  authorizedPersons: []
+  authorizedPersons: [],
+    bankName: "",
+  cardNumber: "",
+  accountNumber: "",
+  cardExpiryDate: undefined,
   })
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({})
 
@@ -239,6 +247,43 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
     setValidationErrors(errors)
     return Object.keys(errors).length === 0
   }
+
+  const validatePhilfundCashCard = (): boolean => {
+  const errors: ValidationErrors = {}
+
+  if (!formData.bankName.trim()) {
+    errors.bankName = "Cash Card Bank name is required"
+  }
+  
+  if (!formData.cardNumber.trim()) {
+    errors.cardNumber = "Cash card number is required"
+  } else if (formData.cardNumber.length < 10) {
+    errors.cardNumber = "Card number must be at least 10 digits"
+  }
+  
+  if (!formData.accountNumber.trim()) {
+    errors.accountNumber = "Account number is required"
+  } else if (formData.accountNumber.length < 8) {
+    errors.accountNumber = "Account number must be at least 8 digits"
+  }
+  
+  if (!formData.cardExpiryDate) {
+    errors.cardExpiryDate = "Cash card expiry date is required"
+  } else {
+    // Check if the card is not expired
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const expiryDate = new Date(formData.cardExpiryDate)
+    expiryDate.setHours(0, 0, 0, 0)
+    
+    if (expiryDate <= today) {
+      errors.cardExpiryDate = "Card expiry date must be in the future"
+    }
+  }
+
+  setValidationErrors(errors)
+  return Object.keys(errors).length === 0
+}
 
   const validateDependents = (): boolean => {
     const errors: ValidationErrors = {}
@@ -417,7 +462,7 @@ const validateWorkInformation = (): boolean => {
       case "authorization":
         return validateAuthorization()
       case "philfund-cash-card":
-        return true
+        return validatePhilfundCashCard()
       default:
         return true
     }
@@ -559,7 +604,16 @@ const validateWorkInformation = (): boolean => {
             </TabsContent>
 
             <TabsContent value="philfund-cash-card" className="mt-0 h-full">
-              <PhilfundCashCardTab />
+               <PhilfundCashCardTab
+    formData={{
+      bankName: formData.bankName,
+      cardNumber: formData.cardNumber,
+      accountNumber: formData.accountNumber,
+      cardExpiryDate: formData.cardExpiryDate
+    }}
+    validationErrors={validationErrors}
+    onUpdateFormData={(data) => updateFormData(data)}
+  />
             </TabsContent>
 
             <TabsContent value="verification" className="mt-0 h-full">

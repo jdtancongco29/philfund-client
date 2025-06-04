@@ -10,7 +10,7 @@ interface InformationTabProps {
 
 export function InformationTab({ borrower, loans }: InformationTabProps) {
   return (
-    <div className="space-y-6 max-w-md">
+    <div className="space-y-6 w-100">
       {/* Borrower Primary Details */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">

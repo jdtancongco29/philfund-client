@@ -40,7 +40,7 @@ const BorrowerDashboard: React.FC = () => {
           {selectedBorrower ? (
             <div className="flex h-full">
               {/* Center Content */}
-              <div className="flex-1 p-6 overflow-auto">
+              <div className="flex-1 p-2 overflow-auto">
                 {/* Tabs */}
                 <div className="border-b border-gray-200 mb-6">
                   <nav className="flex space-x-8">

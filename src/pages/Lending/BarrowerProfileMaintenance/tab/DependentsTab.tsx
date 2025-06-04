@@ -34,7 +34,6 @@ export function DependentsTab({ dependents, validationErrors, onUpdateDependents
   }
 
   const removeDependent = (id: string) => {
-    // Prevent removal if it would result in 0 dependents
     if (dependents.length <= 1) {
       return
     }

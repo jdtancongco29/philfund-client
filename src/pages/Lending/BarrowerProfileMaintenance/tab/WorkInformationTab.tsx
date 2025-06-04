@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 import { cn } from "@/lib/utils"
-import type { FormData, ValidationErrors } from "../AddBorrowerDialog"
+import { ValidationErrors } from "../Services/AddBorrowersTypes"
+
 
 // Extended FormData interface for work information
 export interface WorkFormData extends FormData {
@@ -22,6 +23,7 @@ export interface WorkFormData extends FormData {
   supervisor_name: string
   prc_id_no: string
   prc_registration_no: string
+  prc_place_issued: string
   gov_valid_id_type: string
   valid_id_no: string
   gov_place_issued: string
@@ -61,7 +63,6 @@ interface WorkInformationTabProps {
 
   return (
     <div className="space-y-8 p-6">
-      {/* Employment Information */}
       <div className="space-y-6">
         <h3 className="text-lg font-semibold border-b pb-2">Employment Information</h3>
       <div className="grid grid-cols-3 gap-6">

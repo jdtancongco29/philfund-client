@@ -5,116 +5,19 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Printer, Archive, CircleCheck } from 'lucide-react'
-import { AddressDetailsTab } from "./tab/AddressDetailsTab"
-import { AuthorizationTab } from "./tab/AuthorizationTab"
-import { BasicInfoTab } from "./tab/BasicInfoTab"
-import { DependentsTab } from "./tab/DependentsTab"
-import { PhilfundCashCardTab } from "./tab/PhilfundCashCardTab"
-import { VerificationTab } from "./tab/VerificationTab"
-import { WorkInformationTab } from "./tab/WorkInformationTab"
+import { AddressDetailsTab } from "./Tab/AddressDetailsTab"
+import { AuthorizationTab } from "./Tab/AuthorizationTab"
+import { BasicInfoTab } from "./Tab/BasicInfoTab"
+import { DependentsTab } from "./Tab/DependentsTab"
+import { PhilfundCashCardTab } from "./Tab/PhilfundCashCardTab"
+import { VerificationTab } from "./Tab/VerificationTab"
+import { WorkInformationTab } from "./Tab/WorkInformationTab"
 import { toast } from "sonner"
-
-interface Dependent {
-  id: string
-  name: string
-  birthdate: Date | undefined
-}
-
-interface AddBorrowerDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}
-
-export interface FormData {
-  // Basic Info
-  riskLevel: string
-  lastName: string
-  firstName: string
-  middleName: string
-  suffix: string
-  civilStatus: string
-  gender: string
-  birthDate: Date | undefined
-  age: string
-  birthPlace: string
-  maidenName: string
-  nickname: string
-  bloodType: string
-  healthCondition: string
-  dateOfDeath: Date | undefined
-  spouseName: string
-  spouseOccupation: string
-  spouseAddress: string
-  spouseContact: string
-  // Dependents
-  dependents: Dependent[]
-  // Address Details
-  address: string
-  province: string
-  municipality: string
-  barangay: string
-  street: string
-  place_status: string
-  is_permanent: boolean
-  permanent_address: string
-  permanent_province: string
-  permanent_municipality: string
-  permanent_barangay: string
-  permanent_street: string
-  email: string
-  contactNumber1: string
-  network_provider1: string
-  contctNumber2: string
-  network_provider2: string
-  //work information
-  classification: string 
-  date_of_appointment: Date | undefined
-  category: string
-  division: string
-  district: string
-  school: string
-  deped_employee_id: string
-  pricipal_name: string
-  supervisor_name: string
-  prc_id_no: string
-  prc_registration_no: string
-    prc_place_issued: string
-  gov_valid_id_type: string
-  valid_id_no: string
-  gov_place_issued: string
-  gov_date_issued: Date | undefined
-  gov_expiration_date: Date | undefined
-  bank: string
-  atm_account_number: string
-  atm_card_number: string
-  atm_expiration_date: Date | undefined
-  umid_type: string
-  umid_card_no: string
-  atm_bank_branch: string
-    authorizedPersons: AuthorizedPerson[]
-    bankName: string
-  cardNumber: string
-  accountNumber: string
-  cardExpiryDate: Date | undefined
-}
-interface AuthorizedPerson {
-  id: string
-  name: string
-  relationship: string
-  address: string
-  contactNumber: string
-  yearsKnown: string
-  validIdType: string
-  validIdNumber: string
-  placeIssued: string
-  dateIssued: Date | undefined
-  signature: File | null
-  photo: File | null
-}
-
-export interface ValidationErrors {
-  [key: string]: string
-}
+import type { 
+  FormData, 
+  ValidationErrors, 
+  AddBorrowerDialogProps 
+} from "./Services/AddBorrowersTypes"
 
 export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps) {
   const [activeTab, setActiveTab] = useState("basic-info")
@@ -189,13 +92,19 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
   cardNumber: "",
   accountNumber: "",
   cardExpiryDate: undefined,
+      borrowerPhoto: null,
+      borrowerSignature: null,
+      homeSketch: null,
+      googleMapUrl: "",
+      isInterviewed: false,
+      interviewedBy: "",  
   })
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({})
 
   const validateBasicInfo = (): boolean => {
     const errors: ValidationErrors = {}
 
-    // Required field validations
+    
     if (!formData.riskLevel.trim()) {
       errors.riskLevel = "Risk Level is required"
     }
@@ -228,7 +137,7 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
     }
 
 
-    // Spouse information validation (if married)
+    
     if (formData.civilStatus === "married") {
       if (!formData.spouseName.trim()) {
         errors.spouseName = "Spouse Name is required"
@@ -270,7 +179,7 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
   if (!formData.cardExpiryDate) {
     errors.cardExpiryDate = "Cash card expiry date is required"
   } else {
-    // Check if the card is not expired
+    
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const expiryDate = new Date(formData.cardExpiryDate)
@@ -288,11 +197,11 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
   const validateDependents = (): boolean => {
     const errors: ValidationErrors = {}
 
-    // Check if there's at least one dependent
+   
     if (!formData.dependents || formData.dependents.length === 0) {
       errors.dependents = "At least one dependent is required"
     } else {
-      // Check if at least one dependent has a name filled
+      
       const hasValidDependent = formData.dependents.some(dep => dep.name.trim() !== "")
       if (!hasValidDependent) {
         errors.dependents = "At least one dependent must have a name"
@@ -364,7 +273,7 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
 const validateWorkInformation = (): boolean => {
   const errors: ValidationErrors = {}
 
-  // Employment Information
+
   if (!formData.classification) {
     errors.classification = "Classification Status is required"
   }
@@ -446,6 +355,52 @@ const validateWorkInformation = (): boolean => {
 }
 
 
+const validateVerification = (): boolean => {
+  const errors: ValidationErrors = {}
+
+
+  if (!formData.borrowerPhoto) {
+    errors.borrowerPhoto = "Borrower photo is required"
+  }
+  
+  if (!formData.borrowerSignature) {
+    errors.borrowerSignature = "Borrower signature is required"
+  }
+  
+  if (!formData.homeSketch) {
+    errors.homeSketch = "Home sketch is required"
+  }
+
+  if (!formData.googleMapUrl?.trim()) {
+    errors.googleMapUrl = "Google Maps URL is required"
+  } else {
+    const url = formData.googleMapUrl.trim()
+    
+
+    try {
+      new URL(url);
+    } catch (_) {
+      errors.googleMapUrl = "Please enter a valid URL"
+    }
+    
+
+    if (!url.includes('maps.google') && !url.includes('goo.gl/maps') && !url.includes('maps.app.goo.gl')) {
+      errors.googleMapUrl = "Please enter a valid Google Maps URL"
+    }
+  }
+
+
+  if (formData.isInterviewed) {
+    if (!formData.interviewedBy?.trim()) {
+      errors.interviewedBy = "Interviewer name is required when marked as interviewed"
+    }
+  }
+
+  setValidationErrors(errors)
+  return Object.keys(errors).length === 0
+}
+
+
 
 
 
@@ -463,6 +418,8 @@ const validateWorkInformation = (): boolean => {
         return validateAuthorization()
       case "philfund-cash-card":
         return validatePhilfundCashCard()
+         case "verification":
+        return validateVerification()
       default:
         return true
     }
@@ -597,8 +554,6 @@ const validateWorkInformation = (): boolean => {
                <AuthorizationTab 
     validationErrors={validationErrors}
     onValidationChange={() => {
-      // Update form data when authorized persons change
-      // This should be called from within AuthorizationTab when persons are added/removed
     }}
   />
             </TabsContent>
@@ -617,7 +572,11 @@ const validateWorkInformation = (): boolean => {
             </TabsContent>
 
             <TabsContent value="verification" className="mt-0 h-full">
-              <VerificationTab />
+              <VerificationTab
+                formData={formData} 
+                validationErrors={validationErrors}
+                onUpdateFormData={updateFormData}
+              />
             </TabsContent>
           </div>
 

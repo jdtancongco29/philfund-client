@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 import { cn } from "@/lib/utils"
-import type { FormData, ValidationErrors } from "../AddBorrowerDialog"
+import { ValidationErrors } from "../Services/AddBorrowersTypes"
+
 
 // Extended FormData interface for work information
 export interface WorkFormData extends FormData {
@@ -22,6 +23,7 @@ export interface WorkFormData extends FormData {
   supervisor_name: string
   prc_id_no: string
   prc_registration_no: string
+  prc_place_issued: string
   gov_valid_id_type: string
   valid_id_no: string
   gov_place_issued: string

@@ -61,7 +61,6 @@ interface WorkInformationTabProps {
 
   return (
     <div className="space-y-8 p-6">
-      {/* Employment Information */}
       <div className="space-y-6">
         <h3 className="text-lg font-semibold border-b pb-2">Employment Information</h3>
       <div className="grid grid-cols-3 gap-6">

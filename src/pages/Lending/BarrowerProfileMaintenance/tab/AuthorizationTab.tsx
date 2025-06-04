@@ -126,7 +126,6 @@ export function AuthorizationTab({ validationErrors = {}, onValidationChange }: 
     }
 
     if (editingId) {
-      // Update existing person
       setAuthorizedPersons(prev => 
         prev.map(person => 
           person.id === editingId 
@@ -135,7 +134,6 @@ export function AuthorizationTab({ validationErrors = {}, onValidationChange }: 
         )
       )
     } else {
-      // Add new person
       const newPerson: AuthorizedPerson = {
         ...currentPerson,
         id: Date.now().toString(),

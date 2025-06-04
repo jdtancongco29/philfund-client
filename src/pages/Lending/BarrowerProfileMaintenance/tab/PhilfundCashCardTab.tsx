@@ -35,7 +35,7 @@ export function PhilfundCashCardTab({
 }: PhilfundCashCardTabProps) {
   const [localData, setLocalData] = useState<PhilfundCashCardData>(formData)
 
-  // Update local data when formData changes
+
   useEffect(() => {
     setLocalData(formData)
   }, [formData])
@@ -44,7 +44,7 @@ export function PhilfundCashCardTab({
     const updatedData = { ...localData, [field]: value }
     setLocalData(updatedData)
     
-    // Call parent update function if provided
+   
     if (onUpdateFormData) {
       onUpdateFormData(updatedData)
     }

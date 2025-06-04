@@ -52,12 +52,11 @@ export function VerificationTab({
   }
 
   const handleTakePhoto = (field: keyof Pick<VerificationData, 'borrowerPhoto'>) => {
-    // Simulate taking a photo - in real implementation, this would open camera
-    console.log(`Taking photo for ${field}`)
-    // For demo purposes, create a mock file
+  
     const mockFile = new File([''], 'photo.jpg', { type: 'image/jpeg' })
     updateData({ [field]: mockFile })
   }
+
 
   return (
     <div className="space-y-8 p-6">
@@ -107,6 +106,7 @@ export function VerificationTab({
             {validationErrors.borrowerPhoto && (
               <p className="text-sm text-red-500 mt-1">{validationErrors.borrowerPhoto}</p>
             )}
+           
           </div>
           
           <div>

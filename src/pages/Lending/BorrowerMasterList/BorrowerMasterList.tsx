@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button"
 import { ColumnDefinition, FilterDefinition, SearchDefinition } from "@/components/data-table/data-table"
 
 import { AddBorrowerDialog } from "../BarrowerProfileMaintenance/AddBorrowerDialog"
-import { BorrowerProfileUploadDialog } from "../BarrowerProfileMaintenance/dialog/BorrowerProfileUploadDialog"
-import { BeginningBalanceUploadDialog } from "../BarrowerProfileMaintenance/dialog/BeginningBalanceUploadDialog"
+import { BorrowerProfileUploadDialog } from "../BarrowerProfileMaintenance/Dialog/BorrowerProfileUploadDialog"
+import { BeginningBalanceUploadDialog } from "../BarrowerProfileMaintenance/Dialog/BeginningBalanceUploadDialog"
 import { DataTableV3 } from "@/components/data-table/data-table-v3"
 
 interface BorrowerData {

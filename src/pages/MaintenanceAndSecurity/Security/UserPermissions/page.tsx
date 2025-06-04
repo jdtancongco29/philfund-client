@@ -1,9 +1,12 @@
 import MainLayout from '@/components/layout/MainLayout'
 import { PermissionsTable } from './PermissionsTable'
+import { ModulePermissionProps } from './Service/PermissionsTypes'
 
-function UserPermissionsPage() {
+export const UserPermissionsPage: React.FC<ModulePermissionProps> = ({
+  name
+}) => {
   return (
-    <MainLayout>
+    <MainLayout module={name}>
         <PermissionsTable />
     </MainLayout>
   )

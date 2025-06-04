@@ -12,8 +12,15 @@ import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialo
 import { toast } from "sonner"
 import { downloadFile } from "@/lib/utils"
 import { format, parseISO } from "date-fns"
+import { ModulePermissionProps } from "../../Security/UserPermissions/Service/PermissionsTypes"
 
-export function UserManagementTable() {
+UserManagementTable
+export function UserManagementTable({
+  canAdd,
+  canEdit,
+  canDelete,
+  canExport,
+}: ModulePermissionProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<UserManagement | null>(null)
   const [openDeleteModal, setOpenDeleteModal] = useState(false)
@@ -294,30 +301,38 @@ export function UserManagementTable() {
 
   // Define action buttons
   const actionButtons = [
-    {
-      label: "Edit",
-      icon: <PencilIcon className="h-4 w-4" />,
-      onClick: handleEdit,
-    },
-    {
-      label: "Change Password",
-      icon: <KeyRound className="h-4 w-4" />,
-      onClick: handleChangePassword,
-    },
-    {
-      label: "Devices",
-      icon: <MonitorSmartphone className="h-4 w-4" />,
-      onClick: handleDevices,
-    },
-    {
-      label: "Delete",
-      icon: <TrashIcon className="h-4 w-4 text-destructive" />,
-      onClick: (user: UserManagement) => {
-        setSelectedItem(user)
-        setOpenDeleteModal(true)
-      },
-    },
-  ]
+    ...(canEdit
+      ? [
+          {
+            label: "Edit",
+            icon: <PencilIcon className="h-4 w-4" />,
+            onClick: handleEdit,
+          },
+          {
+            label: "Change Password",
+            icon: <KeyRound className="h-4 w-4" />,
+            onClick: handleChangePassword,
+          },
+        ]
+      : []),
+    ...(canDelete
+      ? [
+          {
+            label: "Devices",
+            icon: <MonitorSmartphone className="h-4 w-4" />,
+            onClick: handleDevices,
+          },
+          {
+            label: "Delete",
+            icon: <TrashIcon className="h-4 w-4 text-destructive" />,
+            onClick: (user: UserManagement) => {
+              setSelectedItem(user);
+              setOpenDeleteModal(true);
+            },
+          },
+        ]
+      : []),
+  ];
 
   // Handle exports
   const handlePdfExport = () => {
@@ -351,9 +366,9 @@ export function UserManagementTable() {
         onLoading={isPending || isFetching || deletionHandler.isPending}
         onNew={handleNew}
         idField="id"
-        enableNew={true}
-        enablePdfExport={true}
-        enableCsvExport={true}
+        enableNew={canAdd}
+        enablePdfExport={canExport}
+        enableCsvExport={canExport}
         enableFilter={false}
         onResetTable={false}
         onSearchChange={onSearchChange}

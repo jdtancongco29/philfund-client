@@ -10,8 +10,15 @@ import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialo
 import { DataTableV2 } from "@/components/data-table/data-table-v2"
 import { toast } from "sonner"
 import { downloadFile } from "@/lib/utils"
+import { ModulePermissionProps } from "../../Security/UserPermissions/Service/PermissionsTypes"
+import { PencilIcon, TrashIcon } from "lucide-react"
 
-export function DivisionTable() {
+export function DivisionTable({
+  canAdd,
+  canEdit,
+  canDelete,
+  canExport,
+}: ModulePermissionProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<Division | null>(null)
   const [openDeleteModal, setOpenDeleteModal] = useState(false)
@@ -157,6 +164,28 @@ export function DivisionTable() {
     setSearchQuery(search)
   }
 
+    // Define action buttons
+  const actionButtons = []
+
+  if (canEdit) {
+    actionButtons.push({
+      label: "Edit",
+      icon: <PencilIcon className="h-4 w-4" />,
+      onClick: handleEdit,
+    })
+  }
+
+  if (canDelete) {
+    actionButtons.push({
+      label: "Delete",
+      icon: <TrashIcon className="h-4 w-4 text-destructive" />,
+      onClick: (branch: Division) => {
+        setSelectedItem(branch)
+        setOpenDeleteModal(true)
+      },
+    })
+  }
+
   return (
     <>
       <DataTableV2
@@ -171,17 +200,13 @@ export function DivisionTable() {
         columns={columns}
         filters={filters}
         search={search}
-        onEdit={handleEdit}
+        actionButtons={actionButtons}
         onLoading={isPending || deletionHandler.isPending}
-        onDelete={(item) => {
-          setOpenDeleteModal(true)
-          setSelectedItem(item)
-        }}
         onNew={handleNew}
         idField="id"
-        enableNew={true}
-        enablePdfExport={true}
-        enableCsvExport={true}
+        enableNew={canAdd}
+        enablePdfExport={canExport}
+        enableCsvExport={canExport}
         enableFilter={false}
         onResetTable={resetTable}
         onSearchChange={onSearchChange}

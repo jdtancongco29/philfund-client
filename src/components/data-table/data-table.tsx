@@ -88,6 +88,8 @@ export type DataTableProps<T> = {
   onNew?: () => void;
   idField?: keyof T;
   enableNew?: boolean;
+  enableEdit?: boolean;
+  enableDelete?: boolean;
   enablePdfExport?: boolean;
   enableCsvExport?: boolean;
   enableFilter?: boolean;
@@ -109,6 +111,8 @@ export function DataTable<T>({
   onNew,
   idField = "id" as keyof T,
   enableNew = true,
+  enableEdit = true,
+  enableDelete = true,
   enablePdfExport = true,
   enableCsvExport = true,
   enableFilter = true,
@@ -602,7 +606,7 @@ export function DataTable<T>({
                   {(onEdit || onDelete) && (
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        {onEdit && (
+                        {onEdit && enableEdit && (
                           <Button
                             variant="ghost"
                             size="icon"
@@ -612,7 +616,7 @@ export function DataTable<T>({
                             <span className="sr-only">Edit</span>
                           </Button>
                         )}
-                        {onDelete && (
+                        {onDelete && enableDelete && (
                           <Button
                             variant="ghost"
                             size="icon"

@@ -13,6 +13,7 @@ import {
 } from "@/components/data-table/data-table-coa";
 import { DdeleteDialog } from "./DeleteCOADialog";
 import { AddEditAccountDialog } from "./AddAccountDialog";
+import { ModulePermissionProps } from "../../Security/UserPermissions/Service/PermissionsTypes";
 
 interface Branch {
   uid: string;
@@ -69,7 +70,12 @@ type ApiErrorResponse = {
   data: any | null;
 };
 
-export default function ChartOfAccounts() {
+export default function ChartOfAccounts({
+  canAdd,
+  canEdit,
+  canDelete,
+  canExport
+}: ModulePermissionProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [accountToDelete, setAccountToDelete] = useState<{
     id: string;
@@ -632,9 +638,11 @@ export default function ChartOfAccounts() {
           onDelete={handleDelete}
           onNew={handleNew}
           idField="id"
-          enableNew
-          enablePdfExport
-          enableCsvExport
+          enableNew={canAdd}
+          enableEdit={canEdit}
+          enableDelete={canDelete}
+          enablePdfExport= {canExport}
+          enableCsvExport= {canExport}
           enableFilter
           onPdfExport={handlePdfExport}
           onCsvExport={handleCsvExport}

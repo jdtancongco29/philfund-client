@@ -99,3 +99,12 @@ export interface GetUsersForSelectionResponse {
     total_items: number
   }
 }
+
+export interface ModulePermissionProps {
+  name?: string
+  canAdd?: boolean
+  canEdit?: boolean
+  canDelete?: boolean
+  canExport?: boolean
+  canVoid?: boolean
+}

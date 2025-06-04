@@ -10,8 +10,15 @@ import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialo
 import { DataTableV2 } from "@/components/data-table/data-table-v2"
 import { downloadFile } from "@/lib/utils"
 import { toast } from "sonner"
+import { PencilIcon, TrashIcon } from "lucide-react"
+import { ModulePermissionProps } from "../../Security/UserPermissions/Service/PermissionsTypes"
 
-export function DistrictTable() {
+export function DistrictTable({
+  canAdd,
+  canEdit,
+  canDelete,
+  canExport,
+}: ModulePermissionProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<District | null>(null)
   const [openDeleteModal, setOpenDeleteModal] = useState(false)
@@ -153,6 +160,28 @@ export function DistrictTable() {
     setSearchQuery(search)
   }
 
+    // Define action buttons
+  const actionButtons = []
+
+  if (canEdit) {
+    actionButtons.push({
+      label: "Edit",
+      icon: <PencilIcon className="h-4 w-4" />,
+      onClick: handleEdit,
+    })
+  }
+
+  if (canDelete) {
+    actionButtons.push({
+      label: "Delete",
+      icon: <TrashIcon className="h-4 w-4 text-destructive" />,
+      onClick: (branch: District) => {
+        setSelectedItem(branch)
+        setOpenDeleteModal(true)
+      },
+    })
+  }
+
   return (
     <>
       <DataTableV2
@@ -167,19 +196,15 @@ export function DistrictTable() {
         columns={columns}
         filters={filters}
         search={search}
-        onEdit={handleEdit}
+        actionButtons={actionButtons}
         onLoading={isPending || deletionHandler.isPending}
-        onDelete={(item) => {
-          setOpenDeleteModal(true)
-          setSelectedItem(item)
-        }}
         onCsvExport={exportCsvMutation.mutate}
         onPdfExport={exportPdfMutation.mutate}
         onNew={handleNew}
         idField="id"
-        enableNew={true}
-        enablePdfExport={true}
-        enableCsvExport={true}
+        enableNew={canAdd}
+        enablePdfExport={canExport}
+        enableCsvExport={canExport}
         enableFilter={false}
         onResetTable={resetTable}
         onSearchChange={onSearchChange}

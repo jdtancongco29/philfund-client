@@ -1,10 +1,22 @@
 import MainLayout from '@/components/layout/MainLayout'
 import { BorrowerGroupTable } from './BorrowerGroupTable'
+import { ModulePermissionProps } from '../../Security/UserPermissions/Service/PermissionsTypes'
 
-function GroupSetupPage() {
+export const GroupSetupPage: React.FC<ModulePermissionProps> = ({
+  name,
+  canAdd,
+  canEdit,
+  canDelete,
+  canExport,
+}) => {
   return (
-    <MainLayout>
-        <BorrowerGroupTable />
+    <MainLayout module={name}>
+      <BorrowerGroupTable
+        canAdd={canAdd}
+        canEdit={canEdit}
+        canDelete={canDelete}
+        canExport={canExport}
+      />
     </MainLayout>
   )
 }

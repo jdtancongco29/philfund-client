@@ -1,9 +1,12 @@
 import MainLayout from '@/components/layout/MainLayout'
 import { ActivityLogTable } from './ActivityLogTable'
+import { ModulePermissionProps } from '../../Security/UserPermissions/Service/PermissionsTypes'
 
-function ActivityLogsPage() {
+export const ActivityLogsPage: React.FC<ModulePermissionProps> = ({
+  name,
+}) => {
   return (
-    <MainLayout>
+    <MainLayout module={name}>
         <ActivityLogTable />
     </MainLayout>
   )

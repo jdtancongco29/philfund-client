@@ -12,6 +12,7 @@ import {
 import { apiRequest } from "@/lib/api";
 import { EditReferenceDialog, FormValues } from "./EditReferenceDialog";
 import { DdeleteReferenceDialog } from "./DeleteReferenceDialog";
+import { ModulePermissionProps } from "../../Security/UserPermissions/Service/PermissionsTypes";
 
 interface Module {
   id: string;
@@ -45,7 +46,11 @@ interface ApiResponse {
   data: DataPayload;
 }
 
-export default function ReferenceManagement() {
+export default function ReferenceManagement({
+  canAdd,
+  canEdit,
+  canDelete,
+}: ModulePermissionProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [reference, setReference] = useState<Reference[]>([]);
   const [loading, setLoading] = useState(true);
@@ -272,7 +277,9 @@ export default function ReferenceManagement() {
         onDelete={handleDelete}
         onNew={handleNew}
         idField="id"
-        enableNew
+        enableNew={canAdd}
+        enableEdit={canEdit}
+        enableDelete={canDelete}
         enablePdfExport={false}
         enableCsvExport={false}
         enableFilter={true}

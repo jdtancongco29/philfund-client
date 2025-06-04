@@ -1,10 +1,16 @@
 import MainLayout from '@/components/layout/MainLayout'
 import AccountsSetupForm from './AccountsSetupForm'
+import { ModulePermissionProps } from '../../Security/UserPermissions/Service/PermissionsTypes'
 
-function DefaultAccountSetupPage() {
+export const DefaultAccountSetupPage: React.FC<ModulePermissionProps> = ({
+  name,
+  canAdd,
+}) => {
   return (
-    <MainLayout>
-        <AccountsSetupForm />
+    <MainLayout module={name}>
+        <AccountsSetupForm
+          canAdd={canAdd}
+        />
     </MainLayout>
   )
 }

@@ -1,10 +1,22 @@
 import MainLayout from '@/components/layout/MainLayout'
 import BankAccountsTable from './BankAccountList'
+import { ModulePermissionProps } from '../../Security/UserPermissions/Service/PermissionsTypes'
 
-function BankAccountSetupPage() {
+export const BankAccountSetupPage: React.FC<ModulePermissionProps> = ({
+  name,
+  canAdd,
+  canEdit,
+  canDelete,
+  canExport,
+}) => {
   return (
-    <MainLayout>
-        <BankAccountsTable />
+    <MainLayout module={name}>
+      <BankAccountsTable
+        canAdd={canAdd}
+        canEdit={canEdit}
+        canDelete={canDelete}
+        canExport={canExport}
+      />
     </MainLayout>
   )
 }

@@ -12,6 +12,7 @@ import {
 import { toast } from "sonner";
 import { EditBankDialog, type FormValues } from "./EditBankDialog";
 import { DeleteDataDialog } from "./DeleteDataDialog";
+import { ModulePermissionProps } from "../../Security/UserPermissions/Service/PermissionsTypes";
 
 interface Coa {
   id: string;
@@ -55,7 +56,12 @@ type ApiErrorResponse = {
   data: any | null;
 };
 
-export default function BankAccountsTable() {
+export default function BankAccountsTable({
+  canAdd,
+  canEdit,
+  canDelete,
+  canExport,
+}: ModulePermissionProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [item, setItem] = useState<Bank[]>([]);
   const [loading, setLoading] = useState(true);
@@ -516,9 +522,11 @@ export default function BankAccountsTable() {
           onDelete={handleDelete}
           onNew={handleNew}
           idField="id"
-          enableNew
-          enablePdfExport
-          enableCsvExport
+          enableNew= {canAdd}
+          enableEdit={canEdit}
+          enableDelete={canDelete}
+          enablePdfExport={canExport}
+          enableCsvExport={canExport}
           enableFilter={false}
           onPdfExport={handlePdfExport}
           onCsvExport={handleCsvExport}

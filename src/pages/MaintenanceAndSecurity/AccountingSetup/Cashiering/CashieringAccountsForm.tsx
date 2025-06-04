@@ -22,6 +22,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import Loader from "@/components/loader";
 
 interface ChartOfAccount {
   id: string;
@@ -415,16 +416,7 @@ export default function CashieringAccountsForm() {
 
   if (isLoading) {
     return (
-      <Card className="w-full">
-        <CardContent className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Loading configuration...
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <Loader />
     );
   }
 

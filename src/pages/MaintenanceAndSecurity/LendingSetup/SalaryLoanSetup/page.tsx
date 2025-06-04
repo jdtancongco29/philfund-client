@@ -1,10 +1,22 @@
 import MainLayout from "@/components/layout/MainLayout"
 import { SalaryLoanTable } from "./SalaryLoanTable"
+import { ModulePermissionProps } from '../../Security/UserPermissions/Service/PermissionsTypes'
 
-function SalaryLoanSetupPage() {
+export const SalaryLoanSetupPage: React.FC<ModulePermissionProps> = ({
+  name,
+  canAdd,
+  canEdit,
+  canDelete,
+  canExport,
+}) => {
   return (
-    <MainLayout>
-      <SalaryLoanTable />
+    <MainLayout module={name}>
+      <SalaryLoanTable 
+        canAdd={canAdd}
+        canEdit={canEdit}
+        canDelete={canDelete}
+        canExport={canExport}
+      />
     </MainLayout>
   )
 }

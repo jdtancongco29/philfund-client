@@ -11,11 +11,11 @@ import PermissionError from "../permission/permission-error"
 import PermissionDenied from "../permission/permission-denied"
 
 interface Props {
-  module?: string
-  children: ReactElement<any>
+  module?: string;
+  children: ReactElement<any>;
 }
 
-export default function MainLayout({ module, children }: Props) {
+export default function MainLayout({ module, children }: Props){
   const [queryClient] = useState(() => new QueryClient())
 
   const {

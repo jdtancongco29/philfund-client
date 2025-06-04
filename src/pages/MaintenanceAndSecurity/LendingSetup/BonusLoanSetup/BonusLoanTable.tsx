@@ -252,11 +252,11 @@ export function BonusLoanTable({
         onLoading={isPending || deletionHandler.isPending}
         onNew={handleNew}
         idField="id"
-        enableNew={true}
-        enablePdfExport={true}
+        enableNew={canAdd}
+        enablePdfExport={canExport}
         onPdfExport={exportPdfMutation.mutate}
         onCsvExport={exportCsvMutation.mutate}
-        enableCsvExport={true}
+        enableCsvExport={canExport}
         enableFilter={false}
         onResetTable={resetTable}
         onSearchChange={onSearchChange}

@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { CircleCheck } from "lucide-react";
 import { toast } from "sonner";
 import AddEditEntryDialog from "./AddNewEntryDialog";
+import { ModulePermissionProps } from "../../Security/UserPermissions/Service/PermissionsTypes";
 // Import the updated dialog component
 
 interface AccountEntry {
@@ -58,7 +59,12 @@ interface Pagination {
   total_items: number;
 }
 
-export default function AccountEntriesTable() {
+export default function AccountEntriesTable({
+  canAdd,
+  // canEdit,
+  // canDelete,
+  canExport,
+}: ModulePermissionProps) {
   const [loading, setLoading] = useState(true);
   const [onResetTable, setOnResetTable] = useState(false);
   const [data, setData] = useState<AccountEntry[]>([]);
@@ -454,9 +460,9 @@ export default function AccountEntriesTable() {
         onDelete={requestDelete}
         onNew={handleNew}
         idField="id"
-        enableNew={true}
-        enablePdfExport={true}
-        enableCsvExport={true}
+        enableNew={canAdd}
+        enablePdfExport={canExport}
+        enableCsvExport={canExport}
         enableFilter={true}
         onPdfExport={handlePdfExport}
         onCsvExport={handleCsvExport}

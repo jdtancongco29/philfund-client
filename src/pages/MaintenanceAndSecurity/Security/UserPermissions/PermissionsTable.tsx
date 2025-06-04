@@ -14,7 +14,7 @@ import PermissionsService from "./Service/PermissionsService"
 import { toast } from "sonner"
 import Select from "react-select"
 
-export function PermissionsTable() {
+export function PermissionsTable(){
   const [selectedUser, setSelectedUser] = useState<UserForSelection | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [moduleSearchQuery, setModuleSearchQuery] = useState("")
@@ -97,7 +97,6 @@ export function PermissionsTable() {
       setOriginalPermissions([])
       setHasChanges(false)
       setModuleSearchQuery("");
-      // console.log("User set successfully:", user)
     } else {
       console.error("User not found for ID:", userId)
     }

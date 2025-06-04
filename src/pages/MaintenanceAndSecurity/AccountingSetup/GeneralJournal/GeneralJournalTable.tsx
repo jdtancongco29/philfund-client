@@ -13,6 +13,7 @@ import {
   FilterDefinition,
   SearchDefinition,
 } from "@/components/data-table/data-table-general-journal";
+import { ModulePermissionProps } from "../../Security/UserPermissions/Service/PermissionsTypes";
 
 interface GeneralJournalEntry {
   id?: string;
@@ -73,7 +74,10 @@ interface Pagination {
   total_items: number;
 }
 
-export default function GeneralJournalTable() {
+export default function GeneralJournalTable({
+  canAdd,
+  canExport,
+}: ModulePermissionProps) {
   const [loading, setLoading] = useState(true);
   const [onResetTable, setOnResetTable] = useState(false);
   const [data, setData] = useState<GeneralJournalEntry[]>([]);
@@ -560,9 +564,9 @@ export default function GeneralJournalTable() {
         onDelete={requestDelete}
         onNew={handleNew}
         idField="id"
-        enableNew={true}
-        enablePdfExport={true}
-        enableCsvExport={true}
+        enableNew={canAdd}
+        enablePdfExport={canExport}
+        enableCsvExport={canExport}
         enableFilter={true}
         onPdfExport={handlePdfExport}
         onCsvExport={handleCsvExport}

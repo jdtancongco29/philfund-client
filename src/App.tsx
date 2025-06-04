@@ -35,10 +35,12 @@ import TwoFactorRoute from "./components/TwoFactorRoute"
 import ChangePasswordRoute from "./components/ChangePasswordRoute"
 import { Toaster } from 'sonner';
 import GeneralJournalpage from "./pages/MaintenanceAndSecurity/AccountingSetup/GeneralJournal/page"
+import { PermissionProvider } from "./context/PermissionContext"
 
 function App() {
   return (
     <>
+    <PermissionProvider>
       <Router>
         <Routes>
           {/* Public Routes */}
@@ -65,95 +67,91 @@ function App() {
             <Route path="/accounting" element={<AccountingPage />} />
             <Route
               path="/maintenance-and-security/general-setup/branch-setup"
-              element={<BranchSetup />}
+              element={<BranchSetup name="Branch Setup" />}
             />
             <Route
               path="/maintenance-and-security/general-setup/department-setup"
-              element={<DepartmentSetupPage />}
+              element={<DepartmentSetupPage name="Department Setup" />}
             />
             <Route
               path="/maintenance-and-security/security/user-management"
-              element={<UserManagementPage />}
+              element={<UserManagementPage name="User Management" />}
             />
             <Route
               path="/maintenance-and-security/security/user-permissions"
-              element={<UserPermissionsPage />}
+              element={<UserPermissionsPage name="User Level Permission" />}
             />
             <Route
               path="/maintenance-and-security/admin/approval"
-              element={<ApprovalPage />}
+              element={<ApprovalPage name="For Approval List" />}
             />
             <Route
               path="/maintenance-and-security/admin/backup-and-restore"
-              element={<BackupAndRestorePage />}
+              element={<BackupAndRestorePage name="Backup and Restore" />}
             />
             <Route
               path="/maintenance-and-security/admin/activity-logs"
-              element={<ActivityLogsPage />}
-            />
-            <Route
-              path="/maintenance-and-security/admin/approval"
-              element={<ApprovalPage />}
+              element={<ActivityLogsPage name="Activity Logs" />}
             />
             <Route
               path="/maintenance-and-security/accounting-setup/reference-settings"
-              element={<ReferenceSettingsPage />}
+              element={<ReferenceSettingsPage name="Reference Settings" />}
             />
             <Route
               path="/maintenance-and-security/accounting-setup/chart-of-accounts"
-              element={<ChartOfAccountsPage />}
+              element={<ChartOfAccountsPage name="Chart of Accounts" />}
             />
             <Route
               path="/maintenance-and-security/accounting-setup/accounting-entries-defaults"
-              element={<AccountingEntriesDefaultspage />}
+              element={<AccountingEntriesDefaultspage name="Accounting Entries Default" />}
             />
             <Route
               path="/maintenance-and-security/accounting-setup/default-account-setup"
-              element={<DefaultAccountSetupPage />}
+              element={<DefaultAccountSetupPage name="Accounting General Defaults Accounts Setup" />}
             />
             <Route
               path="/maintenance-and-security/accounting-setup/bank-account-setup"
-              element={<BankAccountSetupPage />}
+              element={<BankAccountSetupPage name="Bank Account Setup" />}
             />
             <Route
               path="/maintenance-and-security/accounting-setup/cashiering"
-              element={<CashieringPage />}
+              element={<CashieringPage name="Cashiering" />}
             />
             <Route
               path="/maintenance-and-security/lending-setup/group-setup"
-              element={<GroupSetupPage />}
+              element={<GroupSetupPage name="Borrower Group Setup" />}
             />
             <Route
               path="/maintenance-and-security/lending-setup/classification-setup"
-              element={<ClasificationSetupPage />}
+              element={<ClasificationSetupPage name="Classification Setup" />}
             />
             <Route
               path="/maintenance-and-security/lending-setup/division-setup"
-              element={<DivisionSetupPage />}
+              element={<DivisionSetupPage name="Borrower Division Setup" />}
             />
             <Route
               path="/maintenance-and-security/lending-setup/district-setup"
-              element={<DistrictSetupPage />}
+              element={<DistrictSetupPage name="Borrower District Setup" />}
             />
             <Route
               path="/maintenance-and-security/lending-setup/school-office-setup"
-              element={<SchoolOfficeSetupPage />}
+              element={<SchoolOfficeSetupPage name="Borrower School Setup" />}
             />
             <Route
               path="/maintenance-and-security/lending-setup/salary-loan-setup"
-              element={<SalaryLoanSetupPage />}
+              element={<SalaryLoanSetupPage name="Salary Loan Setup" />}
             />
             <Route
               path="/maintenance-and-security/lending-setup/bonus-loan-setup"
-              element={<BonusLoanSetupPage />}
+              element={<BonusLoanSetupPage name="Bonus Loan Setup" />}
             />
             <Route
               path="/maintenance-and-security/lending-setup/ca-setup"
-              element={<CashAdvanceSetupPage />}
+              element={<CashAdvanceSetupPage name="Cash Advance Setup" />}
             />
             <Route
               path="/maintenance-and-security/accounting-setup/general-journal"
-              element={<GeneralJournalpage />}
+              element={<GeneralJournalpage name="General Journal" />}
             />
             {/* Add more protected routes here */}
           </Route>
@@ -162,6 +160,7 @@ function App() {
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </Router>
+    </PermissionProvider>
       <Toaster richColors position="top-right" />
     </>
   );

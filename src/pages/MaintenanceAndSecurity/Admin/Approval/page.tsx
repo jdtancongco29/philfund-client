@@ -1,9 +1,12 @@
 import MainLayout from '@/components/layout/MainLayout'
 import { ApprovalTable } from './ApprovalTable'
+import { ModulePermissionProps } from '../../Security/UserPermissions/Service/PermissionsTypes'
 
-function ApprovalPage() {
+export const ApprovalPage: React.FC<ModulePermissionProps> = ({
+  name,
+}) => {
   return (
-    <MainLayout>
+    <MainLayout module={name}>
         <ApprovalTable />
     </MainLayout>
   )

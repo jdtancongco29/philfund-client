@@ -11,8 +11,15 @@ import { DataTableV2 } from "@/components/data-table/data-table-v2"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { downloadFile } from "@/lib/utils"
+import { ModulePermissionProps } from "../../Security/UserPermissions/Service/PermissionsTypes"
+import { PencilIcon, TrashIcon } from "lucide-react"
 
-export function CashAdvanceTable() {
+export function CashAdvanceTable({
+  canAdd,
+  canEdit,
+  canDelete,
+  canExport,
+}: ModulePermissionProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<CashAdvanceSetup | null>(null)
   const [openDeleteModal, setOpenDeleteModal] = useState(false)
@@ -218,6 +225,28 @@ export function CashAdvanceTable() {
     setSearchQuery(search)
   }
 
+   // Define action buttons
+  const actionButtons = []
+
+  if (canEdit) {
+    actionButtons.push({
+      label: "Edit",
+      icon: <PencilIcon className="h-4 w-4" />,
+      onClick: handleEdit,
+    })
+  }
+
+  if (canDelete) {
+    actionButtons.push({
+      label: "Delete",
+      icon: <TrashIcon className="h-4 w-4 text-destructive" />,
+      onClick: (branch: CashAdvanceSetup) => {
+        setSelectedItem(branch)
+        setOpenDeleteModal(true)
+      },
+    })
+  }
+
   return (
     <>
       <DataTableV2
@@ -232,19 +261,15 @@ export function CashAdvanceTable() {
         columns={columns}
         filters={filters}
         search={search}
-        onEdit={handleEdit}
+        actionButtons={actionButtons}
         onLoading={isPending || deletionHandler.isPending}
-        onDelete={(item) => {
-          setOpenDeleteModal(true)
-          setSelectedItem(item)
-        }}
         onNew={handleNew}
         idField="id"
-        enableNew={true}
-        enablePdfExport={true}
+        enableNew={canAdd}
+        enablePdfExport={canExport}
         onPdfExport={exportPdfMutation.mutate}
         onCsvExport={exportCsvMutation.mutate}
-        enableCsvExport={true}
+        enableCsvExport={canExport}
         enableFilter={false}
         onResetTable={resetTable}
         onSearchChange={onSearchChange}

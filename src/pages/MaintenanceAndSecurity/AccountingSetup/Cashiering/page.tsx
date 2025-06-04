@@ -1,9 +1,12 @@
 import MainLayout from '@/components/layout/MainLayout'
 import CashieringAccountsForm from './CashieringAccountsForm'
+import { ModulePermissionProps } from '../../Security/UserPermissions/Service/PermissionsTypes'
 
-function CashieringPage() {
+export const CashieringPage: React.FC<ModulePermissionProps> = ({
+  name,
+}) => {
   return (
-    <MainLayout>
+    <MainLayout module={name}>
       <CashieringAccountsForm />
     </MainLayout>
   )

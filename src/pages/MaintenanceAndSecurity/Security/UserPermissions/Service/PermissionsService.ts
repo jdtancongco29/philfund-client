@@ -38,7 +38,7 @@ export const PermissionsService = {
    * Based on: GET /api/v1/module
    */
   getModules: async (): Promise<ApiResponse<GetModulesResponse>> => {
-    const endpoint = `/module`
+    const endpoint = `/module/?per_page=100`
     const response = await apiRequest<ApiResponse<GetModulesResponse>>("get", endpoint, null, {
       useAuth: true,
       useBranchId: true, // Always required

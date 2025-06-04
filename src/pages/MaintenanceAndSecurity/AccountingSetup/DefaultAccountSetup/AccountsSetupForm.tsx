@@ -26,6 +26,8 @@ import { CircleCheck } from "lucide-react";
 import Select from "react-select";
 
 import { apiRequest } from "@/lib/api";
+import Loader from "@/components/loader";
+import { ModulePermissionProps } from "../../Security/UserPermissions/Service/PermissionsTypes";
 
 interface ChartOfAccount {
   id: string;
@@ -165,7 +167,9 @@ const AccountField = ({
   );
 };
 
-export default function AccountsSetupForm() {
+export default function AccountsSetupForm({
+  // canAdd,
+}: ModulePermissionProps) {
   const [retainedEarnings, setRetainedEarnings] =
     useState<ChartOfAccount | null>(null);
   const [incomeSummary, setIncomeSummary] = useState<ChartOfAccount | null>(
@@ -584,16 +588,7 @@ export default function AccountsSetupForm() {
 
   if (isLoading) {
     return (
-      <Card className="w-full">
-        <CardContent className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Loading configuration...
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <Loader />
     );
   }
 

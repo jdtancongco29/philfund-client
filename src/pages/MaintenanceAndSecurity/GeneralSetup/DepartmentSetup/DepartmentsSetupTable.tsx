@@ -11,8 +11,14 @@ import { PencilIcon, TrashIcon } from "lucide-react"
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog"
 import { toast } from "sonner"
 import { downloadFile } from "@/lib/utils"
+import { ModulePermissionProps } from "../../Security/UserPermissions/Service/PermissionsTypes"
 
-export function DepartmentSetupTable() {
+export function DepartmentSetupTable({
+  canAdd,
+  canEdit,
+  canDelete,
+  canExport,
+}: ModulePermissionProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<DepartmentSetup | null>(null)
   const [openDeleteModal, setOpenDeleteModal] = useState(false)
@@ -38,7 +44,7 @@ export function DepartmentSetupTable() {
     setSearchQuery(search || null)
     setCurrentPage(1) // Reset to first page when searching
   }, [])
-  
+
   const {
     isPending,
     error,
@@ -59,8 +65,8 @@ export function DepartmentSetupTable() {
     onSuccess: () => {
       toast.success("Department deleted successfully")
       const shouldGoToPreviousPage = departments?.data.departments.length === 1 && currentPage > 1
-      
-      
+
+
       if (shouldGoToPreviousPage) {
         // Update the page first, then invalidate queries
         setCurrentPage((prev) => prev - 1)
@@ -93,7 +99,7 @@ export function DepartmentSetupTable() {
       if (newTab) {
         newTab.focus()
         toast.success("PDF opened in new tab")
-      }else{
+      } else {
         toast.error("Failed to open PDF. Please try again.")
       }
     },
@@ -195,21 +201,26 @@ export function DepartmentSetupTable() {
   }
 
   // Define action buttons
-  const actionButtons = [
-    {
+  const actionButtons = []
+
+  if (canEdit) {
+    actionButtons.push({
       label: "Edit",
       icon: <PencilIcon className="h-4 w-4" />,
-      onClick: handleEdit,
-    },
-    {
+      onClick: (department: DepartmentSetup) => handleEdit(department),
+    })
+  }
+
+  if (canDelete) {
+    actionButtons.push({
       label: "Delete",
       icon: <TrashIcon className="h-4 w-4 text-destructive" />,
       onClick: (department: DepartmentSetup) => {
         setSelectedItem(department)
         setOpenDeleteModal(true)
       },
-    },
-  ]
+    })
+  }
 
   const handleSort = (column: string, sort: string) => {
     setColumnSort(column)
@@ -234,9 +245,9 @@ export function DepartmentSetupTable() {
         onLoading={isPending || isFetching || deletionHandler.isPending}
         onNew={handleNew}
         idField="id"
-        enableNew={true}
-        enablePdfExport={true}
-        enableCsvExport={true}
+        enableNew={canAdd ?? false}
+        enablePdfExport={canExport}
+        enableCsvExport={canExport}
         enableFilter={false}
         onResetTable={false}
         onSearchChange={onSearchChange}

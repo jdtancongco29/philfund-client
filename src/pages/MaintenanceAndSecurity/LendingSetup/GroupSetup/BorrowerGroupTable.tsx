@@ -10,8 +10,15 @@ import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialo
 import { DataTableV2 } from "@/components/data-table/data-table-v2"
 import { downloadFile } from "@/lib/utils"
 import { toast } from "sonner"
+import { ModulePermissionProps } from "../../Security/UserPermissions/Service/PermissionsTypes"
+import { PencilIcon, TrashIcon } from "lucide-react"
 
-export function BorrowerGroupTable() {
+export function BorrowerGroupTable({
+  canAdd,
+  canEdit,
+  canDelete,
+  canExport,
+}: ModulePermissionProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<BorrowGroup | null>(null);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
@@ -145,6 +152,28 @@ export function BorrowerGroupTable() {
     setSearchQuery(search);
   }
 
+  // Define action buttons
+  const actionButtons = []
+
+  if (canEdit) {
+    actionButtons.push({
+      label: "Edit",
+      icon: <PencilIcon className="h-4 w-4" />,
+      onClick: handleEdit,
+    })
+  }
+
+  if (canDelete) {
+    actionButtons.push({
+      label: "Delete",
+      icon: <TrashIcon className="h-4 w-4 text-destructive" />,
+      onClick: (item: BorrowGroup) => {
+        setSelectedItem(item)
+        setOpenDeleteModal(true)
+      },
+    })
+  }
+
 
   return (
     <>
@@ -160,23 +189,19 @@ export function BorrowerGroupTable() {
         columns={columns}
         filters={filters}
         search={search}
-        onEdit={handleEdit}
+        actionButtons={actionButtons}
         onLoading={isPending || deletionHandler.isPending}
-        onDelete={(item) => {
-          setOpenDeleteModal(true);
-          setSelectedItem(item)
-        }}
         onNew={handleNew}
         idField="id"
-        enableNew={true}
+        enableNew={canAdd}
         onPdfExport={async () => {
           exportPdfMutation.mutate()
         }}
         onCsvExport={async () => {
           exportCsvMutation.mutate()
         }}
-        enablePdfExport={true}
-        enableCsvExport={true}
+        enablePdfExport={canExport}
+        enableCsvExport={canExport}
         enableFilter={false}
         onResetTable={resetTable}
         onSearchChange={onSearchChange}

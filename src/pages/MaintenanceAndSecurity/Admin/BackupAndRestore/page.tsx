@@ -1,9 +1,12 @@
 import MainLayout from '@/components/layout/MainLayout'
 import { SystemBackupTable } from './SystemBackupTable'
+import { ModulePermissionProps } from '../../Security/UserPermissions/Service/PermissionsTypes'
 
-function BackupAndRestorePage() {
+export const BackupAndRestorePage: React.FC<ModulePermissionProps> = ({
+  name,
+}) => {
   return (
-    <MainLayout>
+    <MainLayout module={name}>
         <SystemBackupTable />
     </MainLayout>
   )

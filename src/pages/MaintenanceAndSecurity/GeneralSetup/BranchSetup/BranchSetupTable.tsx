@@ -11,8 +11,14 @@ import { PencilIcon, TrashIcon } from "lucide-react"
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog"
 import { toast } from "sonner"
 import { downloadFile } from "@/lib/utils"
+import { ModulePermissionProps } from "../../Security/UserPermissions/Service/PermissionsTypes"
 
-export function BranchSetupTable() {
+export function BranchSetupTable({
+  canAdd,
+  canEdit,
+  canDelete,
+  canExport,
+}: ModulePermissionProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<BranchSetup | null>(null)
   const [openDeleteModal, setOpenDeleteModal] = useState(false)
@@ -60,13 +66,13 @@ export function BranchSetupTable() {
       toast.success("Branch deleted successfully")
       // Check if we need to go back a page after deletion
       const shouldGoToPreviousPage = branches?.data.branches.length === 1 && currentPage > 1
-      
-      
+
+
       if (shouldGoToPreviousPage) {
         // Update the page first, then invalidate queries
         setCurrentPage((prev) => prev - 1)
       }
-      
+
       queryClient.invalidateQueries({
         queryKey: ["branch-setup-table"],
         exact: false,
@@ -86,7 +92,7 @@ export function BranchSetupTable() {
       if (newTab) {
         newTab.focus()
         toast.success("PDF opened in new tab")
-      }else{
+      } else {
         toast.error("Failed to open PDF. Please try again.")
       }
     },
@@ -223,22 +229,27 @@ export function BranchSetupTable() {
   }
 
   // Define action buttons
-  const actionButtons = [
-    {
+  const actionButtons = []
+
+  if (canEdit) {
+    actionButtons.push({
       label: "Edit",
       icon: <PencilIcon className="h-4 w-4" />,
       onClick: handleEdit,
-    },
-    {
+    })
+  }
+
+  if (canDelete) {
+    actionButtons.push({
       label: "Delete",
       icon: <TrashIcon className="h-4 w-4 text-destructive" />,
       onClick: (branch: BranchSetup) => {
         setSelectedItem(branch)
         setOpenDeleteModal(true)
       },
-    },
-  ]
-
+    })
+  }
+  
   const handleSort = (column: string, sort: string) => {
     setColumnSort(column)
     setSortQuery(sort)
@@ -261,9 +272,9 @@ export function BranchSetupTable() {
         onLoading={isPending || isFetching || deletionHandler.isPending}
         onNew={handleNew}
         idField="id"
-        enableNew={true}
-        enablePdfExport={true}
-        enableCsvExport={true}
+        enableNew={canAdd}
+        enablePdfExport={canExport}
+        enableCsvExport={canExport}
         enableFilter={false}
         onResetTable={false}
         onSearchChange={onSearchChange}

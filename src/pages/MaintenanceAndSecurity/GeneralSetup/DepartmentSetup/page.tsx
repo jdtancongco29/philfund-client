@@ -1,10 +1,22 @@
 import MainLayout from '@/components/layout/MainLayout'
 import { DepartmentSetupTable } from './DepartmentsSetupTable'
+import { ModulePermissionProps } from '../../Security/UserPermissions/Service/PermissionsTypes'
 
-function DepartmentSetupPage() {
+export const DepartmentSetupPage: React.FC<ModulePermissionProps> = ({
+  name,
+  canAdd,
+  canEdit,
+  canDelete,
+  canExport,
+}) => {
   return (
-    <MainLayout>
-        <DepartmentSetupTable />
+    <MainLayout module={name}>
+      <DepartmentSetupTable
+        canAdd={canAdd}
+        canEdit={canEdit}
+        canDelete={canDelete}
+        canExport={canExport}
+      />
     </MainLayout>
   )
 }

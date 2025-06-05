@@ -1,6 +1,5 @@
 "use client"
 
-import type React from "react"
 import { useState } from "react"
 import { BorrowerSearchSidebar } from "./Components/BorrowerSearchSidebar"
 import { EmptyState } from "./Components/EmptyState"
@@ -9,8 +8,12 @@ import { VoucherTab } from "./Components/Tabs/VoucherTab"
 import { UserDetailsSidebar } from "./Components/UserDetailsSidebar"
 import { borrowers, loans } from "./Data/MockData"
 import { Borrower } from "./Types/Index"
+import { ModulePermissionProps } from "../MaintenanceAndSecurity/Security/UserPermissions/Service/PermissionsTypes"
 
-const BorrowerDashboard: React.FC = () => {
+
+  export default function BorrowerDashboard({
+    //canExport
+  }: ModulePermissionProps) {
   const [selectedBorrower, setSelectedBorrower] = useState<Borrower | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState<"information" | "voucher">("information")
@@ -36,11 +39,11 @@ const BorrowerDashboard: React.FC = () => {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 h-full overflow-auto">
+        <div className="flex-1 h-full overflow-auto ">
           {selectedBorrower ? (
             <div className="flex h-full">
               {/* Center Content */}
-              <div className="flex-1 p-2 overflow-auto">
+              <div className="flex-1 p-2 overflow-auto ">
                 {/* Tabs */}
                 <div className="border-b border-gray-200 mb-6">
                   <nav className="flex space-x-8">
@@ -68,7 +71,7 @@ const BorrowerDashboard: React.FC = () => {
                 </div>
 
                 {/* Tab Content */}
-                {activeTab === "information" && <InformationTab borrower={selectedBorrower} loans={loans} />}
+                {activeTab === "information" && <InformationTab borrower={selectedBorrower} loans={loans}   className="w-full max-w-5xl mx-auto"/>}
                 {activeTab === "voucher" && <VoucherTab />}
               </div>
 
@@ -84,4 +87,4 @@ const BorrowerDashboard: React.FC = () => {
   )
 }
 
-export default BorrowerDashboard
+// export default BorrowerDashboard

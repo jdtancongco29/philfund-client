@@ -3,14 +3,14 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent} from "@/components/ui/tabs"
 import { Printer, Archive, CircleCheck } from 'lucide-react'
 import { AddressDetailsTab } from "./Tab/AddressDetailsTab"
 import { AuthorizationTab } from "./Tab/AuthorizationTab"
 import { BasicInfoTab } from "./Tab/BasicInfoTab"
 import { DependentsTab } from "./Tab/DependentsTab"
 import { PhilfundCashCardTab } from "./Tab/PhilfundCashCardTab"
-import { VerificationTab } from "./Tab/VerificationTab"
+
 import { WorkInformationTab } from "./Tab/WorkInformationTab"
 import { toast } from "sonner"
 import type { 
@@ -18,6 +18,9 @@ import type {
   ValidationErrors, 
   AddBorrowerDialogProps 
 } from "./Services/AddBorrowersTypes"
+import VerificationTab from "./Tab/VerificationTab"
+
+export type { ValidationErrors, FormData }
 
 export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps) {
   const [activeTab, setActiveTab] = useState("basic-info")
@@ -87,17 +90,17 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
     umid_type: "",
     umid_card_no: "",
     atm_bank_branch: "",
-  authorizedPersons: [],
+    authorizedPersons: [],
     bankName: "",
-  cardNumber: "",
-  accountNumber: "",
-  cardExpiryDate: undefined,
-      borrowerPhoto: null,
-      borrowerSignature: null,
-      homeSketch: null,
-      googleMapUrl: "",
-      isInterviewed: false,
-      interviewedBy: "",  
+    cardNumber: "",
+    accountNumber: "",
+    cardExpiryDate: undefined,
+    borrowerPhoto: null,
+    borrowerSignature: null,
+    homeSketch: null,
+    googleMapUrl: "",
+    isInterviewed: false,
+    interviewedBy: "",  
   })
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({})
 
@@ -198,16 +201,33 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
     const errors: ValidationErrors = {}
 
    
-    if (!formData.dependents || formData.dependents.length === 0) {
-      errors.dependents = "At least one dependent is required"
-    } else {
-      
-      const hasValidDependent = formData.dependents.some(dep => dep.name.trim() !== "")
-      if (!hasValidDependent) {
-        errors.dependents = "At least one dependent must have a name"
-      }
-      
+if (!formData.dependents || formData.dependents.length === 0) {
+  errors.dependents = "At least one dependent is required"
+} else {
+  let hasValidDependent = false
+
+  formData.dependents.forEach((dep) => {
+    const trimmedName = dep.name.trim()
+
+    if (!trimmedName) {
+      errors[`${dep.id}_name`] = "Name is required"
     }
+
+    if (!dep.birthdate) {
+      errors[`${dep.id}_birthdate`] = "Birthdate is required"
+    }
+
+    // Track if at least one dependent has both valid name and birthdate
+    if (trimmedName && dep.birthdate) {
+      hasValidDependent = true
+    }
+  })
+
+  if (!hasValidDependent) {
+    errors.dependents = "At least one dependent must have both name and birthdate"
+  }
+}
+
 
     setValidationErrors(errors)
     return Object.keys(errors).length === 0
@@ -307,20 +327,28 @@ const validateWorkInformation = (): boolean => {
   if (!formData.prc_registration_no.trim()) {
     errors.prc_registration_no = "PRC Registration No. is required"
   }
+   if (!formData.prc_place_issued.trim()) {
+    errors.prc_place_issued = "PRC Place of Issue is required" 
+  }
+  //   if (!formData.gov_place_issued.trim()) {
+  //   errors.gov_place_issued = "Place of Issue is required"
+  // }
+    if (!formData.gov_date_issued) {
+    errors.gov_date_issued = "Date of Issue is required"
+  }
+    if (!formData.gov_expiration_date) {
+    errors.gov_expiration_date = "Expiration Date is required"
+  }
   if (!formData.gov_valid_id_type.trim()) {
     errors.gov_valid_id_type = "Government Valid ID Type is required"
   }
-  if (!formData.valid_id_no.trim()) {
-    errors.valid_id_no = "Valid ID No. is required"
-  }
-  if (!formData.gov_place_issued.trim()) {
-    errors.gov_place_issued = "Place of Issue is required"
-  }
-  if (!formData.gov_date_issued) {
-    errors.gov_date_issued = "Date of Issue is required"
-  }
-  if (!formData.gov_expiration_date) {
-    errors.gov_expiration_date = "Expiration Date is required"
+  // if (!formData.valid_id_no.trim()) {
+  //   errors.valid_id_no = "Valid ID No. is required"
+  // }
+
+
+if (!formData.bank.trim()) {
+    errors.bank = "Bank is required"
   }
   if (!formData.atm_account_number.trim()) {
     errors.atm_account_number = "ATM Account Number is required"
@@ -340,12 +368,8 @@ const validateWorkInformation = (): boolean => {
   if (!formData.atm_bank_branch.trim()) {
     errors.atm_bank_branch = "ATM Bank Branch is required"
   }
-  if (!formData.prc_place_issued.trim()) {
-    errors.prc_place_issued = "PRC Place of Issue is required" 
-  }
-  if (!formData.bank.trim()) {
-    errors.bank = "Bank is required"
-  }
+ 
+  
   
 
 
@@ -507,7 +531,7 @@ const validateVerification = (): boolean => {
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-7 flex-shrink-0">
+          {/* <TabsList className="grid w-full grid-cols-7 flex-shrink-0">
             <TabsTrigger value="basic-info">Basic Info</TabsTrigger>
             <TabsTrigger value="dependents">Dependents</TabsTrigger>
             <TabsTrigger value="address-details">Address Details</TabsTrigger>
@@ -515,7 +539,81 @@ const validateVerification = (): boolean => {
             <TabsTrigger value="authorization">Authorization</TabsTrigger>
             <TabsTrigger value="philfund-cash-card">Philfund cash card</TabsTrigger>
             <TabsTrigger value="verification">Verification</TabsTrigger>
-          </TabsList>
+          </TabsList> */}
+
+           <nav className="flex space-x-8 border-b mb-4">
+    <button
+      className={`py-2 px-1 border-b-2 font-medium text-sm ${
+        activeTab === "basic-info"
+          ? "border-blue-500 text-blue-600"
+          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+      }`}
+      onClick={() => setActiveTab("basic-info")}
+    >
+      Basic Info
+    </button>
+    <button
+      className={`py-2 px-1 border-b-2 font-medium text-sm ${
+        activeTab === "dependents"
+          ? "border-blue-500 text-blue-600"
+          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+      }`}
+      onClick={() => setActiveTab("dependents")}
+    >
+      Dependents
+    </button>
+    <button
+      className={`py-2 px-1 border-b-2 font-medium text-sm ${
+        activeTab === "address-details"
+          ? "border-blue-500 text-blue-600"
+          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+      }`}
+      onClick={() => setActiveTab("address-details")}
+    >
+      Address Details
+    </button>
+    <button
+      className={`py-2 px-1 border-b-2 font-medium text-sm ${
+        activeTab === "work-information"
+          ? "border-blue-500 text-blue-600"
+          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+      }`}
+      onClick={() => setActiveTab("work-information")}
+    >
+      Work Information
+    </button>
+    <button
+      className={`py-2 px-1 border-b-2 font-medium text-sm ${
+        activeTab === "authorization"
+          ? "border-blue-500 text-blue-600"
+          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+      }`}
+      onClick={() => setActiveTab("authorization")}
+    >
+      Authorization
+    </button>
+    <button
+      className={`py-2 px-1 border-b-2 font-medium text-sm ${
+        activeTab === "philfund-cash-card"
+          ? "border-blue-500 text-blue-600"
+          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+      }`}
+      onClick={() => setActiveTab("philfund-cash-card")}
+    >
+      Philfund Cash Card
+    </button>
+    <button
+      className={`py-2 px-1 border-b-2 font-medium text-sm ${
+        activeTab === "verification"
+          ? "border-blue-500 text-blue-600"
+          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+      }`}
+      onClick={() => setActiveTab("verification")}
+    >
+      Verification
+    </button>
+  </nav>
+
 
           <div className="flex-1 overflow-y-auto px-1">
             <TabsContent value="basic-info" className="mt-0 h-full">

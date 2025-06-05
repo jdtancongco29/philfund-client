@@ -8,24 +8,24 @@ interface InformationTabProps {
   loans: Loan[]
 }
 
-export function InformationTab({ borrower, loans }: InformationTabProps) {
+export function InformationTab({ borrower, loans , className = "" }: InformationTabProps &  { className?: string }) {
   return (
-    <div className="space-y-6 w-100">
+         <div className={`space-y-4 ${className}`}>
       {/* Borrower Primary Details */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Borrower Primary Details</h3>
+          <h3 className="text-sl font-bold text-gray-900">Borrower Primary Details</h3>
         </div>
         <div className="p-6">
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-8">
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-500">Contact ID</label>
-                <p className="text-gray-900 font-medium">{borrower.contactId}</p>
+                <label className="block text-sm sm text-gray-500">Contact ID</label>
+                <p className="text-gray-900 sm">{borrower.contactId}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-500">ATM Card Status</label>
-                <p className="text-gray-900 font-medium">{borrower.atmCard}</p>
+                <p className="text-gray-900 sm">{borrower.atmCard}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-500">Card User ID</label>
@@ -59,25 +59,25 @@ export function InformationTab({ borrower, loans }: InformationTabProps) {
       {/* Co-Maker Information */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Co-Maker Information</h3>
+          <h3 className="text-sl font-bold  text-gray-900">Co-Maker Information</h3>
         </div>
         <div className="p-6">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-2 gap-6">
             <div>
               <div className="text-sm text-gray-500 mb-1">Loans as Co-Maker</div>
-              <div className="text-xl lg:text-2xl font-bold text-gray-900">{borrower.coMakerLoans} Loans</div>
+              <div className="text-sl  font-bold text-gray-900">{borrower.coMakerLoans} Loans</div>
             </div>
             <div>
               <div className="text-sm text-gray-500 mb-1">Guaranteed Loans</div>
-              <div className="text-xl lg:text-2xl font-bold text-gray-900">{borrower.guaranteedLoans} Loan</div>
+              <div className="text-sl  font-bold text-gray-900">{borrower.guaranteedLoans} Loan</div>
             </div>
             <div>
               <div className="text-sm text-gray-500 mb-1">Bad Debt Loans</div>
-              <div className="text-xl lg:text-2xl font-bold text-gray-900">{borrower.badDebtLoans} Loans</div>
+              <div className="text-sl  font-bold text-gray-900">{borrower.badDebtLoans} Loans</div>
             </div>
             <div>
               <div className="text-sm text-gray-500 mb-1">As co-borrowers</div>
-              <div className="text-xl lg:text-2xl font-bold text-gray-900">4 Borrowers</div>
+              <div className="text-sl font-bold text-gray-900">4 Borrowers</div>
             </div>
           </div>
         </div>
@@ -86,36 +86,36 @@ export function InformationTab({ borrower, loans }: InformationTabProps) {
       {/* Loan Count */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Loan Count</h3>
+          <h3 className="text-sl font-bold  text-gray-900">Loan Count</h3>
         </div>
         <div className="p-6">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
             <div>
               <div className="text-sm text-gray-500 mb-1">Total SL Availed</div>
-              <div className="text-xl lg:text-2xl font-bold text-gray-900">23</div>
+              <div className="text-sl font-bold text-gray-900">23</div>
             </div>
             <div>
               <div className="text-sm text-gray-500 mb-1">Total SL Availed</div>
-              <div className="text-xl lg:text-2xl font-bold text-gray-900">34</div>
+              <div className="text-sl font-bold text-gray-900">34</div>
             </div>
             <div>
               <div className="text-sm text-gray-500 mb-1">Loan Overdraft</div>
-              <div className="text-xl lg:text-2xl font-bold text-gray-900">10</div>
+              <div className="text-sl  font-bold text-gray-900">10</div>
             </div>
             <div></div>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
             <div>
               <div className="text-sm text-gray-500 mb-1">Total BL CA Availed</div>
-              <div className="text-xl lg:text-2xl font-bold text-gray-900">2</div>
+              <div className="text-sl font-bold text-gray-900">2</div>
             </div>
             <div>
               <div className="text-sm text-gray-500 mb-1">Total BL CA Availed</div>
-              <div className="text-xl lg:text-2xl font-bold text-gray-900">2</div>
+              <div className="text-sl font-bold text-gray-900">2</div>
             </div>
             <div>
               <div className="text-sm text-gray-500 mb-1">Total Loans Availed</div>
-              <div className="text-xl lg:text-2xl font-bold text-gray-900">63</div>
+              <div className="text-sl font-bold text-gray-900">63</div>
             </div>
             <div></div>
           </div>
@@ -125,7 +125,7 @@ export function InformationTab({ borrower, loans }: InformationTabProps) {
       {/* Active Loans and Advances */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <h3 className="text-lg font-semibold text-gray-900">Active Loans and Advances</h3>
+          <h3 className="text-sl font-bold  text-gray-900">Active Loans and Advances</h3>
           <div className="flex items-center gap-2">
             <label className="text-sm text-gray-600">Search</label>
             <div className="relative">

@@ -1,6 +1,7 @@
 
 import MainLayout from '@/components/layout/MainLayout'
-import BorrowersMasterList from './BorrowerMasterList/BorrowerMasterList'
+import BorrowersMasterList from '../BorrowerMasterList/BorrowerMasterList'
+
 
 function LendingPage() {
   return (

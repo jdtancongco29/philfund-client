@@ -7,8 +7,7 @@ import ProtectedRoute from "./components/ProtectedRoute"
 import PublicRoute from "./components/PublicRoute"
 import BranchSetup from "./pages/MaintenanceAndSecurity/GeneralSetup/BranchSetup/page"
 import UserManagementPage from "./pages/MaintenanceAndSecurity/Security/UserManagement/page"
-import BorrowerDashboardPage from "./pages/BorrowerDashboard/page"
-import LendingPage from "./pages/Lending/page"
+import LendingPage from "./pages/Lending/BorrowerMasterList/page"
 import AccountingPage from "./pages/Accounting/page"
 import ReferenceSettingsPage from "./pages/MaintenanceAndSecurity/AccountingSetup/ReferenceSettings/page"
 import CashieringPage from "./pages/MaintenanceAndSecurity/AccountingSetup/Cashiering/page"
@@ -36,6 +35,9 @@ import ChangePasswordRoute from "./components/ChangePasswordRoute"
 import { Toaster } from 'sonner';
 import GeneralJournalpage from "./pages/MaintenanceAndSecurity/AccountingSetup/GeneralJournal/page"
 import { PermissionProvider } from "./context/PermissionContext"
+import BorrowersMasterList from "./pages/Lending/BorrowerMasterList/BorrowerMasterList"
+import BorrowerDashboard from "./pages/BorrowerDashboard/BorrowerDashbaord"
+import BorrowerDashboardPage from "./pages/BorrowerDashboard/page"
 
 function App() {
   return (
@@ -61,10 +63,12 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route
               path="/borrower-dashboard"
-              element={<BorrowerDashboardPage />}
+              element={<BorrowerDashboardPage name="Borrowers Dashboard"/>}
             />
             <Route path="/lending" element={<LendingPage />} />
+            <Route path="/lending/borrower-master-list" element={<BorrowersMasterList name="Borrower's Masterlist"/>} />
             <Route path="/accounting" element={<AccountingPage />} />
+            
             <Route
               path="/maintenance-and-security/general-setup/branch-setup"
               element={<BranchSetup name="Branch Setup" />}
@@ -73,6 +77,7 @@ function App() {
               path="/maintenance-and-security/general-setup/department-setup"
               element={<DepartmentSetupPage name="Department Setup" />}
             />
+            
             <Route
               path="/maintenance-and-security/security/user-management"
               element={<UserManagementPage name="User Management" />}

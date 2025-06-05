@@ -6,10 +6,12 @@ import { Upload, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ColumnDefinition, FilterDefinition, SearchDefinition } from "@/components/data-table/data-table"
 
-import { AddBorrowerDialog } from "../BarrowerProfileMaintenance/AddBorrowerDialog"
-import { BorrowerProfileUploadDialog } from "../BarrowerProfileMaintenance/Dialog/BorrowerProfileUploadDialog"
-import { BeginningBalanceUploadDialog } from "../BarrowerProfileMaintenance/Dialog/BeginningBalanceUploadDialog"
+
 import { DataTableV3 } from "@/components/data-table/data-table-v3"
+import { AddBorrowerDialog } from "../BarrowerProfileMaintenance/AddBorrowerDialog"
+import { BeginningBalanceUploadDialog } from "../BarrowerProfileMaintenance/Dialog/BeginningBalanceUploadDialog"
+import { BorrowerProfileUploadDialog } from "../BarrowerProfileMaintenance/Dialog/BorrowerProfileUploadDialog"
+import { ModulePermissionProps } from "@/pages/MaintenanceAndSecurity/Security/UserPermissions/Service/PermissionsTypes"
 
 interface BorrowerData {
   id: string
@@ -163,8 +165,13 @@ const getStatusBadge = (status: string) => {
       return <Badge variant="secondary">{status}</Badge>
   }
 }
+export default function BorrowersMasterList({
+  canAdd,
+  // canEdit,
+  // canDelete,
+  canExport
+}: ModulePermissionProps) {
 
-export default function BorrowersMasterList() {
   const [currentPage, setCurrentPage] = useState(1)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -354,9 +361,9 @@ export default function BorrowersMasterList() {
         onPdfExport={handlePdfExport}
         onCsvExport={handleCsvExport}
         idField="id"
-        enableNew={true}
-        enablePdfExport={true}
-        enableCsvExport={true}
+        enableNew={canAdd}
+        enablePdfExport={canExport}
+        enableCsvExport={canExport}
         enableFilter={true}
         enableSelection={false}
         onLoading={false}

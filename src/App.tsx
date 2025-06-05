@@ -8,7 +8,6 @@ import PublicRoute from "./components/PublicRoute"
 import BranchSetup from "./pages/MaintenanceAndSecurity/GeneralSetup/BranchSetup/page"
 import UserManagementPage from "./pages/MaintenanceAndSecurity/Security/UserManagement/page"
 import BorrowerDashboardPage from "./pages/BorrowerDashboard/page"
-import LendingPage from "./pages/Lending/page"
 import AccountingPage from "./pages/Accounting/page"
 import ReferenceSettingsPage from "./pages/MaintenanceAndSecurity/AccountingSetup/ReferenceSettings/page"
 import CashieringPage from "./pages/MaintenanceAndSecurity/AccountingSetup/Cashiering/page"
@@ -36,6 +35,7 @@ import ChangePasswordRoute from "./components/ChangePasswordRoute"
 import { Toaster } from 'sonner';
 import GeneralJournalpage from "./pages/MaintenanceAndSecurity/AccountingSetup/GeneralJournal/page"
 import { PermissionProvider } from "./context/PermissionContext"
+import LoanProcessing from "./pages/Lending/LoanProcessing/page"
 
 function App() {
   return (
@@ -63,8 +63,16 @@ function App() {
               path="/borrower-dashboard"
               element={<BorrowerDashboardPage />}
             />
-            <Route path="/lending" element={<LendingPage />} />
+            {/* Lending Routes */}
+            <Route path="/lending/loan-processing" element={<LoanProcessing name="" />} />
+
+            {/* Maintenance and Security Routes */}
+            <Route
+              path="/maintenance-and-security/general-setup/department-setup"
+              element={<DepartmentSetupPage name="Department Setup" />}
+            />
             <Route path="/accounting" element={<AccountingPage />} />
+
             <Route
               path="/maintenance-and-security/general-setup/branch-setup"
               element={<BranchSetup name="Branch Setup" />}

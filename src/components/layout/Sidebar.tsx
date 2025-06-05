@@ -43,60 +43,27 @@ const menuConfig = [
     sectionTitle: "Lending",
     value: "lending",
     items: [
+        {
+        title: "More Actions",
+        value: "more-actions-group",
+        links: [
+          { label: "Loan Processing", path: "/lending/loan-processing" },
           {
-       title: "Loan Processing",
-        value: "loan-processing",
-        links: [
-          
-        ],
-      },
+            label: "Cash Advance Processing",
+            path: "/cash-advance-processing",
+          },
+          { label: "Loan Restructuring", path: "/lending/loan-restructuring" },
+          { label: "Cash Processing", path: "/lending/cash-processing" },
           {
-       title: "Cash Advance Processing", 
-        value: "cash-advance-processing",
-        links: [
-          
-        ],
-      },
+            label: "Payments & Collections",
+            path: "/lending/payments-and-collections",
+          },
+          { label: "Loan Pay Off", path: "/lending/loan-pay-off" },
+          { label: "Cards Custody Log", path: "/lending/cards-custody-log" },
           {
-       title: "Loan Structuring",
-        value: "loan-structuring",
-        links: [
-          
-        ],
-      },
-          {
-       title: "Cash Processing",
-        value: "cash-processing",
-        links: [
-          
-        ],
-      },
-         {
-       title: "Payments & Collections",
-        value: "payments-and-collections",
-        links: [
-          
-        ],
-      },
-         {
-       title: "Loan Pay Off",
-        value: "loan-pay-off",
-        links: [
-          
-        ],
-      },
-         {
-       title: "Card Custody Log",
-        value: "card-custody-log",
-        links: [
-          
-        ],
-      },
-         {
-       title: "Unsold / No Accounts Recording",
-        value: "unsold-no-accounts-recording",
-        links: [
-          
+            label: "Unsold / No Accounts Recording",
+            path: "/lending/unsold-or-no-account-recording",
+          },
         ],
       },
       {

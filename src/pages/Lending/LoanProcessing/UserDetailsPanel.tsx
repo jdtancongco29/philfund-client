@@ -20,7 +20,7 @@ export function UserDetailsPanel({
   onProcessCheckVoucher,
 }: UserDetailsPanelProps) {
   return (
-    <div className="w-80 bg-white border-l border-gray-200 p-6">
+    <div className="w-80 bg-white border-l border-gray-200 p-6 hidden 2xl:block">
       <h2 className="text-lg font-semibold mb-4">User Details</h2>
 
       <div className="space-y-4">

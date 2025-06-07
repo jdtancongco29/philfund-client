@@ -16,7 +16,7 @@ const navItems = [
   { to: "/dashboard", label: "Dashboard" },
   { to: "/borrower-dashboard", label: "Borrower Dashboard" },
   {
-    to: "/lending/loan-processing",
+    to: "/lending/salary-loan-processing",
     label: "Lending",
     matchPath: "/lending",
   },

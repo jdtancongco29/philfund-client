@@ -13,6 +13,9 @@ import { UserDetailsPanel } from "./UserDetailsPanel"
 import { LoanComputationTab } from "./Tabs/LoanComputationTab"
 import { VoucherTab } from "./Tabs/VoucherTab"
 import { TransactionHistoryTab } from "./Tabs/TransactionHistoryTab"
+import { Button } from "@/components/ui/button"
+import { UserDetailsDrawer } from "./Drawer/UserDetailsDrawer"
+import NoSelected from "@/components/no-selected"
 
 // Form schema for loan computation
 const loanComputationSchema = z.object({
@@ -47,6 +50,7 @@ export function SalaryLoanProcessing() {
   const [currentLoan, setCurrentLoan] = useState<SalaryLoan | null>(null)
   const [coMakers, setCoMakers] = useState<CoMaker[]>([])
   const [activeTab, setActiveTab] = useState("loan-computation")
+  const [openProfileDrawer, setOpenProfileDrawer] = useState(false)
 
   // Build filters
   const filters: SalaryLoanFilters = useMemo(
@@ -224,6 +228,10 @@ export function SalaryLoanProcessing() {
     // TODO: Implement actual check voucher processing
   }
 
+  const handleShowProfile = () => {
+    setOpenProfileDrawer(prev => !prev)
+  }
+
   return (
     <div className="flex gap-6 h-full overflow-hidden">
       {/* Left Sidebar - Borrower Search */}
@@ -247,88 +255,108 @@ export function SalaryLoanProcessing() {
       />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col border rounded-[8px] h-full overflow-hidden">
-        <div className="flex-1 flex overflow-hidden">
-          {/* Center Panel - Loan Processing */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Header - Fixed */}
-            <div className="bg-white p-6 border-gray-200 flex-shrink-0">
-              <h1 className="text-xl font-semibold">Salary Loan Processing</h1>
-            </div>
-
-            {/* Tabs Container - Flexible */}
-            <div className="flex-1 flex flex-col overflow-hidden">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-                {/* Tab List - Fixed */}
-                <TabsList className="flex justify-start border-b border-gray-200 bg-transparent rounded-none p-0 w-full flex-shrink-0">
-                  <TabsTrigger
-                    value="loan-computation"
-                    className="shadow-transparent mb-[-3px] relative flex-none border-none rounded-none bg-transparent px-4 py-2 text-sm font-medium text-black data-[state=active]:text-black data-[state=active]:after:absolute data-[state=active]:after:left-0 data-[state=active]:after:bottom-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-blue-600"
-                  >
-                    Loan Computation
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="voucher"
-                    className="shadow-transparent mb-[-3px] relative flex-none border-none rounded-none bg-transparent px-4 py-2 text-sm font-medium text-black data-[state=active]:text-black data-[state=active]:after:absolute data-[state=active]:after:left-0 data-[state=active]:after:bottom-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-blue-600"
-                  >
-                    Voucher
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="transaction-history"
-                    className="shadow-transparent mb-[-3px] relative flex-none border-none rounded-none bg-transparent px-4 py-2 text-sm font-medium text-black data-[state=active]:text-black data-[state=active]:after:absolute data-[state=active]:after:left-0 data-[state=active]:after:bottom-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-blue-600"
-                  >
-                    Transaction History
-                  </TabsTrigger>
-                </TabsList>
-
-                {/* Tab Content - Scrollable */}
-                <div className="flex-1 overflow-hidden">
-                  <TabsContent value="loan-computation" className="h-full overflow-y-auto p-6 m-0">
-                    <LoanComputationTab
-                      currentLoan={currentLoan}
-                      borrowers={borrowersData?.data.borrowers || []}
-                      coMakers={coMakers}
-                      setCoMakers={setCoMakers}
-                      onSaveAsDraft={handleSaveAsDraft}
-                      onProcess={handleProcess}
-                      onReset={handleReset}
-                      isLoading={createLoanMutation.isPending || updateLoanMutation.isPending}
-                    />
-                  </TabsContent>
-
-                  <TabsContent value="voucher" className="h-full overflow-y-auto p-6 m-0">
-                    <VoucherTab
-                      voucherData={voucherData?.data || null}
-                      banks={banksData?.data.banks || []}
-                      onReset={handleReset}
-                      onSaveAsDraft={() => toast.info("Saving voucher as draft...")}
-                      onProcess={handleProcess}
-                    />
-                  </TabsContent>
-
-                  <TabsContent value="transaction-history" className="h-full overflow-y-auto p-6 m-0">
-                    <TransactionHistoryTab
-                      amortizationSchedule={amortizationData?.data.schedule || null}
-                      onReset={handleReset}
-                      onSaveAsDraft={() => toast.info("Saving transaction history as draft...")}
-                      onProcess={handleProcess}
-                    />
-                  </TabsContent>
+      {
+        selectedBorrower ? (
+          <div className="flex-1 flex flex-col border rounded-[8px] h-full overflow-hidden">
+            <div className="flex-1 flex overflow-hidden">
+              {/* Center Panel - Loan Processing */}
+              <div className="flex-1 flex flex-col overflow-hidden">
+                {/* Header - Fixed */}
+                <div className="bg-white p-6 border-gray-200 flex-shrink-0 md:flex md:item-center md:justify-between">
+                  <h1 className="text-xl font-semibold">Salary Loan Processing</h1>
+                  <Button className="block 2xl:hidden" size="sm" onClick={handleShowProfile}>
+                    View Profile
+                  </Button>
                 </div>
-              </Tabs>
+
+                {/* Tabs Container - Flexible */}
+                <div className="flex-1 flex flex-col overflow-hidden">
+                  <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+                    {/* Tab List - Fixed */}
+                    <TabsList className="flex justify-start border-b border-gray-200 bg-transparent rounded-none p-0 w-full flex-shrink-0">
+                      <TabsTrigger
+                        value="loan-computation"
+                        className="shadow-transparent mb-[-3px] relative flex-none border-none rounded-none bg-transparent px-4 py-2 text-sm font-medium text-black data-[state=active]:text-black data-[state=active]:after:absolute data-[state=active]:after:left-0 data-[state=active]:after:bottom-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-blue-600"
+                      >
+                        Loan Computation
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="voucher"
+                        className="shadow-transparent mb-[-3px] relative flex-none border-none rounded-none bg-transparent px-4 py-2 text-sm font-medium text-black data-[state=active]:text-black data-[state=active]:after:absolute data-[state=active]:after:left-0 data-[state=active]:after:bottom-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-blue-600"
+                      >
+                        Voucher
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="transaction-history"
+                        className="shadow-transparent mb-[-3px] relative flex-none border-none rounded-none bg-transparent px-4 py-2 text-sm font-medium text-black data-[state=active]:text-black data-[state=active]:after:absolute data-[state=active]:after:left-0 data-[state=active]:after:bottom-0 data-[state=active]:after:h-0.5 data-[state=active]:after:w-full data-[state=active]:after:bg-blue-600"
+                      >
+                        Transaction History
+                      </TabsTrigger>
+                    </TabsList>
+
+                    {/* Tab Content - Scrollable */}
+                    <div className="flex-1 overflow-hidden">
+                      <TabsContent value="loan-computation" className="h-full overflow-y-auto p-6 m-0">
+                        <LoanComputationTab
+                          currentLoan={currentLoan}
+                          borrowers={borrowersData?.data.borrowers || []}
+                          coMakers={coMakers}
+                          setCoMakers={setCoMakers}
+                          onSaveAsDraft={handleSaveAsDraft}
+                          onProcess={handleProcess}
+                          onReset={handleReset}
+                          isLoading={createLoanMutation.isPending || updateLoanMutation.isPending}
+                        />
+                      </TabsContent>
+
+                      <TabsContent value="voucher" className="h-full overflow-y-auto p-6 m-0">
+                        <VoucherTab
+                          voucherData={voucherData?.data || null}
+                          banks={banksData?.data.banks || []}
+                          onReset={handleReset}
+                          onSaveAsDraft={() => toast.info("Saving voucher as draft...")}
+                          onProcess={handleProcess}
+                        />
+                      </TabsContent>
+
+                      <TabsContent value="transaction-history" className="h-full overflow-y-auto p-6 m-0">
+                        <TransactionHistoryTab
+                          amortizationSchedule={amortizationData?.data.schedule || null}
+                          onReset={handleReset}
+                          onSaveAsDraft={() => toast.info("Saving transaction history as draft...")}
+                          onProcess={handleProcess}
+                        />
+                      </TabsContent>
+                    </div>
+                  </Tabs>
+                </div>
+              </div>
+
+              {/* Right Sidebar - User Details */}
+              <UserDetailsPanel
+                selectedBorrower={selectedBorrower}
+                onPrintLoanDisclosure={handlePrintLoanDisclosure}
+                onPrintPromissoryNote={handlePrintPromissoryNote}
+                onPrintComakerStatement={handlePrintComakerStatement}
+                onProcessCheckVoucher={handleProcessCheckVoucher}
+              />
+              <UserDetailsDrawer
+                open={openProfileDrawer}
+                onOpenChange={setOpenProfileDrawer}
+                selectedBorrower={selectedBorrower}
+                onPrintLoanDisclosure={handlePrintLoanDisclosure}
+                onPrintPromissoryNote={handlePrintPromissoryNote}
+                onPrintComakerStatement={handlePrintComakerStatement}
+                onProcessCheckVoucher={handleProcessCheckVoucher}
+              />
             </div>
           </div>
-
-          {/* Right Sidebar - User Details */}
-          <UserDetailsPanel
-            selectedBorrower={selectedBorrower}
-            onPrintLoanDisclosure={handlePrintLoanDisclosure}
-            onPrintPromissoryNote={handlePrintPromissoryNote}
-            onPrintComakerStatement={handlePrintComakerStatement}
-            onProcessCheckVoucher={handleProcessCheckVoucher}
+        ) : (
+          <NoSelected
+            description="Choose a borrower from the list to view their details."
           />
-        </div>
-      </div>
+        )
+      }
     </div>
   )
 }

@@ -351,6 +351,7 @@ export const SalaryLoanService = {
    * TODO: Replace with actual API call: GET /api/v1/salary-loans/{id}
    */
   getSalaryLoan: async (id: string): Promise<ApiResponse<SalaryLoan>> => {
+    console.log(id)
     // TODO: Remove simulation delay
     await new Promise((resolve) => setTimeout(resolve, 500))
 
@@ -566,6 +567,7 @@ export const SalaryLoanService = {
    * TODO: Replace with actual API call: GET /api/v1/salary-loans/{loanId}/amortization
    */
   getAmortizationSchedule: async (loanId: string): Promise<ApiResponse<GetAmortizationScheduleResponse>> => {
+    console.log(loanId)
     // TODO: Remove simulation delay
     await new Promise((resolve) => setTimeout(resolve, 500))
 
@@ -591,6 +593,7 @@ export const SalaryLoanService = {
    * TODO: Replace with actual API call: POST /api/v1/salary-loans/{id}/process
    */
   processSalaryLoan: async (id: string): Promise<ApiResponse<null>> => {
+    console.log(id)
     // TODO: Remove simulation delay
     await new Promise((resolve) => setTimeout(resolve, 1000))
 

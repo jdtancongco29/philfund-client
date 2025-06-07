@@ -58,109 +58,43 @@ function App() {
 
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
+            {/* Dashboard Routes */}
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route
-              path="/borrower-dashboard"
-              element={<BorrowerDashboardPage />}
-            />
-            {/* Lending Routes */}
-            <Route path="/lending/loan-processing" element={<LoanProcessing name="" />} />
 
-            {/* Maintenance and Security Routes */}
-            <Route
-              path="/maintenance-and-security/general-setup/department-setup"
-              element={<DepartmentSetupPage name="Department Setup" />}
-            />
+            {/* Borrower Dashboard Routes */}
+            <Route path="/borrower-dashboard" element={<BorrowerDashboardPage />} />
+
+
+            {/* Lending Routes */}
+            <Route path="/lending/salary-loan-processing" element={<LoanProcessing name="Salary Loan Processing" />} />
+
+
+            {/* Accounting Routes */}
             <Route path="/accounting" element={<AccountingPage />} />
 
-            <Route
-              path="/maintenance-and-security/general-setup/branch-setup"
-              element={<BranchSetup name="Branch Setup" />}
-            />
-            <Route
-              path="/maintenance-and-security/general-setup/department-setup"
-              element={<DepartmentSetupPage name="Department Setup" />}
-            />
-            <Route
-              path="/maintenance-and-security/security/user-management"
-              element={<UserManagementPage name="User Management" />}
-            />
-            <Route
-              path="/maintenance-and-security/security/user-permissions"
-              element={<UserPermissionsPage name="User Level Permission" />}
-            />
-            <Route
-              path="/maintenance-and-security/admin/approval"
-              element={<ApprovalPage name="For Approval List" />}
-            />
-            <Route
-              path="/maintenance-and-security/admin/backup-and-restore"
-              element={<BackupAndRestorePage name="Backup and Restore" />}
-            />
-            <Route
-              path="/maintenance-and-security/admin/activity-logs"
-              element={<ActivityLogsPage name="Activity Logs" />}
-            />
-            <Route
-              path="/maintenance-and-security/accounting-setup/reference-settings"
-              element={<ReferenceSettingsPage name="Reference Settings" />}
-            />
-            <Route
-              path="/maintenance-and-security/accounting-setup/chart-of-accounts"
-              element={<ChartOfAccountsPage name="Chart of Accounts" />}
-            />
-            <Route
-              path="/maintenance-and-security/accounting-setup/accounting-entries-defaults"
-              element={<AccountingEntriesDefaultspage name="Accounting Entries Default" />}
-            />
-            <Route
-              path="/maintenance-and-security/accounting-setup/default-account-setup"
-              element={<DefaultAccountSetupPage name="Accounting General Defaults Accounts Setup" />}
-            />
-            <Route
-              path="/maintenance-and-security/accounting-setup/bank-account-setup"
-              element={<BankAccountSetupPage name="Bank Account Setup" />}
-            />
-            <Route
-              path="/maintenance-and-security/accounting-setup/cashiering"
-              element={<CashieringPage name="Cashiering" />}
-            />
-            <Route
-              path="/maintenance-and-security/lending-setup/group-setup"
-              element={<GroupSetupPage name="Borrower Group Setup" />}
-            />
-            <Route
-              path="/maintenance-and-security/lending-setup/classification-setup"
-              element={<ClasificationSetupPage name="Classification Setup" />}
-            />
-            <Route
-              path="/maintenance-and-security/lending-setup/division-setup"
-              element={<DivisionSetupPage name="Borrower Division Setup" />}
-            />
-            <Route
-              path="/maintenance-and-security/lending-setup/district-setup"
-              element={<DistrictSetupPage name="Borrower District Setup" />}
-            />
-            <Route
-              path="/maintenance-and-security/lending-setup/school-office-setup"
-              element={<SchoolOfficeSetupPage name="Borrower School Setup" />}
-            />
-            <Route
-              path="/maintenance-and-security/lending-setup/salary-loan-setup"
-              element={<SalaryLoanSetupPage name="Salary Loan Setup" />}
-            />
-            <Route
-              path="/maintenance-and-security/lending-setup/bonus-loan-setup"
-              element={<BonusLoanSetupPage name="Bonus Loan Setup" />}
-            />
-            <Route
-              path="/maintenance-and-security/lending-setup/ca-setup"
-              element={<CashAdvanceSetupPage name="Cash Advance Setup" />}
-            />
-            <Route
-              path="/maintenance-and-security/accounting-setup/general-journal"
-              element={<GeneralJournalpage name="General Journal" />}
-            />
+            {/* Maintenance and Security Routes */}
+            <Route path="/maintenance-and-security/general-setup/branch-setup" element={<BranchSetup name="Branch Setup" />} />
+            <Route path="/maintenance-and-security/general-setup/department-setup" element={<DepartmentSetupPage name="Department Setup" />} />
+            <Route path="/maintenance-and-security/security/user-management" element={<UserManagementPage name="User Management" />} />
+            <Route path="/maintenance-and-security/security/user-permissions" element={<UserPermissionsPage name="User Level Permission" />} />
+            <Route path="/maintenance-and-security/admin/approval" element={<ApprovalPage name="For Approval List" />} />
+            <Route path="/maintenance-and-security/admin/backup-and-restore" element={<BackupAndRestorePage name="Backup and Restore" />} />
+            <Route path="/maintenance-and-security/admin/activity-logs" element={<ActivityLogsPage name="Activity Logs" />} />
+            <Route path="/maintenance-and-security/accounting-setup/reference-settings" element={<ReferenceSettingsPage name="Reference Settings" />} />
+            <Route path="/maintenance-and-security/accounting-setup/chart-of-accounts" element={<ChartOfAccountsPage name="Chart of Accounts" />} />
+            <Route path="/maintenance-and-security/accounting-setup/accounting-entries-defaults" element={<AccountingEntriesDefaultspage name="Accounting Entries Default" />} />
+            <Route path="/maintenance-and-security/accounting-setup/default-account-setup" element={<DefaultAccountSetupPage name="Accounting General Defaults Accounts Setup" />} />
+            <Route path="/maintenance-and-security/accounting-setup/bank-account-setup" element={<BankAccountSetupPage name="Bank Account Setup" />} />
+            <Route path="/maintenance-and-security/accounting-setup/cashiering" element={<CashieringPage name="Cashiering" />} />
+            <Route path="/maintenance-and-security/lending-setup/group-setup" element={<GroupSetupPage name="Borrower Group Setup" />} />
+            <Route path="/maintenance-and-security/lending-setup/classification-setup" element={<ClasificationSetupPage name="Classification Setup" />} />
+            <Route path="/maintenance-and-security/lending-setup/division-setup" element={<DivisionSetupPage name="Borrower Division Setup" />} />
+            <Route path="/maintenance-and-security/lending-setup/district-setup" element={<DistrictSetupPage name="Borrower District Setup" />} />
+            <Route path="/maintenance-and-security/lending-setup/school-office-setup" element={<SchoolOfficeSetupPage name="Borrower School Setup" />} />
+            <Route path="/maintenance-and-security/lending-setup/salary-loan-setup" element={<SalaryLoanSetupPage name="Salary Loan Setup" />} />
+            <Route path="/maintenance-and-security/lending-setup/bonus-loan-setup" element={<BonusLoanSetupPage name="Bonus Loan Setup" />} />
+            <Route path="/maintenance-and-security/lending-setup/ca-setup" element={<CashAdvanceSetupPage name="Cash Advance Setup" />} />
+            <Route path="/maintenance-and-security/accounting-setup/general-journal" element={<GeneralJournalpage name="General Journal" />} />
             {/* Add more protected routes here */}
           </Route>
 

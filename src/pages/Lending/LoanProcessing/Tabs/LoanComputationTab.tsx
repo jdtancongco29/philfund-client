@@ -696,7 +696,7 @@ export function LoanComputationTab({
       </div>
 
       {/* Sticky Action Buttons */}
-      <div className="border-t border-gray-200 bg-white p-4 flex justify-end gap-2 flex-shrink-0">
+      <div className="border-t border-gray-200 bg-white p-4 pb-0 flex justify-end gap-2 flex-shrink-0">
         <Button variant="outline" onClick={onReset} type="button">
           Reset
         </Button>

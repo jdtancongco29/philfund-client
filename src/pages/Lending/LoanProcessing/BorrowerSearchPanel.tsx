@@ -39,10 +39,9 @@ export function BorrowerSearchPanel({
   onSearch,
 }: BorrowerSearchPanelProps) {
   return (
-    <div className="w-80 bg-white h-full border rounded-[8px] border-gray-200 p-6">
-      <h2 className="text-lg font-semibold mb-4">Borrower Search</h2>
-
+    <div className="flex flex-col justify-between w-80 bg-white h-full border rounded-[8px] border-gray-200 p-6 overflow-y-auto">
       <div className="space-y-4">
+        <h2 className="text-lg font-semibold">Borrower Search</h2>
         <div>
           <label className="text-sm font-medium mb-2 block">
             Division <span className="text-red-500">*</span>
@@ -92,33 +91,33 @@ export function BorrowerSearchPanel({
         <div className="space-y-2">
           {isLoadingBorrowers ? (
             <div className="text-sm text-gray-500">Loading borrowers...</div>
+          ) : borrowers.length === 0 ? (
+            <div className="text-sm text-gray-500">No borrowers found.</div>
           ) : (
-              <div className="border rounded-md overflow-hidden">
-                {
-                    borrowers.map((borrower) => (
-                    <button
-                        key={borrower.id}
-                        onClick={() => onBorrowerSelect(borrower)}
-                        className={`w-full text-left p-2 text-sm hover:bg-gray-100 border-b last:border-b-0 ${
-                        selectedBorrower?.id === borrower.id ? "bg-blue-50 text-blue-700" : ""
-                        }`}
-                    >
-                        {borrower.name}
-                    </button>
-                    ))
-                }
-              </div>
+            <div className="border rounded-md overflow-y-auto max-h-[360px]"> {/* 8 items x ~36px each */}
+              {borrowers.map((borrower) => (
+                <button
+                  key={borrower.id}
+                  onClick={() => onBorrowerSelect(borrower)}
+                  className={`w-full text-left p-2 text-sm hover:bg-gray-100 border-b last:border-b-0 ${
+                    selectedBorrower?.id === borrower.id ? "bg-blue-50 text-blue-700" : ""
+                  }`}
+                >
+                  {borrower.name}
+                </button>
+              ))}
+            </div>
           )}
         </div>
 
-        <div className="flex gap-2 pt-4">
-          <Button variant="outline" onClick={onReset} className="flex-1">
-            Reset
-          </Button>
-          <Button onClick={onSearch} className="flex-1">
-            Search
-          </Button>
-        </div>
+      </div>
+      <div className="flex gap-2 pt-4">
+        <Button variant="outline" onClick={onReset} className="flex-1">
+          Reset
+        </Button>
+        <Button onClick={onSearch} className="flex-1">
+          Search
+        </Button>
       </div>
     </div>
   )

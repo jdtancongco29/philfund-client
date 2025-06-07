@@ -93,7 +93,7 @@ export function CoMakerDialog({ open, onOpenChange, onSave, borrowers }: CoMaker
             <FormField
               control={form.control}
               name="borrower_id"
-              render={({ field }) => (
+              render={() => (
                 <FormItem>
                   <FormLabel className="text-sm">
                     Select Borrower <span className="text-red-500">*</span>

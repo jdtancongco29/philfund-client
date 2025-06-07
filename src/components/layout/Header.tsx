@@ -15,7 +15,11 @@ import { toast } from "sonner"
 const navItems = [
   { to: "/dashboard", label: "Dashboard" },
   { to: "/borrower-dashboard", label: "Borrower Dashboard" },
-  { to: "/lending", label: "Lending" },
+  {
+    to: "/lending/salary-loan-processing",
+    label: "Lending",
+    matchPath: "/lending",
+  },
   { to: "/accounting", label: "Accounting" },
   {
     to: "/maintenance-and-security/general-setup/branch-setup",

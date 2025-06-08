@@ -1,8 +1,9 @@
+// src/pages/Lending/LoanProcessing/Component/UserSearcPanel.tsx
 "use client"
 
 import { PrinterIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import type { Borrower } from "./Service/SalaryLoanProcessingTypes"
+import type { Borrower } from "../Service/SalaryLoanProcessingTypes"
 
 interface UserDetailsPanelProps {
   selectedBorrower: Borrower | null

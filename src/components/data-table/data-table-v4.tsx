@@ -28,7 +28,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { format } from "date-fns"
 import { DataTableFilterDialog } from "./data-table-filter-dialog"
-// import { DataTableFilters } from "./data-table-filters"
 import { Label } from "../ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover"
 import { Calendar } from "../ui/calendar"
@@ -53,8 +52,9 @@ export type ColumnDefinition<T> = {
   accessorKey: keyof T
   enableSorting?: boolean
   displayCondition?: DisplayCondition<any>[]
-  align?: string
   cell?: (item: T) => React.ReactNode
+  footer?: (data: T[]) => React.ReactNode // New: footer cell for totals
+  align?: "left" | "center" | "right" // New: column alignment
 }
 
 export type FilterDefinition = {
@@ -72,7 +72,7 @@ export type ActionButton<T> = {
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link"
   className?: string
   showInHeader?: boolean
-  requiresSelection?: boolean // New: indicates if button requires selected items
+  requiresSelection?: boolean
 }
 
 export type BulkActionButton<T> = {
@@ -85,7 +85,7 @@ export type BulkActionButton<T> = {
 }
 
 export type DataTableProps<T> = {
-  title: string
+  title?: string // Made optional for embedded tables
   subtitle?: string
   data: T[]
   columns: ColumnDefinition<T>[]
@@ -100,25 +100,29 @@ export type DataTableProps<T> = {
   enablePdfExport?: boolean
   enableCsvExport?: boolean
   enableFilter?: boolean
-  enableSelection?: boolean // New: enable/disable selection functionality
+  enableSelection?: boolean
+  enablePagination?: boolean // New: enable/disable pagination
+  showHeader?: boolean // New: show/hide header section
+  showTotals?: boolean // New: show/hide totals row
   onPdfExport?: () => void
   onCsvExport?: () => void
   onPaginationChange?: (page: number) => void
   onRowCountChange?: (rows: number) => void
   onSearchChange?: (search: string) => void
-  onSelectionChange?: (selectedItems: T[]) => void // New: callback for selection changes
+  onSelectionChange?: (selectedItems: T[]) => void
   onLoading?: boolean
   onResetTable?: boolean
-  totalCount: number
-  perPage: number
-  pageNumber: number
+  totalCount?: number // Made optional for embedded tables
+  perPage?: number // Made optional for embedded tables
+  pageNumber?: number // Made optional for embedded tables
   actionButtons?: ActionButton<T>[]
-  bulkActionButtons?: BulkActionButton<T>[] // New: bulk action buttons
-  selectedItems?: T[] // New: externally controlled selection
+  bulkActionButtons?: BulkActionButton<T>[]
+  selectedItems?: T[]
   onSort?: (column: string, sort: string) => void
+  className?: string // New: custom className for the table container
 }
 
-export function DataTableV2<T>({
+export function DataTableV4<T>({
   title,
   subtitle,
   data,
@@ -135,13 +139,16 @@ export function DataTableV2<T>({
   enableCsvExport = true,
   enableFilter = true,
   enableSelection = false,
+  enablePagination = true,
+  showHeader = true,
+  showTotals = false,
   onPdfExport,
   onCsvExport,
   onLoading = false,
   onResetTable = false,
-  totalCount,
-  pageNumber,
-  perPage,
+  totalCount = data.length,
+  pageNumber = 1,
+  perPage = 10,
   onPaginationChange,
   onRowCountChange,
   onSearchChange,
@@ -150,6 +157,7 @@ export function DataTableV2<T>({
   bulkActionButtons = [],
   selectedItems: externalSelectedItems,
   onSort,
+  className,
 }: DataTableProps<T>) {
   // State for search, sorting, pagination, and filters
   const [searchQuery, setSearchQuery] = useState("")
@@ -171,53 +179,53 @@ export function DataTableV2<T>({
   const debouncedSearch = useMemo(
     () =>
       debounce((value) => {
-        // Handle the debounced value (e.g., API call)
         if (onSearchChange) {
           onSearchChange(value)
         }
-      }, 500), // 500ms debounce delay
+      }, 500),
     [onSearchChange],
   )
 
   // Watch searchQuery and call debounced function
   useEffect(() => {
     debouncedSearch(searchQuery)
-    // Cleanup debounce on unmount
     return () => debouncedSearch.cancel()
   }, [searchQuery, debouncedSearch])
 
   useEffect(() => {
-    if (onPaginationChange) {
+    if (onPaginationChange && enablePagination) {
       onPaginationChange(currentPage)
     }
-  }, [currentPage, onPaginationChange])
+  }, [currentPage, onPaginationChange, enablePagination])
 
   // Reset to first page when search or filters change
   useEffect(() => {
-    setCurrentPage(1)
-  }, [searchQuery, activeFilters])
+    if (enablePagination) {
+      setCurrentPage(1)
+    }
+  }, [searchQuery, activeFilters, enablePagination])
 
   useEffect(() => {
-    if (onResetTable) {
+    if (onResetTable && enablePagination) {
       if (currentPage != 0) {
         setCurrentPage(currentPage - 1)
       } else {
         setCurrentPage(1)
       }
     }
-  }, [currentPage, onResetTable])
+  }, [currentPage, onResetTable, enablePagination])
 
   // Handle sorting
   const handleSort = (columnId: string) => {
-  if (sortColumn === columnId) {
-    onSort?.(columnId, sortDirection === "asc" ? "desc" : "asc")
-    setSortDirection(sortDirection === "asc" ? "desc" : "asc")
-  } else {
-    setSortColumn(columnId)
-    onSort?.(columnId, "asc")
-    setSortDirection("asc")
+    if (sortColumn === columnId) {
+      onSort?.(columnId, sortDirection === "asc" ? "desc" : "asc")
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+    } else {
+      setSortColumn(columnId)
+      onSort?.(columnId, "asc")
+      setSortDirection("asc")
+    }
   }
-}
 
   // Selection handlers
   const handleSelectAll = (checked: boolean) => {
@@ -247,7 +255,6 @@ export function DataTableV2<T>({
   const filteredBySearch = data.filter((item) => {
     if (!searchQuery) return true
 
-    // Search across all visible columns
     return columns.some((column) => {
       const value = item[column.accessorKey]
       if (value === null || value === undefined) return false
@@ -257,10 +264,8 @@ export function DataTableV2<T>({
 
   // Apply active filters
   const filteredData = filteredBySearch.filter((item) => {
-    // If no filters are active, return all items
     if (Object.keys(activeFilters).length === 0) return true
 
-    // Check each active filter
     return Object.entries(activeFilters).every(([filterId, filterValue]) => {
       if (!filterValue) return true
 
@@ -298,7 +303,7 @@ export function DataTableV2<T>({
 
   // Apply pagination
   const totalPages = Math.ceil(totalCount / rowsPerPage)
-  const paginatedData = data
+  const paginatedData = enablePagination ? data : data
 
   // Handle filter changes
   const handleFilterChange = (filterId: string, value: any) => {
@@ -334,257 +339,273 @@ export function DataTableV2<T>({
     }
   }
 
-  return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{title}</h1>
-          {subtitle && <p className="text-muted-foreground">{subtitle}</p>}
-        </div>
-        <div className="flex items-center gap-2">
-          {actionButtons
-            ?.filter((btn) => btn.showInHeader)
-            ?.map((button, index) => (
-              <Button
-                key={`header-action-${index}`}
-                variant={button.variant || "outline"}
-                size="sm"
-                onClick={() => button.onClick(data[0])}
-                className={button.className}
-              >
-                {button.icon && <span className="mr-2">{button.icon}</span>}
-                {button.label}
-              </Button>
-            ))}
-          {enablePdfExport && (
-            <Button variant="outline" size="sm" onClick={handlePdfExport}>
-              <FileIcon className="h-4 w-4" />
-              PDF
-            </Button>
-          )}
-          {enableCsvExport && (
-            <Button variant="outline" size="sm" onClick={handleCsvExport}>
-              <TableIcon className="h-4 w-4" />
-              CSV
-            </Button>
-          )}
-          {enableNew && (
-            <Button size="sm" onClick={onNew}>
-              <PlusIcon className="h-4 w-4" />
-              {newButtonText}
-            </Button>
-          )}
-        </div>
-      </div>
+  const getColumnAlignment = (align?: "left" | "center" | "right") => {
+    switch (align) {
+      case "center":
+        return "text-center"
+      case "right":
+        return "text-right"
+      default:
+        return "text-left"
+    }
+  }
 
-      {/* Selection Summary and Bulk Actions */}
-      {enableSelection && (
-        <div className="flex items-center justify-end">
-          {selectedItems.length > 0 && bulkActionButtons.length > 0 && (
+  return (
+    <div className={cn("space-y-4", className)}>
+      {/* Header */}
+      {showHeader && (
+        <>
+          <div className="flex items-center justify-between">
+            <div>
+              {title && <h1 className="text-2xl font-bold">{title}</h1>}
+              {subtitle && <p className="text-muted-foreground">{subtitle}</p>}
+            </div>
             <div className="flex items-center gap-2">
-              {bulkActionButtons.map((button, index) => (
-                <Button
-                  key={`bulk-action-${index}`}
-                  variant={button.variant || "outline"}
-                  size="sm"
-                  onClick={() => button.onClick(selectedItems)}
-                  disabled={button.disabled || selectedItems.length === 0}
-                  className={button.className}
-                >
-                  {button.icon && <span className="mr-2">{button.icon}</span>}
-                  {button.label}
+              {actionButtons
+                ?.filter((btn) => btn.showInHeader)
+                ?.map((button, index) => (
+                  <Button
+                    key={`header-action-${index}`}
+                    variant={button.variant || "outline"}
+                    size="sm"
+                    onClick={() => button.onClick(data[0])}
+                    className={button.className}
+                  >
+                    {button.icon && <span className="mr-2">{button.icon}</span>}
+                    {button.label}
+                  </Button>
+                ))}
+              {enablePdfExport && (
+                <Button variant="outline" size="sm" onClick={handlePdfExport}>
+                  <FileIcon className="h-4 w-4" />
+                  PDF
                 </Button>
-              ))}
+              )}
+              {enableCsvExport && (
+                <Button variant="outline" size="sm" onClick={handleCsvExport}>
+                  <TableIcon className="h-4 w-4" />
+                  CSV
+                </Button>
+              )}
+              {enableNew && (
+                <Button size="sm" onClick={onNew}>
+                  <PlusIcon className="h-4 w-4" />
+                  {newButtonText}
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Selection Summary and Bulk Actions */}
+          {enableSelection && (
+            <div className="flex items-center justify-end">
+              {selectedItems.length > 0 && bulkActionButtons.length > 0 && (
+                <div className="flex items-center gap-2">
+                  {bulkActionButtons.map((button, index) => (
+                    <Button
+                      key={`bulk-action-${index}`}
+                      variant={button.variant || "outline"}
+                      size="sm"
+                      onClick={() => button.onClick(selectedItems)}
+                      disabled={button.disabled || selectedItems.length === 0}
+                      className={button.className}
+                    >
+                      {button.icon && <span className="mr-2">{button.icon}</span>}
+                      {button.label}
+                    </Button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
-        </div>
-      )}
 
-      {/* Search and Filters */}
-      <div className="space-y-4">
-        <div>
-          <div className="flex gap-2">
-            <div className="flex gap-2 flex-1">
-              <div>
-                {search?.enableSearch && (
-                  <>
-                    <p className="mb-2 text-sm">{search?.title}</p>
-                    <div className="relative">
-                      <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        placeholder={search?.placeholder}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 w-[300px]"
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {enableFilter &&
-                filters.map((filter) => (
-                  <div key={filter.id} className="space-y-2">
-                    <Label className="text-sm font-medium">{filter.label}</Label>
-                    {filter.type === "select" && (
-                      <Select
-                        value={activeFilters[filter.id] || ""}
-                        onValueChange={(value) => handleFilterChange(filter.id, value)}
-                      >
-                        <SelectTrigger id={filter.id} className="w-full">
-                          <SelectValue placeholder={filter.placeholder} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All</SelectItem>
-                          {filter.options?.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-
-                    {filter.type === "input" && (
-                      <Input
-                        id={filter.id}
-                        value={activeFilters[filter.id] || ""}
-                        onChange={(e) => handleFilterChange(filter.id, e.target.value)}
-                        placeholder={filter.placeholder || `Enter ${filter.label}`}
-                        className="w-full"
-                      />
-                    )}
-
-                    {filter.type === "date" && (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full justify-start text-left font-normal",
-                              !activeFilters[filter.id] && "text-muted-foreground",
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {activeFilters[filter.id] ? (
-                              format(new Date(activeFilters[filter.id]), "PPP")
-                            ) : (
-                              <span>Select...</span>
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={activeFilters[filter.id] ? new Date(activeFilters[filter.id]) : undefined}
-                            onSelect={(date) => handleFilterChange(filter.id, date)}
-                            initialFocus
+          {/* Search and Filters */}
+          <div className="space-y-4">
+            <div>
+              <div className="flex gap-2">
+                <div className="flex gap-2 flex-1">
+                  <div>
+                    {search?.enableSearch && (
+                      <>
+                        <p className="mb-2 text-sm">{search?.title}</p>
+                        <div className="relative">
+                          <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            placeholder={search?.placeholder}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-10 w-[300px]"
                           />
-                        </PopoverContent>
-                      </Popover>
-                    )}
-
-                    {filter.type === "dateRange" && (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full justify-start text-left font-normal",
-                              !activeFilters[filter.id]?.from && "text-muted-foreground",
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {activeFilters[filter.id]?.from ? (
-                              <>
-                                {format(activeFilters[filter.id].from, "PPP")} -{" "}
-                                {activeFilters[filter.id].to ? format(activeFilters[filter.id].to, "PPP") : ""}
-                              </>
-                            ) : (
-                              <span>Select...</span>
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="range"
-                            selected={activeFilters[filter.id] as DateRange}
-                            onSelect={(range) => handleFilterChange(filter.id, range)}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
+                        </div>
+                      </>
                     )}
                   </div>
-                ))}
+
+                  {enableFilter &&
+                    filters.map((filter) => (
+                      <div key={filter.id} className="space-y-2">
+                        <Label className="text-sm font-medium">{filter.label}</Label>
+                        {filter.type === "select" && (
+                          <Select
+                            value={activeFilters[filter.id] || ""}
+                            onValueChange={(value) => handleFilterChange(filter.id, value)}
+                          >
+                            <SelectTrigger id={filter.id} className="w-full">
+                              <SelectValue placeholder={filter.placeholder} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All</SelectItem>
+                              {filter.options?.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+
+                        {filter.type === "input" && (
+                          <Input
+                            id={filter.id}
+                            value={activeFilters[filter.id] || ""}
+                            onChange={(e) => handleFilterChange(filter.id, e.target.value)}
+                            placeholder={filter.placeholder || `Enter ${filter.label}`}
+                            className="w-full"
+                          />
+                        )}
+
+                        {filter.type === "date" && (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full justify-start text-left font-normal",
+                                  !activeFilters[filter.id] && "text-muted-foreground",
+                                )}
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {activeFilters[filter.id] ? (
+                                  format(new Date(activeFilters[filter.id]), "PPP")
+                                ) : (
+                                  <span>Select...</span>
+                                )}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <Calendar
+                                mode="single"
+                                selected={activeFilters[filter.id] ? new Date(activeFilters[filter.id]) : undefined}
+                                onSelect={(date) => handleFilterChange(filter.id, date)}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        )}
+
+                        {filter.type === "dateRange" && (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full justify-start text-left font-normal",
+                                  !activeFilters[filter.id]?.from && "text-muted-foreground",
+                                )}
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {activeFilters[filter.id]?.from ? (
+                                  <>
+                                    {format(activeFilters[filter.id].from, "PPP")} -{" "}
+                                    {activeFilters[filter.id].to ? format(activeFilters[filter.id].to, "PPP") : ""}
+                                  </>
+                                ) : (
+                                  <span>Select...</span>
+                                )}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="range"
+                                selected={activeFilters[filter.id] as DateRange}
+                                onSelect={(range) => handleFilterChange(filter.id, range)}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        )}
+                      </div>
+                    ))}
+                </div>
+                {enableFilter && (
+                  <div className="flex gap-2 items-end">
+                    <Button
+                      variant="outline"
+                      size="default"
+                      onClick={() => setIsFilterDialogOpen(true)}
+                      className="cursor-pointer"
+                    >
+                      <FilterIcon className="h-4 w-4" />
+                      <span className="">Filter</span>
+                    </Button>
+                    <Button variant="outline" size="default" onClick={resetFilters} className="cursor-pointer">
+                      <XIcon className="h-4 w-4" />
+                      <span className="">Reset</span>
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
-            {enableFilter && (
-              <div className="flex gap-2 items-end">
-                <Button
-                  variant="outline"
-                  size="default"
-                  onClick={() => setIsFilterDialogOpen(true)}
-                  className="cursor-pointer"
-                >
-                  <FilterIcon className="h-4 w-4" />
-                  <span className="">Filter</span>
-                </Button>
-                <Button variant="outline" size="default" onClick={resetFilters} className="cursor-pointer">
-                  <XIcon className="h-4 w-4" />
-                  <span className="">Reset</span>
-                </Button>
+          </div>
+          <div>
+            {/* Active Filters Display */}
+            {Object.keys(activeFilters).length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(activeFilters).map(([filterId, value]) => {
+                  const filter = filters.find((f) => f.id === filterId)
+                  if (!filter) return null
+
+                  let displayValue = ""
+                  if (filter.type === "select") {
+                    const option = filter.options?.find((opt) => opt.value === value)
+                    displayValue = option?.label || String(value)
+                  } else if (filter.type === "date") {
+                    displayValue = format(new Date(value), "PPP")
+                  } else if (filter.type === "dateRange" && value.from && value.to) {
+                    displayValue = `${format(value.from, "PPP")} - ${format(value.to, "PPP")}`
+                  } else {
+                    displayValue = String(value)
+                  }
+
+                  return (
+                    <div key={filterId} className="flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-sm">
+                      <span>
+                        {filter.label}: {displayValue}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-4 w-4"
+                        onClick={() => {
+                          setActiveFilters((prev) => {
+                            const newFilters = { ...prev }
+                            delete newFilters[filterId]
+                            return newFilters
+                          })
+                        }}
+                      >
+                        <XIcon className="h-3 w-3" />
+                        <span className="sr-only">Remove filter</span>
+                      </Button>
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>
-        </div>
-      </div>
-      <div>
-        {/* Active Filters Display */}
-        {Object.keys(activeFilters).length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {Object.entries(activeFilters).map(([filterId, value]) => {
-              const filter = filters.find((f) => f.id === filterId)
-              if (!filter) return null
+        </>
+      )}
 
-              let displayValue = ""
-              if (filter.type === "select") {
-                const option = filter.options?.find((opt) => opt.value === value)
-                displayValue = option?.label || String(value)
-              } else if (filter.type === "date") {
-                displayValue = format(new Date(value), "PPP")
-              } else if (filter.type === "dateRange" && value.from && value.to) {
-                displayValue = `${format(value.from, "PPP")} - ${format(value.to, "PPP")}`
-              } else {
-                displayValue = String(value)
-              }
-
-              return (
-                <div key={filterId} className="flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-sm">
-                  <span>
-                    {filter.label}: {displayValue}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-4 w-4"
-                    onClick={() => {
-                      setActiveFilters((prev) => {
-                        const newFilters = { ...prev }
-                        delete newFilters[filterId]
-                        return newFilters
-                      })
-                    }}
-                  >
-                    <XIcon className="h-3 w-3" />
-                    <span className="sr-only">Remove filter</span>
-                  </Button>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
       {/* Table */}
       <div className="rounded-md border">
         <Table>
@@ -607,7 +628,13 @@ export function DataTableV2<T>({
                 </TableHead>
               )}
               {columns.map((column) => (
-                <TableHead key={column.id} className={column.enableSorting === false ? "" : "cursor-pointer"}>
+                <TableHead
+                  key={column.id}
+                  className={cn(
+                    column.enableSorting === false ? "" : "cursor-pointer",
+                    getColumnAlignment(column.align),
+                  )}
+                >
                   <div
                     className="flex items-center"
                     onClick={() => column.enableSorting !== false && handleSort(column.id)}
@@ -673,7 +700,10 @@ export function DataTableV2<T>({
                     </TableCell>
                   )}
                   {columns.map((column) => (
-                    <TableCell key={`${String(item[idField])}-${column.id}`}>
+                    <TableCell
+                      key={`${String(item[idField])}-${column.id}`}
+                      className={getColumnAlignment(column.align)}
+                    >
                       {(() => {
                         const value = item[column.accessorKey]
 
@@ -724,12 +754,24 @@ export function DataTableV2<T>({
                 </TableRow>
               ))
             )}
+            {/* Totals Row */}
+            {showTotals && paginatedData.length > 0 && (
+              <TableRow className="bg-muted/50 font-semibold">
+                {enableSelection && <TableCell></TableCell>}
+                {columns.map((column, index) => (
+                  <TableCell key={`total-${column.id}`} className={getColumnAlignment(column.align)}>
+                    {index === 0 ? "Total" : column.footer ? column.footer(paginatedData) : ""}
+                  </TableCell>
+                ))}
+                {(onEdit || onDelete || actionButtons?.length > 0) && <TableCell></TableCell>}
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
 
       {/* Pagination */}
-      {!onLoading && (
+      {!onLoading && enablePagination && (
         <div className="flex items-center justify-end gap-6">
           <div className="flex items-center gap-2">
             <p className="text-sm text-muted-foreground">Rows per page</p>
@@ -805,13 +847,15 @@ export function DataTableV2<T>({
         </div>
       )}
       {/* Filter Dialog */}
-      <DataTableFilterDialog
-        open={isFilterDialogOpen}
-        onOpenChange={setIsFilterDialogOpen}
-        filters={filters}
-        activeFilters={activeFilters}
-        onFilterChange={handleFilterChange}
-      />
+      {enableFilter && (
+        <DataTableFilterDialog
+          open={isFilterDialogOpen}
+          onOpenChange={setIsFilterDialogOpen}
+          filters={filters}
+          activeFilters={activeFilters}
+          onFilterChange={handleFilterChange}
+        />
+      )}
     </div>
   )
 }

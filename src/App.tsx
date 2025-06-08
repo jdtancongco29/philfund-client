@@ -36,6 +36,10 @@ import { Toaster } from 'sonner';
 import GeneralJournalpage from "./pages/MaintenanceAndSecurity/AccountingSetup/GeneralJournal/page"
 import { PermissionProvider } from "./context/PermissionContext"
 import LoanProcessing from "./pages/Lending/LoanProcessing/page"
+import CashAdvancePage from "./pages/Lending/CashAdvanceProcessing/page"
+import BonusLoanPage from "./pages/Lending/BonusLoanProcessing/page"
+import ChangeVoucherPage from "./pages/Lending/ChangeVoucher/page"
+import LoanRenewalPage from "./pages/Lending/LoanRenewal/page"
 
 function App() {
   return (
@@ -67,6 +71,10 @@ function App() {
 
             {/* Lending Routes */}
             <Route path="/lending/salary-loan-processing" element={<LoanProcessing name="Salary Loan Processing" />} />
+            <Route path="/lending/cash-advance-processing" element={<CashAdvancePage name="Salary and Bonus Cash Advance Processing" />} />
+            <Route path="/lending/bonus-loan-processing" element={<BonusLoanPage name="Bonus Loan Processing" />} />
+            <Route path="/lending/releasing/change-voucher" element={<ChangeVoucherPage name="Change Voucher Module" />} />
+            <Route path="/lending/loan-renewal" element={<LoanRenewalPage name="Loan Renewal" />} />
 
 
             {/* Accounting Routes */}

@@ -1,5 +1,3 @@
-// src/pages/Lending/LoanProcessing/Tabs/LoanComputationTab.tsx
-
 "use client"
 
 import { useState, useMemo } from "react"
@@ -17,47 +15,44 @@ import { Textarea } from "@/components/ui/textarea"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { CoMakerDialog } from "../Dialog/CoMakerDialog"
-import type { SalaryLoan, CoMaker, Borrower } from "../Service/SalaryLoanProcessingTypes"
+import { CoMakerDialog } from "../../LoanProcessing/Dialog/CoMakerDialog"
+import type { BonusLoan, CoMaker } from "../Service/BonusLoanProcessingTypes"
+import type { Borrower } from "@/components/borrower-search/borroer-search-panel"
 import { cn } from "@/lib/utils"
 
-// Form schema for loan computation
-const loanComputationSchema = z.object({
+// Form schema for bonus loan computation
+const bonusLoanSchema = z.object({
   transaction_date: z.date(),
   borrower_id: z.string().min(1, "Please select a borrower"),
+  loan_type: z.string().min(1, "Please select loan type"),
+  promissory_no: z.string().min(1, "Promissory number is required"),
   date_granted: z.date(),
-  principal: z.number().min(1, "Principal amount is required"),
-  terms: z.number().min(1, "Terms is required"),
-  interest_rate: z.number().min(0, "Interest rate is required"),
-  installment_period: z.string().min(1, "Installment period is required"),
-  due_date: z.string().min(1, "Due date is required"),
-  cash_card_amount: z.number().min(0),
-  computer_fee: z.number().min(0),
-  service_charge: z.number().min(0),
-  insurance: z.number().min(0),
-  notarial_fees: z.number().min(0),
-  gross_receipts_tax: z.number().min(0),
-  processing_fee: z.number().min(0),
+  principal_amount: z.number().min(1, "Principal amount is required"),
+  interest_amount: z.number().min(0, "Interest amount is required"),
+  cut_off_date: z.string().min(1, "Cut-off date is required"),
+  no_of_days: z.number().min(1, "Number of days is required"),
+  computed_interest: z.number().min(0, "Computed interest is required"),
+  total_payable: z.number().min(0, "Total payable is required"),
   prepared_by: z.string().min(1, "Prepared by is required"),
   approved_by: z.string().optional(),
   remarks: z.string().optional(),
 })
 
-export type LoanComputationFormValues = z.infer<typeof loanComputationSchema>
+export type BonusLoanFormValues = z.infer<typeof bonusLoanSchema>
 
 interface LoanComputationTabProps {
-  currentLoan: SalaryLoan | null
+  currentBonusLoan: BonusLoan | null
   borrowers: Borrower[]
   coMakers: CoMaker[]
   setCoMakers: (coMakers: CoMaker[]) => void
-  onSaveAsDraft: (values: LoanComputationFormValues) => void
+  onSaveAsDraft: (values: BonusLoanFormValues) => void
   onProcess: () => void
   onReset: () => void
   isLoading: boolean
 }
 
 export function LoanComputationTab({
-  currentLoan,
+  currentBonusLoan,
   borrowers,
   coMakers,
   setCoMakers,
@@ -69,56 +64,35 @@ export function LoanComputationTab({
   const [openCoMakerDialog, setOpenCoMakerDialog] = useState(false)
 
   // Initialize form
-  const form = useForm<LoanComputationFormValues>({
-    resolver: zodResolver(loanComputationSchema),
+  const form = useForm<BonusLoanFormValues>({
+    resolver: zodResolver(bonusLoanSchema),
     defaultValues: {
-      transaction_date: currentLoan?.transaction_date ? new Date(currentLoan.transaction_date) : new Date(),
-      borrower_id: currentLoan?.borrower_id || "",
-      date_granted: currentLoan?.date_granted ? new Date(currentLoan.date_granted) : new Date(),
-      principal: currentLoan?.principal || 0,
-      terms: currentLoan?.terms || 0,
-      interest_rate: currentLoan?.interest_rate || 0,
-      installment_period: currentLoan?.installment_period || "",
-      due_date: currentLoan?.due_date || "",
-      cash_card_amount: currentLoan?.cash_card_amount || 0,
-      computer_fee: currentLoan?.computer_fee || 0,
-      service_charge: currentLoan?.service_charge || 0,
-      insurance: currentLoan?.insurance || 0,
-      notarial_fees: currentLoan?.notarial_fees || 0,
-      gross_receipts_tax: currentLoan?.gross_receipts_tax || 0,
-      processing_fee: currentLoan?.processing_fee || 0,
-      prepared_by: currentLoan?.prepared_by || "Current User Name",
-      approved_by: currentLoan?.approved_by || "",
-      remarks: currentLoan?.remarks || "",
+      transaction_date: currentBonusLoan?.transaction_date ? new Date(currentBonusLoan.transaction_date) : new Date(),
+      borrower_id: currentBonusLoan?.borrower_id || "",
+      loan_type: currentBonusLoan?.loan_type || "",
+      promissory_no: currentBonusLoan?.promissory_no || "PN-3434-2342",
+      date_granted: currentBonusLoan?.date_granted ? new Date(currentBonusLoan.date_granted) : new Date(),
+      principal_amount: currentBonusLoan?.principal_amount || 22000,
+      interest_amount: currentBonusLoan?.interest_amount || 5,
+      cut_off_date: currentBonusLoan?.cut_off_date || "May 31, 2026",
+      no_of_days: currentBonusLoan?.no_of_days || 20,
+      computed_interest: currentBonusLoan?.computed_interest || 7077.31,
+      total_payable: currentBonusLoan?.total_payable || 29077.31,
+      prepared_by: currentBonusLoan?.prepared_by || "Current User Name",
+      approved_by: currentBonusLoan?.approved_by || "",
+      remarks: currentBonusLoan?.remarks || "Borrower is a long-time employee with a good credit history.",
     },
   })
 
   // Computed values
   const watchedValues = form.watch()
   const totalDeductions = useMemo(() => {
-    return (
-      watchedValues.cash_card_amount +
-      watchedValues.computer_fee +
-      watchedValues.service_charge +
-      watchedValues.insurance +
-      watchedValues.notarial_fees +
-      watchedValues.gross_receipts_tax +
-      watchedValues.processing_fee
-    )
-  }, [watchedValues])
+    return 0 // No deductions for bonus loans in this example
+  }, [])
 
   const netProceeds = useMemo(() => {
-    return watchedValues.principal - totalDeductions
-  }, [watchedValues.principal, totalDeductions])
-
-  const totalPayable = useMemo(() => {
-    const interest = watchedValues.principal * (watchedValues.interest_rate / 100) * watchedValues.terms
-    return watchedValues.principal + interest
-  }, [watchedValues.principal, watchedValues.interest_rate, watchedValues.terms])
-
-  const monthlyAmortization = useMemo(() => {
-    return watchedValues.terms > 0 ? totalPayable / watchedValues.terms : 0
-  }, [totalPayable, watchedValues.terms])
+    return watchedValues.principal_amount - totalDeductions
+  }, [watchedValues.principal_amount, totalDeductions])
 
   // Event handlers
   const handleAddCoMaker = (coMaker: Omit<CoMaker, "id">) => {
@@ -133,7 +107,7 @@ export function LoanComputationTab({
     setCoMakers(coMakers.filter((cm) => cm.id !== id))
   }
 
-  const handleSubmit = (values: LoanComputationFormValues) => {
+  const handleSubmit = (values: BonusLoanFormValues) => {
     onSaveAsDraft(values)
   }
 
@@ -147,13 +121,37 @@ export function LoanComputationTab({
               {/* Transaction Details */}
               <Card className="border-none shadow-none p-0">
                 <CardContent className="px-6">
-                  <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="grid grid-cols-3 gap-4 mb-6">
+                    <FormField
+                      control={form.control}
+                      name="loan_type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Select Loan Type <span className="text-red-500">*</span>
+                          </FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select..." />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="bonus">Bonus Loan</SelectItem>
+                              <SelectItem value="salary">Salary Loan</SelectItem>
+                              <SelectItem value="emergency">Emergency Loan</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <FormField
                       control={form.control}
                       name="transaction_date"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Transaction date</FormLabel>
+                          <FormLabel>Transaction Date</FormLabel>
                           <Popover>
                             <PopoverTrigger asChild>
                               <FormControl>
@@ -183,10 +181,19 @@ export function LoanComputationTab({
                         </FormItem>
                       )}
                     />
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">PN no.</label>
-                      <Input value={currentLoan?.pn_no || "29687"} disabled className="bg-gray-50" />
-                    </div>
+                    <FormField
+                      control={form.control}
+                      name="promissory_no"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Promissory No.</FormLabel>
+                          <FormControl>
+                            <Input {...field} disabled className="bg-gray-50" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
 
                   <h3 className="text-lg font-semibold mb-4">Loan Computation Details</h3>
@@ -231,16 +238,16 @@ export function LoanComputationTab({
                     />
                     <FormField
                       control={form.control}
-                      name="principal"
+                      name="principal_amount"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>
-                            Principal <span className="text-red-500">*</span>
+                            Principal Amount <span className="text-red-500">*</span>
                           </FormLabel>
                           <FormControl>
                             <Input
                               type="number"
-                              placeholder="₱200,000.00"
+                              placeholder="₱22,000.00"
                               {...field}
                               onChange={(e) => field.onChange(Number(e.target.value))}
                             />
@@ -251,85 +258,35 @@ export function LoanComputationTab({
                     />
                     <FormField
                       control={form.control}
-                      name="terms"
+                      name="interest_amount"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>
-                            Terms <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <Select
-                            onValueChange={(value) => field.onChange(Number(value))}
-                            value={field.value?.toString()}
-                          >
-                            <FormControl>
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="96 months" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {[12, 24, 36, 48, 60, 72, 84, 96].map((term) => (
-                                <SelectItem key={term} value={term.toString()}>
-                                  {term} months
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-4 mt-4">
-                    <FormField
-                      control={form.control}
-                      name="interest_rate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Interest rate</FormLabel>
-                          <Select onValueChange={(value) => field.onChange(Number(value))} value={field.value?.toString()}>
-                            <FormControl>
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="1.75%" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {[1.25, 1.5, 1.75, 2.0, 2.25, 2.5].map((rate) => (
-                                <SelectItem key={rate} value={rate.toString()}>
-                                  {rate}%
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Interest</label>
-                      <Input
-                        value={`₱${(watchedValues.principal * (watchedValues.interest_rate / 100) * watchedValues.terms).toLocaleString()}`}
-                        disabled
-                        className="bg-gray-50"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Monthly amortization</label>
-                      <Input value={`₱${monthlyAmortization.toLocaleString()}`} disabled className="bg-gray-50" />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-4 mt-4">
-                    <FormField
-                      control={form.control}
-                      name="installment_period"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            Installment Period <span className="text-red-500">*</span>
+                            Interest Amount <span className="text-red-500">*</span>
                           </FormLabel>
                           <FormControl>
-                            <Input placeholder="01/18/2026 - 12/18/2033" {...field} />
+                            <Input
+                              type="number"
+                              placeholder="5%"
+                              {...field}
+                              onChange={(e) => field.onChange(Number(e.target.value))}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4 mt-4">
+                    <FormField
+                      control={form.control}
+                      name="cut_off_date"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Cut-off Date</FormLabel>
+                          <FormControl>
+                            <Input placeholder="May 31, 2026" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -337,47 +294,60 @@ export function LoanComputationTab({
                     />
                     <FormField
                       control={form.control}
-                      name="due_date"
+                      name="no_of_days"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Due date</FormLabel>
+                          <FormLabel>No. of Days till cut-off</FormLabel>
                           <FormControl>
-                            <Input placeholder="May 2025" {...field} />
+                            <Input
+                              type="number"
+                              placeholder="20 Days"
+                              {...field}
+                              onChange={(e) => field.onChange(Number(e.target.value))}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Total Payable</label>
-                      <Input value={`₱${totalPayable.toLocaleString()}`} disabled className="bg-gray-50" />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-4 mt-4">
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Total Payable</label>
-                      <Input value={`₱${totalPayable.toLocaleString()}`} disabled className="bg-gray-50" />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Monthly Amortization</label>
-                      <Input value={`₱${monthlyAmortization.toLocaleString()}`} disabled className="bg-gray-50" />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Interest Rate</label>
-                      <Input value={`${watchedValues.interest_rate}%`} disabled className="bg-gray-50" />
-                    </div>
+                    <FormField
+                      control={form.control}
+                      name="computed_interest"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Computed Interest</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="₱7,077.31"
+                              {...field}
+                              onChange={(e) => field.onChange(Number(e.target.value))}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
 
                   <div className="mt-4">
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Total Interest over term</label>
-                      <Input
-                        value={`₱${(watchedValues.principal * (watchedValues.interest_rate / 100) * watchedValues.terms).toLocaleString()}`}
-                        disabled
-                        className="bg-gray-50"
-                      />
-                    </div>
+                    <FormField
+                      control={form.control}
+                      name="total_payable"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Total Payable</FormLabel>
+                          <FormControl>
+                            <Input
+                              value={`₱${field.value?.toLocaleString()}`}
+                              disabled
+                              className="bg-gray-50 w-[270px]"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -386,152 +356,7 @@ export function LoanComputationTab({
               <Card className="border-none shadow-none p-0">
                 <CardContent className="px-6">
                   <h3 className="text-lg font-semibold mb-4">Computation</h3>
-
-                  <div className="grid grid-cols-3 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="cash_card_amount"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            Cash card amount <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="₱0.00"
-                              {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value))}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div></div>
-                    <div></div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-4 mt-4">
-                    <FormField
-                      control={form.control}
-                      name="computer_fee"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Computer Fee</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="₱200.00"
-                              {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value))}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="service_charge"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Service Charge</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="₱8,000.00"
-                              {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value))}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="insurance"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Insurance</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="₱6,000.00"
-                              {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value))}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-4 mt-4">
-                    <FormField
-                      control={form.control}
-                      name="notarial_fees"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Notarial Fees</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="₱3,000.00"
-                              {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value))}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="gross_receipts_tax"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Gross Receipts Tax</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="₱1,000.00"
-                              {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value))}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="processing_fee"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Processing Fee (9.1%)</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="₱18,200.00"
-                              {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value))}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Existing Payables */}
-              <Card className="border-none shadow-none p-0">
-                <CardContent className="px-6">
-                  <h3 className="text-lg font-semibold mb-4">List of existing payables</h3>
+                  <h4 className="text-md font-medium mb-2">List of existing payables</h4>
 
                   <Table>
                     <TableHeader>
@@ -545,18 +370,16 @@ export function LoanComputationTab({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {currentLoan?.existing_payables.map((payable) => (
-                        <TableRow key={payable.id}>
-                          <TableCell>{payable.pn_no}</TableCell>
-                          <TableCell>{payable.loan_type}</TableCell>
-                          <TableCell>₱{payable.monthly_amortization.toLocaleString()}</TableCell>
-                          <TableCell>₱{payable.overdraft.toLocaleString()}</TableCell>
-                          <TableCell>₱{payable.total.toLocaleString()}</TableCell>
-                          <TableCell>
-                            <Input placeholder={payable.amount_paid} className="w-full" />
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      <TableRow>
+                        <TableCell>29145</TableCell>
+                        <TableCell>Salary Loan</TableCell>
+                        <TableCell>₱3,500.00</TableCell>
+                        <TableCell>₱0.00</TableCell>
+                        <TableCell>₱3,500.00</TableCell>
+                        <TableCell>
+                          <Input placeholder="Type here..." className="w-full" />
+                        </TableCell>
+                      </TableRow>
                     </TableBody>
                   </Table>
 
@@ -621,7 +444,6 @@ export function LoanComputationTab({
                       ))}
                     </TableBody>
                   </Table>
-
                 </CardContent>
               </Card>
 
@@ -705,11 +527,10 @@ export function LoanComputationTab({
         <Button variant="outline" onClick={() => form.handleSubmit(handleSubmit)()} type="button" disabled={isLoading}>
           Save as Draft
         </Button>
-        <Button onClick={onProcess} type="button" disabled={isLoading || !currentLoan}>
+        <Button onClick={onProcess} type="button" disabled={isLoading || !currentBonusLoan}>
           Process
         </Button>
       </div>
-
 
       {/* Co-maker Dialog */}
       <CoMakerDialog

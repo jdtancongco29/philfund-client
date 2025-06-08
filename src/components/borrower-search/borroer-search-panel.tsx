@@ -3,7 +3,28 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import type { Borrower, Division, District } from "./Service/SalaryLoanProcessingTypes"
+
+export interface Division {
+  id: string
+  name: string
+}
+
+export interface District {
+  id: string
+  name: string
+  division_id: string
+}
+
+export interface Borrower {
+  id: string
+  name: string
+  division: string
+  district: string
+  address: string
+  phone: string
+  email: string
+  age?: number
+}
 
 interface BorrowerSearchPanelProps {
   divisions: Division[]
@@ -94,7 +115,7 @@ export function BorrowerSearchPanel({
           ) : borrowers.length === 0 ? (
             <div className="text-sm text-gray-500">No borrowers found.</div>
           ) : (
-            <div className="border rounded-md overflow-y-auto max-h-[360px]"> {/* 8 items x ~36px each */}
+            <div className="border rounded-md overflow-y-auto max-h-[360px]">
               {borrowers.map((borrower) => (
                 <button
                   key={borrower.id}
@@ -109,7 +130,6 @@ export function BorrowerSearchPanel({
             </div>
           )}
         </div>
-
       </div>
       <div className="flex gap-2 pt-4">
         <Button variant="outline" onClick={onReset} className="flex-1">

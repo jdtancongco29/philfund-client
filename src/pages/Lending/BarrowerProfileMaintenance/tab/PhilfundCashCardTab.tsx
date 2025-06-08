@@ -1,12 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
+
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CalendarIcon } from "lucide-react"
+
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 
@@ -35,7 +33,6 @@ export function PhilfundCashCardTab({
 }: PhilfundCashCardTabProps) {
   const [localData, setLocalData] = useState<PhilfundCashCardData>(formData)
 
-  // Update local data when formData changes
   useEffect(() => {
     setLocalData(formData)
   }, [formData])
@@ -44,10 +41,13 @@ export function PhilfundCashCardTab({
     const updatedData = { ...localData, [field]: value }
     setLocalData(updatedData)
     
-    // Call parent update function if provided
     if (onUpdateFormData) {
       onUpdateFormData(updatedData)
     }
+  }
+
+  const getFieldError = (field: string) => {
+    return validationErrors[field]
   }
 
   return (
@@ -100,36 +100,27 @@ export function PhilfundCashCardTab({
           </div>
           <div>
             <Label>Cash card expiry *</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal mt-2",
-                    !localData.cardExpiryDate && "text-muted-foreground",
-                    validationErrors.cardExpiryDate && "border-red-500"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {localData.cardExpiryDate ? format(localData.cardExpiryDate, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar 
-                  mode="single" 
-                  selected={localData.cardExpiryDate} 
-                  onSelect={(date) => updateField('cardExpiryDate', date)}
-                  initialFocus 
-                />
-              </PopoverContent>
-            </Popover>
+            <Input
+              type="date"
+              value={localData.cardExpiryDate ? format(new Date(localData.cardExpiryDate), "yyyy-MM-dd") : ""}
+              onChange={(e) => {
+                const dateValue = e.target.value ? new Date(e.target.value) : undefined;
+                updateField("cardExpiryDate", dateValue);
+              }}
+              className={cn("mt-2 pr-10 relative", {
+                "border-red-500": getFieldError("cardExpiryDate")
+              })}
+              style={{
+                colorScheme: "light",
+              }}
+            />
             {validationErrors.cardExpiryDate && (
               <p className="text-sm text-red-500 mt-1">{validationErrors.cardExpiryDate}</p>
             )}
           </div>
         </div>
 
-        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg hidden">
           <h4 className="font-medium text-blue-900 mb-2">Important Notes:</h4>
           <ul className="text-sm text-blue-800 space-y-1">
             <li>• Ensure the cash card information matches your official records</li>

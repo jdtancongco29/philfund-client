@@ -1,15 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import {  useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
-import type { FormData, ValidationErrors } from "../AddBorrowerDialog"
+import type { FormData, ValidationErrors } from "../Services/AddBorrowersTypes"
 
 interface BasicInfoTabProps {
   formData: FormData
@@ -18,7 +17,6 @@ interface BasicInfoTabProps {
 }
 
 export function BasicInfoTab({ formData, validationErrors, onUpdateFormData }: BasicInfoTabProps) {
-  const [dateOfDeath, setDateOfDeath] = useState<Date>()
 
 
   useEffect(() => {
@@ -44,7 +42,7 @@ export function BasicInfoTab({ formData, validationErrors, onUpdateFormData }: B
     return validationErrors[field]
   }
 
-  const isMarried = formData.civilStatus === "married"
+const isMarried = formData.civilStatus?.toLowerCase() === "married"
 
   return (
     <div className="space-y-8 p-6">
@@ -151,25 +149,29 @@ export function BasicInfoTab({ formData, validationErrors, onUpdateFormData }: B
         <div className="grid grid-cols-3 gap-6">
           <div>
             <Label>Birth Date *</Label>
-               <Input
-                    type="date"
-                    className={` mt-2
-                    pr-10
-                    relative
-                    [&::-webkit-calendar-picker-indicator]:absolute
-                    [&::-webkit-calendar-picker-indicator]:right-3
-                    [&::-webkit-calendar-picker-indicator]:top-1/2
-                    [&::-webkit-calendar-picker-indicator]:-translate-y-1/2
-                    [&::-webkit-calendar-picker-indicator]:cursor-pointer
-                    [&::-webkit-calendar-picker-indicator]:text-black
-                    ${getFieldError("birthDate") ? "border-red-500" : ""}
-                  `}
-                                    style={{
-                                      colorScheme: "light",
-                                    }}
-                                  />
-            
-            {getFieldError("birthDate") && <p className="text-sm text-red-500 mt-1">{getFieldError("birthDate")}</p>}
+                <Input
+    type="date"
+    value={formData.birthDate ? format(new Date(formData.birthDate), "yyyy-MM-dd") : ""}
+    onChange={(e) => {
+      const dateValue = e.target.value ? new Date(e.target.value) : undefined;
+      handleInputChange("birthDate", dateValue);
+    }}
+    className={`mt-2
+      pr-10
+      relative
+      [&::-webkit-calendar-picker-indicator]:absolute
+      [&::-webkit-calendar-picker-indicator]:right-3
+      [&::-webkit-calendar-picker-indicator]:top-1/2
+      [&::-webkit-calendar-picker-indicator]:-translate-y-1/2
+      [&::-webkit-calendar-picker-indicator]:cursor-pointer
+      [&::-webkit-calendar-picker-indicator]:text-black
+      ${getFieldError("birthDate") ? "border-red-500" : ""}
+    `}
+    style={{
+      colorScheme: "light",
+    }}
+  />
+  {getFieldError("birthDate") && <p className="text-sm text-red-500 mt-1">{getFieldError("birthDate")}</p>}
           </div>
           <div>
             <Label htmlFor="age">Age</Label>
@@ -257,33 +259,30 @@ export function BasicInfoTab({ formData, validationErrors, onUpdateFormData }: B
             </div>
             <div>
               <Label>Date of Death</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                 <Input
-                    type="date"
-                    onFocus={(e) => e.target.blur()}
-                    value={ dateOfDeath ? format(dateOfDeath, "yyyy-MM-dd") : ""}
-                    className={` mt-2
-                    pr-10
-                    relative
-                    [&::-webkit-calendar-picker-indicator]:absolute
-                    [&::-webkit-calendar-picker-indicator]:right-3
-                    [&::-webkit-calendar-picker-indicator]:top-1/2
-                    [&::-webkit-calendar-picker-indicator]:-translate-y-1/2
-                    [&::-webkit-calendar-picker-indicator]:cursor-pointer
-                    [&::-webkit-calendar-picker-indicator]:text-black
-                    ${getFieldError("dateOfDeath") ? "border-red-500" : ""}
-                  `}
-                                    style={{
-                                      colorScheme: "light",
-                                    }}
-                                  />
+
+                  <Input
+    type="date"
+    value={formData.dateOfDeath ? format(new Date(formData.dateOfDeath), "yyyy-MM-dd") : ""}
+    onChange={(e) => {
+      const dateValue = e.target.value ? new Date(e.target.value) : undefined;
+      handleInputChange("dateOfDeath", dateValue);
+    }}
+    className={`mt-2
+      pr-10
+      relative
+      [&::-webkit-calendar-picker-indicator]:absolute
+      [&::-webkit-calendar-picker-indicator]:right-3
+      [&::-webkit-calendar-picker-indicator]:top-1/2
+      [&::-webkit-calendar-picker-indicator]:-translate-y-1/2
+      [&::-webkit-calendar-picker-indicator]:cursor-pointer
+      [&::-webkit-calendar-picker-indicator]:text-black
+      ${getFieldError("dateOfDeath") ? "border-red-500" : ""}
+    `}
+    style={{
+      colorScheme: "light",
+    }}
+  />
                
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar mode="single" selected={dateOfDeath} onSelect={setDateOfDeath} initialFocus />
-                </PopoverContent>
-              </Popover>
               {getFieldError("dateOfDeath") && (
                 <p className="text-sm text-red-500 mt-1">{getFieldError("dateOfDeath")}</p>
               )}

@@ -1,30 +1,34 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Badge } from "@/components/ui/badge"
-import { Upload, ChevronDown } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { ColumnDefinition, FilterDefinition, SearchDefinition } from "@/components/data-table/data-table"
-
-import { AddBorrowerDialog } from "../BarrowerProfileMaintenance/AddBorrowerDialog"
-import { BorrowerProfileUploadDialog } from "../BarrowerProfileMaintenance/dialog/BorrowerProfileUploadDialog"
-import { BeginningBalanceUploadDialog } from "../BarrowerProfileMaintenance/dialog/BeginningBalanceUploadDialog"
-import { DataTableV3 } from "@/components/data-table/data-table-v3"
+import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Upload, ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  ColumnDefinition,
+  FilterDefinition,
+  SearchDefinition,
+} from "@/components/data-table/data-table";
+import { DataTableV3 } from "@/components/data-table/data-table-v3";
+import { AddBorrowerDialog } from "../BarrowerProfileMaintenance/AddBorrowerDialog";
+import { ModulePermissionProps } from "@/pages/MaintenanceAndSecurity/Security/UserPermissions/Service/PermissionsTypes";
+import { BorrowerProfileUploadDialog } from "../BarrowerProfileMaintenance/dialog/BorrowerProfileUploadDialog";
+import { BeginningBalanceUploadDialog } from "../BarrowerProfileMaintenance/dialog/BeginningBalanceUploadDialog";
 
 interface BorrowerData {
-  id: string
-  name: string
-  division: string
-  district: string
-  school: string
-  totalActiveSL: number
-  totalActiveBL: number
-  totalActiveSLCA: number
-  totalActiveBLCA: number
-  passDue: number
-  delinquent: number
-  totalNetOverdueBal: number
-  statusForInterview: "Pending" | "Done" | "Denied"
+  id: string;
+  name: string;
+  division: string;
+  district: string;
+  school: string;
+  totalActiveSL: number;
+  totalActiveBL: number;
+  totalActiveSLCA: number;
+  totalActiveBLCA: number;
+  passDue: number;
+  delinquent: number;
+  totalNetOverdueBal: number;
+  statusForInterview: "Pending" | "Done" | "Denied";
 }
 
 // Static data for UI/UX purposes
@@ -149,28 +153,44 @@ const staticBorrowersData: BorrowerData[] = [
     totalNetOverdueBal: 0,
     statusForInterview: "Denied",
   },
-]
+];
 
 const getStatusBadge = (status: string) => {
   switch (status) {
     case "Pending":
-      return <Badge className="bg-blue-500 hover:bg-blue-600 text-white">Pending</Badge>
+      return (
+        <Badge className="bg-blue-500 hover:bg-blue-600 text-white">
+          Pending
+        </Badge>
+      );
     case "Done":
-      return <Badge className="bg-green-500 hover:bg-green-600 text-white">Done</Badge>
+      return (
+        <Badge className="bg-green-500 hover:bg-green-600 text-white">
+          Done
+        </Badge>
+      );
     case "Denied":
-      return <Badge className="bg-red-500 hover:bg-red-600 text-white">Denied</Badge>
+      return (
+        <Badge className="bg-red-500 hover:bg-red-600 text-white">Denied</Badge>
+      );
     default:
-      return <Badge variant="secondary">{status}</Badge>
+      return <Badge variant="secondary">{status}</Badge>;
   }
-}
-
-export default function BorrowersMasterList() {
-  const [currentPage, setCurrentPage] = useState(1)
-  const [rowsPerPage, setRowsPerPage] = useState(10)
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [isBorrowerProfileUploadOpen, setIsBorrowerProfileUploadOpen] = useState(false)
-  const [isBeginningBalanceUploadOpen, setIsBeginningBalanceUploadOpen] = useState(false)
-  const [dropdownOpen, setDropdownOpen] = useState(false)
+};
+export default function BorrowersMasterList({
+  canAdd,
+  // canEdit,
+  // canDelete,
+  canExport,
+}: ModulePermissionProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isBorrowerProfileUploadOpen, setIsBorrowerProfileUploadOpen] =
+    useState(false);
+  const [isBeginningBalanceUploadOpen, setIsBeginningBalanceUploadOpen] =
+    useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   // Define columns for the DataTableV3
   const columns: ColumnDefinition<BorrowerData>[] = [
@@ -253,7 +273,7 @@ export default function BorrowersMasterList() {
       enableSorting: true,
       cell: (item) => getStatusBadge(item.statusForInterview),
     },
-  ]
+  ];
 
   // Define filters
   const filters: FilterDefinition[] = [
@@ -298,47 +318,47 @@ export default function BorrowersMasterList() {
       ],
       placeholder: "Select...",
     },
-  ]
+  ];
 
   // Define search configuration
   const search: SearchDefinition = {
     title: "Search",
     placeholder: "Search",
     enableSearch: true,
-  }
+  };
 
   // Handler functions
   const handleEdit = (borrower: BorrowerData) => {
-    console.log("Edit borrower:", borrower)
-  }
+    console.log("Edit borrower:", borrower);
+  };
 
   const handleDelete = (borrower: BorrowerData) => {
-    console.log("Delete borrower:", borrower)
-  }
+    console.log("Delete borrower:", borrower);
+  };
 
   const handleNew = () => {
-    setIsAddDialogOpen(true)
-  }
+    setIsAddDialogOpen(true);
+  };
 
   const handlePdfExport = () => {
-    console.log("Export to PDF")
-  }
+    console.log("Export to PDF");
+  };
 
   const handleCsvExport = () => {
-    console.log("Export to CSV")
-  }
+    console.log("Export to CSV");
+  };
 
   const handleBorrowerProfileUpload = () => {
-    console.log("Opening Borrower Profile Upload Dialog")
-    setIsBorrowerProfileUploadOpen(true)
-    setDropdownOpen(false)
-  }
+    console.log("Opening Borrower Profile Upload Dialog");
+    setIsBorrowerProfileUploadOpen(true);
+    setDropdownOpen(false);
+  };
 
   const handleBeginningBalanceUpload = () => {
-    console.log("Opening Beginning Balance Upload Dialog")
-    setIsBeginningBalanceUploadOpen(true)
-    setDropdownOpen(false)
-  }
+    console.log("Opening Beginning Balance Upload Dialog");
+    setIsBeginningBalanceUploadOpen(true);
+    setDropdownOpen(false);
+  };
 
   return (
     <div className="w-full p-6">
@@ -354,9 +374,9 @@ export default function BorrowersMasterList() {
         onPdfExport={handlePdfExport}
         onCsvExport={handleCsvExport}
         idField="id"
-        enableNew={true}
-        enablePdfExport={true}
-        enableCsvExport={true}
+        enableNew={canAdd}
+        enablePdfExport={canExport}
+        enableCsvExport={canExport}
         enableFilter={true}
         enableSelection={false}
         onLoading={false}
@@ -370,24 +390,24 @@ export default function BorrowersMasterList() {
         customHeaderActions={
           <>
             <div className="relative">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={() => setDropdownOpen(!dropdownOpen)}
               >
                 <Upload className="h-4 w-4 mr-2" />
-                Bulk Import 
+                Bulk Import
                 <ChevronDown className="h-4 w-4 ml-2" />
               </Button>
               {dropdownOpen && (
                 <div className="absolute right-0 top-full mt-1 bg-white border rounded-md shadow-lg z-50 min-w-[160px]">
-                  <button 
+                  <button
                     className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
                     onClick={handleBorrowerProfileUpload}
                   >
                     Borrower's Profile
                   </button>
-                  <button 
+                  <button
                     className="w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
                     onClick={handleBeginningBalanceUpload}
                   >
@@ -399,17 +419,20 @@ export default function BorrowersMasterList() {
           </>
         }
       />
-      
+
       {/* Dialogs */}
-      <AddBorrowerDialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} />
-      <BorrowerProfileUploadDialog 
-        open={isBorrowerProfileUploadOpen} 
-        onOpenChange={setIsBorrowerProfileUploadOpen} 
+      <AddBorrowerDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
       />
-      <BeginningBalanceUploadDialog 
-        open={isBeginningBalanceUploadOpen} 
-        onOpenChange={setIsBeginningBalanceUploadOpen} 
+      <BorrowerProfileUploadDialog
+        open={isBorrowerProfileUploadOpen}
+        onOpenChange={setIsBorrowerProfileUploadOpen}
+      />
+      <BeginningBalanceUploadDialog
+        open={isBeginningBalanceUploadOpen}
+        onOpenChange={setIsBeginningBalanceUploadOpen}
       />
     </div>
-  )
+  );
 }

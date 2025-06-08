@@ -18,11 +18,10 @@ interface AddressTabProps {
 export function AddressDetailsTab({ formData, validationErrors, onUpdateFormData }: AddressTabProps) {
   const [sameAddress, setSameAddress] = useState(!formData.is_permanent)
 
-  // Update form data when sameAddress changes
+
   useEffect(() => {
     onUpdateFormData({ is_permanent: !sameAddress })
     
-    // If same address is checked, clear permanent address fields
     if (sameAddress) {
       onUpdateFormData({
         permanent_address: "",

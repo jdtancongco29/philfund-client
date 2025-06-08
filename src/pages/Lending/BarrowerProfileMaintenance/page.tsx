@@ -1,14 +1,12 @@
-
-import MainLayout from '@/components/layout/MainLayout'
-import BorrowersMasterList from '../BorrowerMasterList/BorrowerMasterList'
-
+import MainLayout from "@/components/layout/MainLayout";
+import BorrowersMasterList from "../BorrowerMasterList/BorrowerMasterList";
 
 function LendingPage() {
   return (
-    <MainLayout>  
-        <BorrowersMasterList />
+    <MainLayout>
+      <BorrowersMasterList />
     </MainLayout>
-  )
+  );
 }
 
-export default LendingPage
+export default LendingPage;

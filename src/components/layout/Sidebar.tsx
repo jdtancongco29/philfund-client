@@ -1,9 +1,14 @@
-"use client"
+"use client";
 
-import { NavLink, useLocation } from "react-router-dom"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { useMemo, useState } from "react"
-import clsx from "clsx"
+import { NavLink, useLocation } from "react-router-dom";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { useMemo, useState } from "react";
+import clsx from "clsx";
 
 // Enhanced menu configuration with ordering and page-based sections
 const menuConfig = {
@@ -43,10 +48,26 @@ const menuConfig = {
         order: 1,
         defaultOpen: true,
         links: [
-          { label: "Salary Loan Processing", path: "/lending/salary-loan-processing", order: 1 },
-          { label: "Cash Advance Processing", path: "/lending/cash-advance-processing", order: 2 },
-          { label: "Bonus Loan Processing", path: "/lending/bonus-loan-processing", order: 3 },
-          { label: "Loan Restructure", path: "/lending/loan-restructure", order: 4 },
+          {
+            label: "Salary Loan Processing",
+            path: "/lending/salary-loan-processing",
+            order: 1,
+          },
+          {
+            label: "Cash Advance Processing",
+            path: "/lending/cash-advance-processing",
+            order: 2,
+          },
+          {
+            label: "Bonus Loan Processing",
+            path: "/lending/bonus-loan-processing",
+            order: 3,
+          },
+          {
+            label: "Loan Restructure",
+            path: "/lending/loan-restructure",
+            order: 4,
+          },
         ],
       },
       {
@@ -56,15 +77,31 @@ const menuConfig = {
         order: 2,
         defaultOpen: true,
         links: [
-          { label: "Check Encashment", path: "/lending/releasing/check-encashment", order: 1 },
-          { label: "Change Voucher", path: "/lending/releasing/change-voucher", order: 2 },
+          {
+            label: "Check Encashment",
+            path: "/lending/releasing/check-encashment",
+            order: 1,
+          },
+          {
+            label: "Change Voucher",
+            path: "/lending/releasing/change-voucher",
+            order: 2,
+          },
           {
             label: "Salary and Cash Advance Payment",
             path: "/lending/releasing/salary-and-cash-advance-payment",
             order: 3,
           },
-          { label: "Bonus Loan Payment", path: "/lending/releasing/bonus-loan-payment", order: 4 },
-          { label: "Loans Payoff", path: "/lending/releasing/loans-payoff", order: 5 },
+          {
+            label: "Bonus Loan Payment",
+            path: "/lending/releasing/bonus-loan-payment",
+            order: 4,
+          },
+          {
+            label: "Loans Payoff",
+            path: "/lending/releasing/loans-payoff",
+            order: 5,
+          },
         ],
       },
       {
@@ -74,10 +111,26 @@ const menuConfig = {
         order: 3,
         defaultOpen: false,
         links: [
-          { label: "Borrower's Master List", path: "/lending/borrowers/borrower-master-list", order: 1 },
-          { label: "Bulk Upload Borrowers Profile", path: "/lending/borrowers/bulk-upload-profile", order: 2 },
-          { label: "Beginning Balance", path: "/lending/borrowers/beginning-balance", order: 3 },
-          { label: "Pre-Loan Application", path: "/lending/borrowers/pre-loan-application", order: 4 },
+          {
+            label: "Borrower's Master List",
+            path: "/lending/borrowers/borrower-master-list",
+            order: 1,
+          },
+          {
+            label: "Bulk Upload Borrowers Profile",
+            path: "/lending/borrowers/bulk-upload-profile",
+            order: 2,
+          },
+          {
+            label: "Beginning Balance",
+            path: "/lending/borrowers/beginning-balance",
+            order: 3,
+          },
+          {
+            label: "Pre-Loan Application",
+            path: "/lending/borrowers/pre-loan-application",
+            order: 4,
+          },
         ],
       },
       {
@@ -87,8 +140,16 @@ const menuConfig = {
         order: 4,
         defaultOpen: false,
         links: [
-          { label: "Card Custody Log", path: "/lending/card-custody-log", order: 1 },
-          { label: "Unsold/No Account", path: "/lending/unsold-or-no-account-recording", order: 2 },
+          {
+            label: "Card Custody Log",
+            path: "/lending/card-custody-log",
+            order: 1,
+          },
+          {
+            label: "Unsold/No Account",
+            path: "/lending/unsold-or-no-account-recording",
+            order: 2,
+          },
         ],
       },
     ],
@@ -119,15 +180,31 @@ const menuConfig = {
         order: 2,
         defaultOpen: true,
         links: [
-          { label: "Check Encashment", path: "/lending/releasing/check-encashment", order: 1 },
-          { label: "Change Voucher", path: "/lending/releasing/change-voucher", order: 2 },
+          {
+            label: "Check Encashment",
+            path: "/lending/releasing/check-encashment",
+            order: 1,
+          },
+          {
+            label: "Change Voucher",
+            path: "/lending/releasing/change-voucher",
+            order: 2,
+          },
           {
             label: "Salary and Cash Advance Payment",
             path: "/lending/releasing/salary-and-cash-advance-payment",
             order: 3,
           },
-          { label: "Bonus Loan Payment", path: "/lending/releasing/bonus-loan-payment", order: 4 },
-          { label: "Loans Payoff", path: "/lending/releasing/loans-payoff", order: 5 },
+          {
+            label: "Bonus Loan Payment",
+            path: "/lending/releasing/bonus-loan-payment",
+            order: 4,
+          },
+          {
+            label: "Loans Payoff",
+            path: "/lending/releasing/loans-payoff",
+            order: 5,
+          },
         ],
       },
       {
@@ -137,10 +214,26 @@ const menuConfig = {
         order: 3,
         defaultOpen: false,
         links: [
-          { label: "Borrower's Master List", path: "/lending/borrowers/borrower-master-list", order: 1 },
-          { label: "Bulk Upload Borrowers Profile", path: "/lending/borrowers/bulk-upload-profile", order: 2 },
-          { label: "Beginning Balance", path: "/lending/borrowers/beginning-balance", order: 3 },
-          { label: "Pre-Loan Application", path: "/lending/borrowers/pre-loan-application", order: 4 },
+          {
+            label: "Borrower's Master List",
+            path: "/lending/borrowers/borrower-master-list",
+            order: 1,
+          },
+          {
+            label: "Bulk Upload Borrowers Profile",
+            path: "/lending/borrowers/bulk-upload-profile",
+            order: 2,
+          },
+          {
+            label: "Beginning Balance",
+            path: "/lending/borrowers/beginning-balance",
+            order: 3,
+          },
+          {
+            label: "Pre-Loan Application",
+            path: "/lending/borrowers/pre-loan-application",
+            order: 4,
+          },
         ],
       },
       {
@@ -150,8 +243,16 @@ const menuConfig = {
         order: 4,
         defaultOpen: false,
         links: [
-          { label: "Card Custody Log", path: "/lending/card-custody-log", order: 1 },
-          { label: "Unsold/No Account", path: "/lending/unsold-or-no-account-recording", order: 2 },
+          {
+            label: "Card Custody Log",
+            path: "/lending/card-custody-log",
+            order: 1,
+          },
+          {
+            label: "Unsold/No Account",
+            path: "/lending/unsold-or-no-account-recording",
+            order: 2,
+          },
         ],
       },
     ],
@@ -167,9 +268,21 @@ const menuConfig = {
         title: "Financial Overview",
         order: 1,
         links: [
-          { label: "Accounting Dashboard", path: "/accounting/dashboard", order: 1 },
-          { label: "Trial Balance", path: "/accounting/trial-balance", order: 2 },
-          { label: "Financial Statements", path: "/accounting/financial-statements", order: 3 },
+          {
+            label: "Accounting Dashboard",
+            path: "/accounting/dashboard",
+            order: 1,
+          },
+          {
+            label: "Trial Balance",
+            path: "/accounting/trial-balance",
+            order: 2,
+          },
+          {
+            label: "Financial Statements",
+            path: "/accounting/financial-statements",
+            order: 3,
+          },
         ],
       },
       {
@@ -179,10 +292,26 @@ const menuConfig = {
         order: 2,
         defaultOpen: true,
         links: [
-          { label: "General Journal", path: "/accounting/general-journal", order: 1 },
-          { label: "Cash Receipts", path: "/accounting/cash-receipts", order: 2 },
-          { label: "Cash Disbursements", path: "/accounting/cash-disbursements", order: 3 },
-          { label: "Adjusting Entries", path: "/accounting/adjusting-entries", order: 4 },
+          {
+            label: "General Journal",
+            path: "/accounting/general-journal",
+            order: 1,
+          },
+          {
+            label: "Cash Receipts",
+            path: "/accounting/cash-receipts",
+            order: 2,
+          },
+          {
+            label: "Cash Disbursements",
+            path: "/accounting/cash-disbursements",
+            order: 3,
+          },
+          {
+            label: "Adjusting Entries",
+            path: "/accounting/adjusting-entries",
+            order: 4,
+          },
         ],
       },
       {
@@ -192,9 +321,21 @@ const menuConfig = {
         order: 3,
         defaultOpen: false,
         links: [
-          { label: "Chart of Accounts", path: "/accounting/chart-of-accounts", order: 1 },
-          { label: "Account Reconciliation", path: "/accounting/reconciliation", order: 2 },
-          { label: "Bank Accounts", path: "/accounting/bank-accounts", order: 3 },
+          {
+            label: "Chart of Accounts",
+            path: "/accounting/chart-of-accounts",
+            order: 1,
+          },
+          {
+            label: "Account Reconciliation",
+            path: "/accounting/reconciliation",
+            order: 2,
+          },
+          {
+            label: "Bank Accounts",
+            path: "/accounting/bank-accounts",
+            order: 3,
+          },
         ],
       },
     ],
@@ -212,8 +353,16 @@ const menuConfig = {
         order: 2,
         defaultOpen: true,
         links: [
-          { label: "Branch Setup", path: "/maintenance-and-security/general-setup/branch-setup", order: 1 },
-          { label: "Department Setup", path: "/maintenance-and-security/general-setup/department-setup", order: 2 },
+          {
+            label: "Branch Setup",
+            path: "/maintenance-and-security/general-setup/branch-setup",
+            order: 1,
+          },
+          {
+            label: "Department Setup",
+            path: "/maintenance-and-security/general-setup/department-setup",
+            order: 2,
+          },
         ],
       },
       {
@@ -223,8 +372,16 @@ const menuConfig = {
         order: 3,
         defaultOpen: false,
         links: [
-          { label: "User Management", path: "/maintenance-and-security/security/user-management", order: 1 },
-          { label: "User Permissions", path: "/maintenance-and-security/security/user-permissions", order: 2 },
+          {
+            label: "User Management",
+            path: "/maintenance-and-security/security/user-management",
+            order: 1,
+          },
+          {
+            label: "User Permissions",
+            path: "/maintenance-and-security/security/user-permissions",
+            order: 2,
+          },
         ],
       },
       {
@@ -234,9 +391,21 @@ const menuConfig = {
         order: 4,
         defaultOpen: false,
         links: [
-          { label: "For approval list", path: "/maintenance-and-security/admin/approval", order: 1 },
-          { label: "Back up and Restore", path: "/maintenance-and-security/admin/backup-and-restore", order: 2 },
-          { label: "Activity Logs", path: "/maintenance-and-security/admin/activity-logs", order: 3 },
+          {
+            label: "For approval list",
+            path: "/maintenance-and-security/admin/approval",
+            order: 1,
+          },
+          {
+            label: "Back up and Restore",
+            path: "/maintenance-and-security/admin/backup-and-restore",
+            order: 2,
+          },
+          {
+            label: "Activity Logs",
+            path: "/maintenance-and-security/admin/activity-logs",
+            order: 3,
+          },
         ],
       },
       {
@@ -246,16 +415,36 @@ const menuConfig = {
         order: 5,
         defaultOpen: false,
         links: [
-          { label: "Reference Settings", path: "/maintenance-and-security/accounting-setup/reference-settings", order: 1 },
-          { label: "Chart of Accounts (CoA)", path: "/maintenance-and-security/accounting-setup/chart-of-accounts", order: 2 },
+          {
+            label: "Reference Settings",
+            path: "/maintenance-and-security/accounting-setup/reference-settings",
+            order: 1,
+          },
+          {
+            label: "Chart of Accounts (CoA)",
+            path: "/maintenance-and-security/accounting-setup/chart-of-accounts",
+            order: 2,
+          },
           {
             label: "Accounting Entries Defaults",
             path: "/maintenance-and-security/accounting-setup/accounting-entries-defaults",
             order: 3,
           },
-          { label: "Default Account Setup", path: "/maintenance-and-security/accounting-setup/default-account-setup", order: 4 },
-          { label: "Bank Account Setup", path: "/maintenance-and-security/accounting-setup/bank-account-setup", order: 5 },
-          { label: "Cashiering", path: "/maintenance-and-security/accounting-setup/cashiering", order: 6 },
+          {
+            label: "Default Account Setup",
+            path: "/maintenance-and-security/accounting-setup/default-account-setup",
+            order: 4,
+          },
+          {
+            label: "Bank Account Setup",
+            path: "/maintenance-and-security/accounting-setup/bank-account-setup",
+            order: 5,
+          },
+          {
+            label: "Cashiering",
+            path: "/maintenance-and-security/accounting-setup/cashiering",
+            order: 6,
+          },
         ],
       },
       {
@@ -265,89 +454,124 @@ const menuConfig = {
         order: 6,
         defaultOpen: false,
         links: [
-          { label: "Group Setup", path: "/maintenance-and-security/lending-setup/group-setup", order: 1 },
-          { label: "Classification Setup", path: "/maintenance-and-security/lending-setup/classification-setup", order: 2 },
-          { label: "Division Setup", path: "/maintenance-and-security/lending-setup/division-setup", order: 3 },
-          { label: "District Setup", path: "/maintenance-and-security/lending-setup/district-setup", order: 4 },
-          { label: "School / Office Setup", path: "/maintenance-and-security/lending-setup/school-office-setup", order: 5 },
-          { label: "Salary Loan Setup", path: "/maintenance-and-security/lending-setup/salary-loan-setup", order: 6 },
-          { label: "Bonus Loan Setup", path: "/maintenance-and-security/lending-setup/bonus-loan-setup", order: 7 },
-          { label: "Cash Advance Setup", path: "/maintenance-and-security/lending-setup/ca-setup", order: 8 },
+          {
+            label: "Group Setup",
+            path: "/maintenance-and-security/lending-setup/group-setup",
+            order: 1,
+          },
+          {
+            label: "Classification Setup",
+            path: "/maintenance-and-security/lending-setup/classification-setup",
+            order: 2,
+          },
+          {
+            label: "Division Setup",
+            path: "/maintenance-and-security/lending-setup/division-setup",
+            order: 3,
+          },
+          {
+            label: "District Setup",
+            path: "/maintenance-and-security/lending-setup/district-setup",
+            order: 4,
+          },
+          {
+            label: "School / Office Setup",
+            path: "/maintenance-and-security/lending-setup/school-office-setup",
+            order: 5,
+          },
+          {
+            label: "Salary Loan Setup",
+            path: "/maintenance-and-security/lending-setup/salary-loan-setup",
+            order: 6,
+          },
+          {
+            label: "Bonus Loan Setup",
+            path: "/maintenance-and-security/lending-setup/bonus-loan-setup",
+            order: 7,
+          },
+          {
+            label: "Cash Advance Setup",
+            path: "/maintenance-and-security/lending-setup/ca-setup",
+            order: 8,
+          },
         ],
       },
     ],
   },
-}
+};
 
-type MenuSection = keyof typeof menuConfig
+type MenuSection = keyof typeof menuConfig;
 
 export default function ImprovedSidebar() {
-  const location = useLocation()
-  const currentPath = location.pathname
+  const location = useLocation();
+  const currentPath = location.pathname;
 
   // State to manage accordion open/close
-  const [accordionValue, setAccordionValue] = useState<string>("")
+  const [accordionValue, setAccordionValue] = useState<string>("");
 
-  const { 
+  const {
     // currentSection,
     sortedItems,
-    defaultAccordionValue
+    defaultAccordionValue,
   } = useMemo(() => {
     // Determine which section to show based on current path
-    let activeSection: MenuSection = "dashboard" // default fallback
+    let activeSection: MenuSection = "dashboard"; // default fallback
 
     for (const [sectionKey, section] of Object.entries(menuConfig)) {
       if (section.pathPattern.test(currentPath)) {
-        activeSection = sectionKey as MenuSection
-        break
+        activeSection = sectionKey as MenuSection;
+        break;
       }
     }
 
-    const section = menuConfig[activeSection]
+    const section = menuConfig[activeSection];
 
     // Sort items by order
-    const sortedItems = [...section.items].sort((a, b) => a.order - b.order)
+    const sortedItems = [...section.items].sort((a, b) => a.order - b.order);
 
     // Sort links within each item
     sortedItems.forEach((item) => {
       if (item.links) {
-        item.links.sort((a, b) => a.order - b.order)
+        item.links.sort((a, b) => a.order - b.order);
       }
-    })
+    });
 
     // Find default accordion value based on current path or defaultOpen
-    let defaultAccordionValue = ""
+    let defaultAccordionValue = "";
 
     // First, check if current path matches any accordion item
     for (const item of sortedItems) {
       if (item.type === "accordion" && item.links) {
         const hasActiveLink = item.links.some(
-          (link) => currentPath === link.path || currentPath.startsWith(link.path + "/"),
-        )
+          (link) =>
+            currentPath === link.path || currentPath.startsWith(link.path + "/")
+        );
         if (hasActiveLink) {
-          defaultAccordionValue = item.value
-          break
+          defaultAccordionValue = item.value;
+          break;
         }
       }
     }
 
     // If no active link found, use the first defaultOpen accordion
     if (!defaultAccordionValue) {
-      const defaultOpenItem = sortedItems.find((item) => item.type === "accordion" && item.defaultOpen)
-      defaultAccordionValue = defaultOpenItem?.value || ""
+      const defaultOpenItem = sortedItems.find(
+        (item) => item.type === "accordion" && item.defaultOpen
+      );
+      defaultAccordionValue = defaultOpenItem?.value || "";
     }
 
     return {
       currentSection: section,
       sortedItems,
       defaultAccordionValue,
-    }
-  }, [currentPath])
+    };
+  }, [currentPath]);
 
   // Update accordion value when default changes
   useMemo(() => {
-    setAccordionValue(defaultAccordionValue)
-  }, [defaultAccordionValue])
+    setAccordionValue(defaultAccordionValue);
+  }, [defaultAccordionValue]);
 
   return (
     <aside className="w-64 h-full p-2 bg-sidebar border-r border-sidebar-border">
@@ -370,7 +594,9 @@ export default function ImprovedSidebar() {
                     className={({ isActive }) =>
                       clsx(
                         "text-sm rounded-md hover:bg-foreground hover:text-white px-3 py-2 font-medium transition-colors",
-                        isActive ? "bg-foreground text-white" : "text-sidebar-foreground",
+                        isActive
+                          ? "bg-foreground text-white"
+                          : "text-sidebar-foreground"
                       )
                     }
                   >
@@ -392,7 +618,11 @@ export default function ImprovedSidebar() {
           {sortedItems
             .filter((item) => item.type === "accordion")
             .map((item) => (
-              <AccordionItem key={item.value} value={item.value} className="border-none">
+              <AccordionItem
+                key={item.value}
+                value={item.value}
+                className="border-none"
+              >
                 <AccordionTrigger className="px-3 py-2 rounded-md text-sm font-medium hover:underline">
                   {item.title}
                 </AccordionTrigger>
@@ -405,7 +635,9 @@ export default function ImprovedSidebar() {
                         className={({ isActive }) =>
                           clsx(
                             "text-sm rounded-md hover:bg-foreground hover:text-white px-3 py-2 font-medium transition-colors",
-                            isActive ? "bg-foreground text-white" : "text-sidebar-foreground",
+                            isActive
+                              ? "bg-foreground text-white"
+                              : "text-sidebar-foreground"
                           )
                         }
                       >
@@ -419,5 +651,5 @@ export default function ImprovedSidebar() {
         </Accordion>
       </nav>
     </aside>
-  )
+  );
 }

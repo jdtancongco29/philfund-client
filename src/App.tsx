@@ -73,7 +73,7 @@ function App() {
                 element={<BorrowerDashboardPage />}
               />
 
-              {/* Lending Routes */}
+              {/* Lending Routess */}
               <Route
                 path="/lending/salary-loan-processing"
                 element={<LoanProcessing name="Salary Loan Processing" />}

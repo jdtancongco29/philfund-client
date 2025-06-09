@@ -101,7 +101,7 @@ export function UserDetailsDrawer({
                   variant="outline"
                   size="sm"
                   className="w-full justify-start text-center items-center"
-                  onClick={onPrintPromissoryNote}
+                  
                 >
                   Apply for New Salary Loan
                 </Button>
@@ -109,7 +109,7 @@ export function UserDetailsDrawer({
                   variant="outline"
                   size="sm"
                   className="w-full justify-start text-center items-center"
-                  onClick={onPrintComakerStatement}
+                  
                 >
                   Apply for Cash Advance
                 </Button>
@@ -118,7 +118,7 @@ export function UserDetailsDrawer({
                   variant="outline"
                   size="sm"
                   className="w-full justify-start text-center items-center"
-                  onClick={onPrintComakerStatement}
+                  
                 >
                   Apply for New Bonus Loan
                 </Button>
@@ -131,7 +131,7 @@ export function UserDetailsDrawer({
                   variant="outline"
                   size="sm"
                   className="w-full justify-start text-center items-center"
-                  onClick={onPrintPromissoryNote}
+                  
                 >
                   Process Payment
                 </Button>
@@ -139,7 +139,7 @@ export function UserDetailsDrawer({
                   variant="outline"
                   size="sm"
                   className="w-full justify-start text-center items-center"
-                  onClick={onPrintComakerStatement}
+                 
                 >
                   Reloan/Restructure Loan
                 </Button>
@@ -148,7 +148,7 @@ export function UserDetailsDrawer({
                   variant="outline"
                   size="sm"
                   className="w-full justify-start text-center items-center"
-                  onClick={onPrintComakerStatement}
+                 
                 >
                   Pay off with Insurance
                 </Button>
@@ -157,7 +157,7 @@ export function UserDetailsDrawer({
                   variant="outline"
                   size="sm"
                   className="w-full justify-start text-center items-center p-5"
-                  onClick={onPrintComakerStatement}
+                  
                 >
                   Deem all loans selected as <br />
                   Bad Debt
@@ -166,7 +166,7 @@ export function UserDetailsDrawer({
                   variant="outline"
                   size="sm"
                   className="w-full justify-start text-center items-center"
-                  onClick={onPrintComakerStatement}
+                  
                 >
                   Deem all loans as Garnished
                 </Button>
@@ -175,7 +175,7 @@ export function UserDetailsDrawer({
                   variant="outline"
                   size="sm"
                   className="w-full justify-start text-center items-center p-5"
-                  onClick={onPrintComakerStatement}
+                  
                 >
                   Open Statement of Account <br /> & Ledger Report
                 </Button>

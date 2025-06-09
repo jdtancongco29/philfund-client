@@ -3,7 +3,7 @@ import MainLayout from '@/components/layout/MainLayout'
 import BorrowersMasterList from './BorrowerMasterList'
 import { ModulePermissionProps } from '@/pages/MaintenanceAndSecurity/Security/UserPermissions/Service/PermissionsTypes'
 
-export const LendingPage: React.FC<ModulePermissionProps> = ({
+export const BorrowerMasterListPage: React.FC<ModulePermissionProps> = ({
   name,
   canAdd,
   canEdit,
@@ -22,4 +22,4 @@ export const LendingPage: React.FC<ModulePermissionProps> = ({
   )
 }
 
-export default LendingPage
+export default BorrowerMasterListPage

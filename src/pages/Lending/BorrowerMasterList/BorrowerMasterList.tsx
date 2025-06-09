@@ -12,8 +12,10 @@ import {
 import { DataTableV3 } from "@/components/data-table/data-table-v3";
 import { AddBorrowerDialog } from "../BarrowerProfileMaintenance/AddBorrowerDialog";
 import { ModulePermissionProps } from "@/pages/MaintenanceAndSecurity/Security/UserPermissions/Service/PermissionsTypes";
-import { BorrowerProfileUploadDialog } from "../BarrowerProfileMaintenance/dialog/BorrowerProfileUploadDialog";
-import { BeginningBalanceUploadDialog } from "../BarrowerProfileMaintenance/dialog/BeginningBalanceUploadDialog";
+import { BeginningBalanceUploadDialog } from "../BarrowerProfileMaintenance/Dialog/BeginningBalanceUploadDialog";
+import { BorrowerProfileUploadDialog } from "../BarrowerProfileMaintenance/Dialog/BorrowerProfileUploadDialog";
+
+
 
 interface BorrowerData {
   id: string;

@@ -23,7 +23,7 @@ export function UserDetailsDrawer({
   open,
   onOpenChange,
   onPrintPromissoryNote,
-  onPrintComakerStatement,
+  // onPrintComakerStatement,
 }: UserDetailsDrawerProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

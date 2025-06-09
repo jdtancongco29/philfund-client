@@ -40,6 +40,7 @@ import CashAdvancePage from "./pages/Lending/CashAdvanceProcessing/page"
 import BonusLoanPage from "./pages/Lending/BonusLoanProcessing/page"
 import ChangeVoucherPage from "./pages/Lending/ChangeVoucher/page"
 import LoanRenewalPage from "./pages/Lending/LoanRenewal/page"
+import BorrowerMasterListPage from "./pages/Lending/BorrowerMasterList/page"
 
 function App() {
   return (
@@ -85,7 +86,7 @@ function App() {
             <Route path="/lending/loan-renewal" element={<LoanRenewalPage name="Loan Renewal" />} />
               <Route
                 path="/lending/borrowers/borrower-master-list"
-                element={<BorrowerDashboardPage name="Borrowers Master List" />}
+                element={<BorrowerMasterListPage name="Borrowers Masterlist" />}
               />
 
               {/* Accounting Routes */}

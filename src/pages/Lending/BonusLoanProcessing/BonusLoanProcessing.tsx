@@ -8,13 +8,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import BonusLoanService from "./Service/BonusLoanProcessingService"
 import type { BonusLoanFilters, BonusLoan, CoMaker } from "./Service/BonusLoanProcessingTypes"
 import { toast } from "sonner"
-import { BorrowerSearchPanel, type Borrower } from "@/components/borrower-search/borroer-search-panel"
-import { UserDetailsPanel } from "../LoanProcessing/Component/UserDetailsPanel"
+import { BorrowerSearchPanel, type Borrower } from "@/components/borrower-search/borrower-search-panel"
 import { LoanComputationTab } from "./Tabs/LoanComputationTab"
 import { VoucherTab } from "./Tabs/VoucherTab"
 import { Button } from "@/components/ui/button"
-import { UserDetailsDrawer } from "../LoanProcessing/Drawer/UserDetailsDrawer"
 import NoSelected from "@/components/no-selected"
+import { BlUserDetailsPanel } from "./Component/BlUserDetails"
+import { BlUserDetailsDrawer } from "./Drawer/BlUserDetailsDrawer"
 
 // Form schema for bonus loan computation
 const bonusLoanSchema = z.object({
@@ -260,14 +260,14 @@ export function BonusLoanProcessing() {
             </div>
 
             {/* Right Sidebar - User Details */}
-            <UserDetailsPanel
+            <BlUserDetailsPanel
               selectedBorrower={selectedBorrower}
               onPrintLoanDisclosure={() => toast.info("Printing Bonus Loan Calculation...")}
               onPrintPromissoryNote={() => toast.info("Printing Bonus Promissory Note...")}
               onPrintComakerStatement={() => toast.info("Printing Bonus Check Voucher...")}
               onProcessCheckVoucher={() => toast.info("Processing Bonus Check Voucher...")}
             />
-            <UserDetailsDrawer
+            <BlUserDetailsDrawer
               open={openProfileDrawer}
               onOpenChange={setOpenProfileDrawer}
               selectedBorrower={selectedBorrower}

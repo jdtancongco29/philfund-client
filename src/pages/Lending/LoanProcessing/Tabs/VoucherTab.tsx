@@ -10,9 +10,10 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Form } from "@/components/ui/form"
 import type { CheckVoucher, Bank } from "../Service/SalaryLoanProcessingTypes"
+import Loader from "@/components/loader"
+import { JournalEntryTable } from "@/components/journal-entry-table"
 
 interface VoucherTabProps {
   voucherData: CheckVoucher | null
@@ -37,14 +38,12 @@ export function VoucherTab({ voucherData, banks, onReset, onSaveAsDraft, onProce
 
   if (!voucherData) {
     return (
-      <div className="text-center py-8">
-        <p className="text-gray-500">No voucher data available. Please complete the loan computation first.</p>
-      </div>
+      <Loader />
     )
   }
 
-  const totalDebit = voucherData.journal_entries.reduce((sum, entry) => sum + (entry.debit || 0), 0)
-  const totalCredit = voucherData.journal_entries.reduce((sum, entry) => sum + (entry.credit || 0), 0)
+  // const totalDebit = voucherData.journal_entries.reduce((sum, entry) => sum + (entry.debit || 0), 0)
+  // const totalCredit = voucherData.journal_entries.reduce((sum, entry) => sum + (entry.credit || 0), 0)
 
   return (
     <div className="flex flex-col h-full">
@@ -125,7 +124,7 @@ export function VoucherTab({ voucherData, banks, onReset, onSaveAsDraft, onProce
                   </div>
 
                   <h4 className="text-md font-semibold mb-4">Journal Entries</h4>
-                  <Table>
+                  {/* <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Code</TableHead>
@@ -149,7 +148,8 @@ export function VoucherTab({ voucherData, banks, onReset, onSaveAsDraft, onProce
                         <TableCell>₱{totalCredit.toLocaleString()}</TableCell>
                       </TableRow>
                     </TableBody>
-                  </Table>
+                  </Table> */}
+                  <JournalEntryTable data={voucherData?.journal_entries || []} showTotals={true} />
 
                   <div className="mt-4">
                     <div className="flex items-center space-x-2">

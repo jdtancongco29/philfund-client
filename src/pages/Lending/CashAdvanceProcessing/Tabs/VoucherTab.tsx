@@ -9,7 +9,7 @@ import { Form } from "@/components/ui/form"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import type { CashAdvance } from "../Service/CashAdvanceProcessingTypes"
-import { JournalEntryTable } from "../Components/JournalEntryTable"
+import { JournalEntryTable } from "@/components/journal-entry-table"
 
 // Form schema for voucher
 const voucherSchema = z.object({

@@ -52,12 +52,7 @@ export function TransactionHistoryTab({
 
   if (!amortizationSchedule || amortizationSchedule.length === 0) {
     return (
-      <div className="text-center py-8">
-        <p className="text-gray-500">
-          No transaction history available. Please complete the loan
-          computation first.
-        </p>
-      </div>
+      <Loader />
     )
   }
 
@@ -75,35 +70,36 @@ export function TransactionHistoryTab({
               <CardContent className="px-6">
                 <div>
                   <h3 className="text-lg font-semibold mb-4">Amortization</h3>
-
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Principal Amount Paid</TableHead>
-                        <TableHead>Principal Interest Paid</TableHead>
-                        <TableHead>Total Running Balance</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {amortizationSchedule.map((schedule) => (
-                        <TableRow key={schedule.id}>
-                          <TableCell>
-                            {format(new Date(schedule.date), "yyyy-MM-dd")}
-                          </TableCell>
-                          <TableCell>
-                            ₱{schedule.principal_amount_paid.toLocaleString()}
-                          </TableCell>
-                          <TableCell>
-                            ₱{schedule.principal_interest_paid.toLocaleString()}
-                          </TableCell>
-                          <TableCell>
-                            ₱{schedule.total_running_balance.toLocaleString()}
-                          </TableCell>
+                  <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Principal Amount Paid</TableHead>
+                          <TableHead>Principal Interest Paid</TableHead>
+                          <TableHead>Total Running Balance</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {amortizationSchedule.map((schedule) => (
+                          <TableRow key={schedule.id}>
+                            <TableCell>
+                              {format(new Date(schedule.date), "yyyy-MM-dd")}
+                            </TableCell>
+                            <TableCell>
+                              ₱{schedule.principal_amount_paid.toLocaleString()}
+                            </TableCell>
+                            <TableCell>
+                              ₱{schedule.principal_interest_paid.toLocaleString()}
+                            </TableCell>
+                            <TableCell>
+                              ₱{schedule.total_running_balance.toLocaleString()}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div >
                 </div>
               </CardContent>
             </Card>

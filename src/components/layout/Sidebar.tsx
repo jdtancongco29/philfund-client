@@ -11,251 +11,75 @@ import { useMemo, useState } from "react";
 import clsx from "clsx";
 
 // Enhanced menu configuration with ordering and page-based sections
+const lendingItems = [
+  {
+    type: "list" as const,
+    value: "loan-processing",
+    order: 1,
+    defaultOpen: true,
+    links: [
+      { label: "Salary Loan Processing", path: "/lending/salary-loan-processing", order: 1 },
+      { label: "Cash Advance Processing", path: "/lending/cash-advance-processing", order: 2 },
+      { label: "Bonus Loan Processing", path: "/lending/bonus-loan-processing", order: 3 },
+      { label: "Loan Renewal", path: "/lending/loan-renewal", order: 4 },
+    ],
+  },
+  {
+    type: "accordion" as const,
+    title: "Releasing",
+    value: "releasing",
+    order: 2,
+    defaultOpen: true,
+    links: [
+      { label: "Check Encashment", path: "/lending/releasing/check-encashment", order: 1 },
+      { label: "Change Voucher", path: "/lending/releasing/change-voucher", order: 2 },
+      { label: "Salary and Cash Advance Payment", path: "/lending/releasing/salary-and-cash-advance-payment", order: 3 },
+      { label: "Bonus Loan Payment", path: "/lending/releasing/bonus-loan-payment", order: 4 },
+      { label: "Loans Payoff", path: "/lending/releasing/loans-payoff", order: 5 },
+    ],
+  },
+  {
+    type: "accordion" as const,
+    title: "Borrowers",
+    value: "borrowers",
+    order: 3,
+    defaultOpen: false,
+    links: [
+      { label: "Borrower's Master List", path: "/lending/borrowers/borrower-master-list", order: 1 },
+      { label: "Pre-Loan Application", path: "/lending/borrowers/pre-loan-application", order: 2 },
+    ],
+  },
+  {
+    type: "accordion" as const,
+    title: "Other Lending Transactions",
+    value: "other-lending-transactions",
+    order: 4,
+    defaultOpen: false,
+    links: [
+      { label: "Card Custody Log", path: "/lending/card-custody-log", order: 1 },
+      { label: "Unsold/No Account", path: "/lending/unsold-or-no-account-recording", order: 2 },
+    ],
+  },
+];
 const menuConfig = {
   dashboard: {
     sectionTitle: "Dashboard",
     order: 1,
     pathPattern: /^\/dashboard/,
-    items: [
-      {
-        type: "accordion" as const,
-        title: "More Actions",
-        value: "more-actions",
-        order: 2,
-        defaultOpen: true,
-        links: [
-          { label: "Salary Loan Processing", path: "/lending/salary-loan-processing", order: 1 },
-          { label: "Cash Advance Processing", path: "/lending/cash-advance-processing", order: 2 },
-          { label: "Bonus Loan Processing", path: "/lending/bonus-loan-processing", order: 2 },
-          { label: "Loan Restructuring", path: "/lending/loan-restructuring", order: 3 },
-          { label: "Cash Processing", path: "/dashboard/cash-processing", order: 4 },
-          { label: "Payments & Collections", path: "/dashboard/payments-and-collections", order: 5 },
-          { label: "Loan Pay Off", path: "/lending/loan-pay-off", order: 6 },
-          { label: "Cards Custody Log", path: "/lending/cards-custody-log", order: 7 },
-          { label: "Unsold / No Accounts Recording", path: "/lending/unsold-or-no-account-recording", order: 8 },
-        ],
-      },
-    ],
+    items: lendingItems,
   },
   "borrower-dashboard": {
     sectionTitle: "Borrowers Dashboard",
     order: 2,
     pathPattern: /^\/borrower-dashboard/,
-    items: [
-      {
-        type: "list" as const,
-        value: "loan-processing",
-        order: 1,
-        defaultOpen: true,
-        links: [
-          {
-            label: "Salary Loan Processing",
-            path: "/lending/salary-loan-processing",
-            order: 1,
-          },
-          {
-            label: "Cash Advance Processing",
-            path: "/lending/cash-advance-processing",
-            order: 2,
-          },
-          {
-            label: "Bonus Loan Processing",
-            path: "/lending/bonus-loan-processing",
-            order: 3,
-          },
-          {
-            label: "Loan Restructure",
-            path: "/lending/loan-restructure",
-            order: 4,
-          },
-        ],
-      },
-      {
-        type: "accordion" as const,
-        title: "Releasing",
-        value: "releasing",
-        order: 2,
-        defaultOpen: true,
-        links: [
-          {
-            label: "Check Encashment",
-            path: "/lending/releasing/check-encashment",
-            order: 1,
-          },
-          {
-            label: "Change Voucher",
-            path: "/lending/releasing/change-voucher",
-            order: 2,
-          },
-          {
-            label: "Salary and Cash Advance Payment",
-            path: "/lending/releasing/salary-and-cash-advance-payment",
-            order: 3,
-          },
-          {
-            label: "Bonus Loan Payment",
-            path: "/lending/releasing/bonus-loan-payment",
-            order: 4,
-          },
-          {
-            label: "Loans Payoff",
-            path: "/lending/releasing/loans-payoff",
-            order: 5,
-          },
-        ],
-      },
-      {
-        type: "accordion" as const,
-        title: "Borrowers",
-        value: "borrowers",
-        order: 3,
-        defaultOpen: false,
-        links: [
-          {
-            label: "Borrower's Master List",
-            path: "/lending/borrowers/borrower-master-list",
-            order: 1,
-          },
-          {
-            label: "Bulk Upload Borrowers Profile",
-            path: "/lending/borrowers/bulk-upload-profile",
-            order: 2,
-          },
-          {
-            label: "Beginning Balance",
-            path: "/lending/borrowers/beginning-balance",
-            order: 3,
-          },
-          {
-            label: "Pre-Loan Application",
-            path: "/lending/borrowers/pre-loan-application",
-            order: 4,
-          },
-        ],
-      },
-      {
-        type: "accordion" as const,
-        title: "Other Lending Transactions",
-        value: "other-lending-transactions",
-        order: 4,
-        defaultOpen: false,
-        links: [
-          {
-            label: "Card Custody Log",
-            path: "/lending/card-custody-log",
-            order: 1,
-          },
-          {
-            label: "Unsold/No Account",
-            path: "/lending/unsold-or-no-account-recording",
-            order: 2,
-          },
-        ],
-      },
-    ],
+    items: lendingItems,
   },
 
   lending: {
     sectionTitle: "Lending",
     order: 3,
     pathPattern: /^\/lending/,
-    items: [
-      {
-        type: "list" as const,
-        value: "loan-processing",
-        order: 1,
-        defaultOpen: true,
-        links: [
-          { label: "Salary Loan Processing", path: "/lending/salary-loan-processing", order: 1 },
-          { label: "Cash Advance Processing", path: "/lending/cash-advance-processing", order: 2 },
-          { label: "Bonus Loan Processing", path: "/lending/bonus-loan-processing", order: 3 },
-          { label: "Loan Restructure", path: "/lending/loan-restructure", order: 4 },
-          { label: "Loan Renewal", path: "/lending/loan-renewal", order: 5 },
-        ],
-      },
-      {
-        type: "accordion" as const,
-        title: "Releasing",
-        value: "releasing",
-        order: 2,
-        defaultOpen: true,
-        links: [
-          {
-            label: "Check Encashment",
-            path: "/lending/releasing/check-encashment",
-            order: 1,
-          },
-          {
-            label: "Change Voucher",
-            path: "/lending/releasing/change-voucher",
-            order: 2,
-          },
-          {
-            label: "Salary and Cash Advance Payment",
-            path: "/lending/releasing/salary-and-cash-advance-payment",
-            order: 3,
-          },
-          {
-            label: "Bonus Loan Payment",
-            path: "/lending/releasing/bonus-loan-payment",
-            order: 4,
-          },
-          {
-            label: "Loans Payoff",
-            path: "/lending/releasing/loans-payoff",
-            order: 5,
-          },
-        ],
-      },
-      {
-        type: "accordion" as const,
-        title: "Borrowers",
-        value: "borrowers",
-        order: 3,
-        defaultOpen: false,
-        links: [
-          {
-            label: "Borrower's Master List",
-            path: "/lending/borrowers/borrower-master-list",
-            order: 1,
-          },
-          {
-            label: "Bulk Upload Borrowers Profile",
-            path: "/lending/borrowers/bulk-upload-profile",
-            order: 2,
-          },
-          {
-            label: "Beginning Balance",
-            path: "/lending/borrowers/beginning-balance",
-            order: 3,
-          },
-          {
-            label: "Pre-Loan Application",
-            path: "/lending/borrowers/pre-loan-application",
-            order: 4,
-          },
-        ],
-      },
-      {
-        type: "accordion" as const,
-        title: "Other Lending Transactions",
-        value: "other-lending-transactions",
-        order: 4,
-        defaultOpen: false,
-        links: [
-          {
-            label: "Card Custody Log",
-            path: "/lending/card-custody-log",
-            order: 1,
-          },
-          {
-            label: "Unsold/No Account",
-            path: "/lending/unsold-or-no-account-recording",
-            order: 2,
-          },
-        ],
-      },
-    ],
+    items: lendingItems,
   },
 
   accounting: {

@@ -31,6 +31,21 @@ export const getBranchId = (): string | undefined => {
   }
 }
 
+export const getCode = (): string | undefined => {
+  try {
+    const raw = Cookies.get("code")
+
+    if (!raw) return undefined
+
+    // Strip quotes if value is a JSON string
+    const currentBranch = raw.replace(/^"|"$/g, "")
+    return currentBranch
+  } catch (error) {
+    console.error("Failed to parse user cookie:", error)
+    return undefined
+  }
+}
+
 // Main API request function
 export const apiRequest = async <T = any>(
   method: "get" | "post" | "put" | "delete",

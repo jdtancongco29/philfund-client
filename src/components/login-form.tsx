@@ -63,6 +63,7 @@ export default function LoginForm() {
           Cookies.set("authToken", data.data.access_token, cookieOptions);
           Cookies.set("user", JSON.stringify(data.data.user), cookieOptions);
           Cookies.set("current_branch", JSON.stringify(data.data.user.current_branch), cookieOptions);
+          Cookies.set("code", JSON.stringify(data.data.user.code), cookieOptions);
           navigate('/dashboard');
         }
       } catch (err) {

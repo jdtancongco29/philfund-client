@@ -1,11 +1,11 @@
-// Common Types
+
 export type ApiResponse<T> = {
   status: string
   message: string
   data: T
 }
 
-// Borrower Types
+
 export interface Borrower {
   id: string
   name: string
@@ -50,7 +50,7 @@ export interface GetDistrictsResponse {
   districts: District[]
 }
 
-// Bonus Loan Types
+
 export interface BonusLoan {
   id: string
   transaction_date: string
@@ -118,4 +118,35 @@ export interface BonusLoanFilters {
   division?: string
   district?: string
   borrower_search?: string
+}
+export interface CachedBorrowerStep1 {
+  code: string;
+  branch_id: string;
+  bi_risk_level: number;
+  bi_last_name: string;
+  bi_first_name: string;
+  bi_middle_name: string;
+  bi_civil_status: string;
+  bi_gender: string;
+  bi_suffix: string;
+  bi_birth_date: string;
+  bi_birth_place: string;
+  bi_maiden_name: string;
+  bi_nickname: string;
+  bi_blood_type: string;
+  bi_date_of_death: string | null;
+  bi_health_condition: number;
+  bi_critical_health_condition: string | null;
+}
+export interface CachedBorrowerResponse {
+  status: string;
+  message: string;
+  data: {
+    step_1: CachedBorrowerStep1;
+  };
+}
+export interface ApiError {
+  message: string;
+  type?: 'network' | 'validation' | 'server';
+  validationErrors?: Record<string, string>;
 }

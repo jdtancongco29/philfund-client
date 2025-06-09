@@ -17,13 +17,14 @@ import type {
   ValidationErrors,
   AddBorrowerDialogProps,
 } from "./Services/AddBorrowersTypes";
-import { AddressDetailsTab } from "./tab/AddressDetailsTab";
-import { AuthorizationTab } from "./tab/AuthorizationTab";
-import { BasicInfoTab } from "./tab/BasicInfoTab";
-import { DependentsTab } from "./tab/DependentsTab";
-import { PhilfundCashCardTab } from "./tab/PhilfundCashCardTab";
-import VerificationTab from "./tab/VerificationTab";
-import { WorkInformationTab } from "./tab/WorkInformationTab";
+import { AddressDetailsTab } from "./Tab/AddressDetailsTab";
+import { AuthorizationTab } from "./Tab/AuthorizationTab";
+import { BasicInfoTab } from "./Tab/BasicInfoTab";
+import { DependentsTab } from "./Tab/DependentsTab";
+import { PhilfundCashCardTab } from "./Tab/PhilfundCashCardTab";
+import VerificationTab from "./Tab/VerificationTab";
+import { WorkInformationTab } from "./Tab/WorkInformationTab";
+
 
 
 export type { ValidationErrors, FormData };

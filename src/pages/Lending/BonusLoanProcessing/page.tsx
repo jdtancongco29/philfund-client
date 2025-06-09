@@ -1,16 +1,14 @@
 import type React from "react"
-// src/pages/Lending/CashAdvanceProcessing/page.tsx
-
 import MainLayout from "@/components/layout/MainLayout"
 import type { ModulePermissionProps } from "@/pages/MaintenanceAndSecurity/Security/UserPermissions/Service/PermissionsTypes"
-import { CashAdvanceProcessing } from "./CashAdvanceProcessing"
+import { BonusLoanProcessing } from "./BonusLoanProcessing"
 
-export const CashAdvancePage: React.FC<ModulePermissionProps> = ({ name }) => {
+export const BonusLoanPage: React.FC<ModulePermissionProps> = ({ name }) => {
   return (
     <MainLayout module={name}>
-      <CashAdvanceProcessing />
+      <BonusLoanProcessing />
     </MainLayout>
   )
 }
 
-export default CashAdvancePage
+export default BonusLoanPage

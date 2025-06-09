@@ -1,3 +1,5 @@
+// src/pages/Lending/LoanProcessing/Service/SalaryLoanProcessingTypes.tsx
+
 // Common Types
 export type ApiResponse<T> = {
   status: string

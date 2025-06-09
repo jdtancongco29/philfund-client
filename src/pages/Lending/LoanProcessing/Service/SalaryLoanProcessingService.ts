@@ -1,3 +1,5 @@
+// src/pages/Lending/LoanProcessing/Service/SalaryLoanProcessingService.tsx
+
 import type {
   ApiResponse,
   GetBorrowersResponse,

@@ -80,7 +80,7 @@ function App() {
 
               <Route
                 path="/lending/borrowers/borrower-master-list"
-                element={<BorrowerDashboardPage name="Borrowers Master List" />}
+                element={<BorrowerDashboardPage name="Borrowers Masterlist" />}
               />
 
               {/* Accounting Routes */}

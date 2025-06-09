@@ -17,7 +17,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { CoMakerDialog } from "../../LoanProcessing/Dialog/CoMakerDialog"
 import type { BonusLoan, CoMaker } from "../Service/BonusLoanProcessingTypes"
-import type { Borrower } from "@/components/borrower-search/borroer-search-panel"
+import type { Borrower } from "@/components/borrower-search/borrower-search-panel"
 import { cn } from "@/lib/utils"
 
 // Form schema for bonus loan computation

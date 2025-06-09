@@ -104,9 +104,6 @@ export function ChangeVoucherDialog({ open, onOpenChange, entry, onSave, isLoadi
       <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
         <DialogHeader className="flex flex-row items-center justify-between">
           <DialogTitle className="text-xl font-bold">Change voucher</DialogTitle>
-          <Button variant="ghost" size="icon" onClick={handleClose}>
-            <X className="h-4 w-4" />
-          </Button>
         </DialogHeader>
 
         <Form {...form}>
@@ -263,7 +260,7 @@ export function ChangeVoucherDialog({ open, onOpenChange, entry, onSave, isLoadi
               <JournalEntryTable data={journalEntries} showTotals={true} />
             </div>
 
-            <div className="flex justify-between items-center pt-4">
+            <div className="flex justify-end items-center pt-4">
               <div className="flex gap-2">
                 <Button variant="outline" onClick={handleClose} type="button">
                   Cancel
@@ -272,10 +269,10 @@ export function ChangeVoucherDialog({ open, onOpenChange, entry, onSave, isLoadi
                   <PrinterIcon className="h-4 w-4 mr-2" />
                   Print
                 </Button>
+                <Button className="bg-[#2B7FFF] " type="submit" disabled={isLoading}>
+                  Save
+                </Button>
               </div>
-              <Button type="submit" disabled={isLoading}>
-                Save
-              </Button>
             </div>
           </form>
         </Form>

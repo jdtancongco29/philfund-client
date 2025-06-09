@@ -3,18 +3,18 @@
 import { useState, useEffect, useMemo } from "react"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import * as z from "zod"
-import { format } from "date-fns"
+// import { format } from "date-fns"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import CashAdvanceService from "./Service/CashAdvanceProcessingService"
 import type { CashAdvanceFilters, CashAdvance } from "./Service/CashAdvanceProcessingTypes"
 import { toast } from "sonner"
-import { BorrowerSearchPanel, type Borrower } from "@/components/borrower-search/borroer-search-panel"
-import { UserDetailsPanel } from "../LoanProcessing/Component/UserDetailsPanel"
+import { BorrowerSearchPanel, type Borrower } from "@/components/borrower-search/borrower-search-panel"
 import { InformationTab } from "./Tabs/InformationTab"
 import { VoucherTab } from "./Tabs/VoucherTab"
 import { Button } from "@/components/ui/button"
-import { UserDetailsDrawer } from "../LoanProcessing/Drawer/UserDetailsDrawer"
 import NoSelected from "@/components/no-selected"
+import { CaUserDetailsPanel } from "./Component/CaUserDetails"
+import { CaUserDetailsDrawer } from "./Drawer/CaUserDetailsDrawer"
 
 // Form schema for cash advance
 const cashAdvanceSchema = z.object({
@@ -124,23 +124,24 @@ export function CashAdvanceProcessing() {
     setSelectedBorrower(borrower)
   }
 
-  const handleSaveAsDraft = (values: CashAdvanceFormValues) => {
-    const payload = {
-      transaction_date: format(values.transaction_date, "yyyy-MM-dd"),
-      borrower_id: values.borrower_id,
-      reference_code: values.reference_code,
-      reference_number: values.reference_number,
-      amount: values.amount,
-      prepared_by: values.prepared_by,
-      approved_by: values.approved_by || "",
-      remarks: values.remarks || "",
-    }
+  const handleSaveAsDraft = () => {
+    console.log('draft saved')
+    // const payload = {
+    //   transaction_date: format(values.transaction_date, "yyyy-MM-dd"),
+    //   borrower_id: values.borrower_id,
+    //   reference_code: values.reference_code,
+    //   reference_number: values.reference_number,
+    //   amount: values.amount,
+    //   prepared_by: values.prepared_by,
+    //   approved_by: values.approved_by || "",
+    //   remarks: values.remarks || "",
+    // }
 
-    if (currentCashAdvance) {
-      updateCashAdvanceMutation.mutate({ ...payload, id: currentCashAdvance.id })
-    } else {
-      createCashAdvanceMutation.mutate(payload)
-    }
+    // if (currentCashAdvance) {
+    //   updateCashAdvanceMutation.mutate({ ...payload, id: currentCashAdvance.id })
+    // } else {
+    //   createCashAdvanceMutation.mutate(payload)
+    // }
   }
 
   const handleProcess = () => {
@@ -256,14 +257,14 @@ export function CashAdvanceProcessing() {
             </div>
 
             {/* Right Sidebar - User Details */}
-            <UserDetailsPanel
+            <CaUserDetailsPanel
               selectedBorrower={selectedBorrower}
               onPrintLoanDisclosure={handlePrintCashAdvancePromissoryNote}
               onPrintPromissoryNote={handlePrintCashAdvancePromissoryNote}
               onPrintComakerStatement={handlePrintVoucher}
               onProcessCheckVoucher={handlePrintVoucher}
             />
-            <UserDetailsDrawer
+            <CaUserDetailsDrawer
               open={openProfileDrawer}
               onOpenChange={setOpenProfileDrawer}
               selectedBorrower={selectedBorrower}

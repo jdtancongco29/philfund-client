@@ -518,7 +518,7 @@ export function AddBorrowerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!max-w-none w-[90vw] max-w-screen-2xl h-[75vh] flex flex-col overflow-y-auto">
+      <DialogContent className="!max-w-none w-[90vw]  h-[75vh] flex flex-col overflow-y-auto">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-xl font-bold">
             Add Borrowers Profile Maintenance

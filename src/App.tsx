@@ -1,47 +1,46 @@
 // src/App.tsx
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
-import LoginPage from "./pages/Auth/Login";
-import Dashboard from "./pages/Home/page";
-import ForgotPasswordPage from "./pages/Auth/ForgotPassword";
-import ProtectedRoute from "./components/ProtectedRoute";
-import PublicRoute from "./components/PublicRoute";
-import BranchSetup from "./pages/MaintenanceAndSecurity/GeneralSetup/BranchSetup/page";
-import UserManagementPage from "./pages/MaintenanceAndSecurity/Security/UserManagement/page";
-import BorrowerDashboardPage from "./pages/BorrowerDashboard/page";
-import AccountingPage from "./pages/Accounting/page";
-import ReferenceSettingsPage from "./pages/MaintenanceAndSecurity/AccountingSetup/ReferenceSettings/page";
-import CashieringPage from "./pages/MaintenanceAndSecurity/AccountingSetup/Cashiering/page";
-import BankAccountSetupPage from "./pages/MaintenanceAndSecurity/AccountingSetup/BankAccountSetup/page";
-import DefaultAccountSetupPage from "./pages/MaintenanceAndSecurity/AccountingSetup/DefaultAccountSetup/page";
-import AccountingEntriesDefaultspage from "./pages/MaintenanceAndSecurity/AccountingSetup/AccountingEntriesDefaults/page";
-import ChartOfAccountsPage from "./pages/MaintenanceAndSecurity/AccountingSetup/ChartOfAccounts/page";
-import DepartmentSetupPage from "./pages/MaintenanceAndSecurity/GeneralSetup/DepartmentSetup/page";
-import UserPermissionsPage from "./pages/MaintenanceAndSecurity/Security/UserPermissions/page";
-import ApprovalPage from "./pages/MaintenanceAndSecurity/Admin/Approval/page";
-import BackupAndRestorePage from "./pages/MaintenanceAndSecurity/Admin/BackupAndRestore/page";
-import ActivityLogsPage from "./pages/MaintenanceAndSecurity/Admin/ActivityLogs/page";
-import CashAdvanceSetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/CashAdvanceSetup/page";
-import BonusLoanSetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/BonusLoanSetup/page";
-import SalaryLoanSetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/SalaryLoanSetup/page";
-import SchoolOfficeSetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/SchoolOfficeSetup/page";
-import DistrictSetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/DistrictSetup/page";
-import DivisionSetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/DivisionSetup/page";
-import ClasificationSetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/ClassificationSetup/page";
-import GroupSetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/GroupSetup/page";
-import TwoFactorAuthPage from "./pages/Auth/TwoFactorAuth";
-import ChangePasswordPage from "./pages/Auth/ChangePassword";
-import TwoFactorRoute from "./components/TwoFactorRoute";
-import ChangePasswordRoute from "./components/ChangePasswordRoute";
-import { Toaster } from "sonner";
-import GeneralJournalpage from "./pages/MaintenanceAndSecurity/AccountingSetup/GeneralJournal/page";
-import { PermissionProvider } from "./context/PermissionContext";
-import LoanProcessing from "./pages/Lending/LoanProcessing/page";
-import BorrowerMasterListPage from "./pages/Lending/BorrowerMasterList/page";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
+import LoginPage from "./pages/Auth/Login"
+import Dashboard from "./pages/Home/page"
+import ForgotPasswordPage from "./pages/Auth/ForgotPassword"
+import ProtectedRoute from "./components/ProtectedRoute"
+import PublicRoute from "./components/PublicRoute"
+import BranchSetup from "./pages/MaintenanceAndSecurity/GeneralSetup/BranchSetup/page"
+import UserManagementPage from "./pages/MaintenanceAndSecurity/Security/UserManagement/page"
+import BorrowerDashboardPage from "./pages/BorrowerDashboard/page"
+import AccountingPage from "./pages/Accounting/page"
+import ReferenceSettingsPage from "./pages/MaintenanceAndSecurity/AccountingSetup/ReferenceSettings/page"
+import CashieringPage from "./pages/MaintenanceAndSecurity/AccountingSetup/Cashiering/page"
+import BankAccountSetupPage from "./pages/MaintenanceAndSecurity/AccountingSetup/BankAccountSetup/page"
+import DefaultAccountSetupPage from "./pages/MaintenanceAndSecurity/AccountingSetup/DefaultAccountSetup/page"
+import AccountingEntriesDefaultspage from "./pages/MaintenanceAndSecurity/AccountingSetup/AccountingEntriesDefaults/page"
+import ChartOfAccountsPage from "./pages/MaintenanceAndSecurity/AccountingSetup/ChartOfAccounts/page"
+import DepartmentSetupPage from "./pages/MaintenanceAndSecurity/GeneralSetup/DepartmentSetup/page"
+import UserPermissionsPage from "./pages/MaintenanceAndSecurity/Security/UserPermissions/page"
+import ApprovalPage from "./pages/MaintenanceAndSecurity/Admin/Approval/page"
+import BackupAndRestorePage from "./pages/MaintenanceAndSecurity/Admin/BackupAndRestore/page"
+import ActivityLogsPage from "./pages/MaintenanceAndSecurity/Admin/ActivityLogs/page"
+import CashAdvanceSetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/CashAdvanceSetup/page"
+import BonusLoanSetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/BonusLoanSetup/page"
+import SalaryLoanSetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/SalaryLoanSetup/page"
+import SchoolOfficeSetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/SchoolOfficeSetup/page"
+import DistrictSetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/DistrictSetup/page"
+import DivisionSetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/DivisionSetup/page"
+import ClasificationSetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/ClassificationSetup/page"
+import GroupSetupPage from "./pages/MaintenanceAndSecurity/LendingSetup/GroupSetup/page"
+import TwoFactorAuthPage from "./pages/Auth/TwoFactorAuth"
+import ChangePasswordPage from "./pages/Auth/ChangePassword"
+import TwoFactorRoute from "./components/TwoFactorRoute"
+import ChangePasswordRoute from "./components/ChangePasswordRoute"
+import { Toaster } from 'sonner';
+import GeneralJournalpage from "./pages/MaintenanceAndSecurity/AccountingSetup/GeneralJournal/page"
+import { PermissionProvider } from "./context/PermissionContext"
+import LoanProcessing from "./pages/Lending/LoanProcessing/page"
+import CashAdvancePage from "./pages/Lending/CashAdvanceProcessing/page"
+import BonusLoanPage from "./pages/Lending/BonusLoanProcessing/page"
+import ChangeVoucherPage from "./pages/Lending/ChangeVoucher/page"
+import LoanRenewalPage from "./pages/Lending/LoanRenewal/page"
+import BorrowerMasterListPage from "./pages/Lending/BorrowerMasterList/page"
 
 function App() {
   return (
@@ -79,6 +78,12 @@ function App() {
                 element={<LoanProcessing name="Salary Loan Processing" />}
               />
 
+            {/* Lending Routes */}
+            <Route path="/lending/salary-loan-processing" element={<LoanProcessing name="Salary Loan Processing" />} />
+            <Route path="/lending/cash-advance-processing" element={<CashAdvancePage name="Salary and Bonus Cash Advance Processing" />} />
+            <Route path="/lending/bonus-loan-processing" element={<BonusLoanPage name="Bonus Loan Processing" />} />
+            <Route path="/lending/releasing/change-voucher" element={<ChangeVoucherPage name="Change Voucher Module" />} />
+            <Route path="/lending/loan-renewal" element={<LoanRenewalPage name="Loan Renewal" />} />
               <Route
                 path="/lending/borrowers/borrower-master-list"
                 element={<BorrowerMasterListPage name="Borrowers Masterlist" />}

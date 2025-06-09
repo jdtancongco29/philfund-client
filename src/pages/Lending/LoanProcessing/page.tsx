@@ -1,3 +1,5 @@
+// src/pages/Lending/LoanProcessing/page.tsx
+
 import MainLayout from '@/components/layout/MainLayout'
 import { ModulePermissionProps } from '@/pages/MaintenanceAndSecurity/Security/UserPermissions/Service/PermissionsTypes'
 import { SalaryLoanProcessing } from './SalaryLoanProcessing'

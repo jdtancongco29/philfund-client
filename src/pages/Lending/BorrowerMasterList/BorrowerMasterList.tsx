@@ -12,8 +12,8 @@ import {
 import { DataTableV3 } from "@/components/data-table/data-table-v3";
 import { AddBorrowerDialog } from "../BarrowerProfileMaintenance/AddBorrowerDialog";
 import { ModulePermissionProps } from "@/pages/MaintenanceAndSecurity/Security/UserPermissions/Service/PermissionsTypes";
-import { BeginningBalanceUploadDialog } from "../BarrowerProfileMaintenance/Dialog/BeginningBalanceUploadDialog";
-import { BorrowerProfileUploadDialog } from "../BarrowerProfileMaintenance/Dialog/BorrowerProfileUploadDialog";
+import { BeginningBalanceUploadDialog } from "../BarrowerProfileMaintenance/dialog/BeginningBalanceUploadDialog";
+import { BorrowerProfileUploadDialog } from "../BarrowerProfileMaintenance/dialog/BorrowerProfileUploadDialog";
 
 
 

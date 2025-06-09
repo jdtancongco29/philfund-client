@@ -1,3 +1,4 @@
+// src/pages/Lending/LoanProcessing/Dialog/CoMakerDialog.tsx
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -9,7 +10,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import type { CoMaker, Borrower } from "./Service/SalaryLoanProcessingTypes"
+import type { CoMaker, Borrower } from "../Service/SalaryLoanProcessingTypes"
 
 const coMakerSchema = z.object({
   borrower_id: z.string().min(1, "Please select a borrower"),

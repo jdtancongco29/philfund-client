@@ -1,3 +1,5 @@
+// src/pages/Lending/LoanProcessing/Tabs/TransactionHistoryTab.tsx
+
 "use client"
 
 import { format } from "date-fns"

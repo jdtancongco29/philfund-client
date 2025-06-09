@@ -1,3 +1,4 @@
+// src/pages/Lending/LoanProcessing/Drawer/UserDetailsDrawer.tsx
 "use client"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"

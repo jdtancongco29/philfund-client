@@ -61,13 +61,14 @@ export type DisplayCondition<T> = {
 };
 
 export type ColumnDefinition<T> = {
-  id: string;
-  header: string;
-  accessorKey: keyof T;
-  enableSorting?: boolean;
-  displayCondition?: DisplayCondition<any>[];
-  cell?: (item: T) => React.ReactNode;
-};
+  id: string
+  header: string
+  accessorKey: keyof T
+  enableSorting?: boolean
+  displayCondition?: DisplayCondition<any>[]
+  align?: string
+  cell?: (item: T) => React.ReactNode
+}
 
 export type FilterDefinition = {
   id: string;

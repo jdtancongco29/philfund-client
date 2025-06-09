@@ -1,3 +1,5 @@
+// src/pages/Lending/LoanProcessing/SalaryLoanProcessing.tsx
+
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
@@ -8,8 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import SalaryLoanService from "./Service/SalaryLoanProcessingService"
 import type { SalaryLoanFilters, Borrower, SalaryLoan, CoMaker } from "./Service/SalaryLoanProcessingTypes"
 import { toast } from "sonner"
-import { BorrowerSearchPanel } from "./BorrowerSearchPanel"
-import { UserDetailsPanel } from "./UserDetailsPanel"
+import { BorrowerSearchPanel } from "./Component/BorrowerSearchPanel"
+import { UserDetailsPanel } from "./Component/UserDetailsPanel"
 import { LoanComputationTab } from "./Tabs/LoanComputationTab"
 import { VoucherTab } from "./Tabs/VoucherTab"
 import { TransactionHistoryTab } from "./Tabs/TransactionHistoryTab"

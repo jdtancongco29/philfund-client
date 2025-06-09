@@ -41,7 +41,6 @@ import { Toaster } from "sonner";
 import GeneralJournalpage from "./pages/MaintenanceAndSecurity/AccountingSetup/GeneralJournal/page";
 import { PermissionProvider } from "./context/PermissionContext";
 import LoanProcessing from "./pages/Lending/LoanProcessing/page";
-import BorrowersMasterList from "./pages/Lending/BorrowerMasterList/BorrowerMasterList";
 import BorrowerMasterListPage from "./pages/Lending/BorrowerMasterList/page";
 
 function App() {

@@ -19,10 +19,10 @@ export function BlUserDetailsDrawer({
     open,
     onOpenChange,
     selectedBorrower,
-    onPrintLoanDisclosure,
-    onPrintPromissoryNote,
-    onPrintComakerStatement,
-    onProcessCheckVoucher,
+    // onPrintLoanDisclosure,
+    // onPrintPromissoryNote,
+    // onPrintComakerStatement,
+    // onProcessCheckVoucher,
 }: CaUserDetailsDrawerProps) {
 
     return (

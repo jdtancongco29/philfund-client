@@ -10,7 +10,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Form } from "@/components/ui/form"
 import type { CheckVoucher, Bank } from "../Service/SalaryLoanProcessingTypes"
 import Loader from "@/components/loader"
@@ -43,8 +42,8 @@ export function VoucherTab({ voucherData, banks, onReset, onSaveAsDraft, onProce
     )
   }
 
-  const totalDebit = voucherData.journal_entries.reduce((sum, entry) => sum + (entry.debit || 0), 0)
-  const totalCredit = voucherData.journal_entries.reduce((sum, entry) => sum + (entry.credit || 0), 0)
+  // const totalDebit = voucherData.journal_entries.reduce((sum, entry) => sum + (entry.debit || 0), 0)
+  // const totalCredit = voucherData.journal_entries.reduce((sum, entry) => sum + (entry.credit || 0), 0)
 
   return (
     <div className="flex flex-col h-full">

@@ -41,6 +41,10 @@ import BonusLoanPage from "./pages/Lending/BonusLoanProcessing/page"
 import ChangeVoucherPage from "./pages/Lending/ChangeVoucher/page"
 import LoanRenewalPage from "./pages/Lending/LoanRenewal/page"
 import BorrowerMasterListPage from "./pages/Lending/BorrowerMasterList/page"
+import LoanPayOffPage from "./pages/Lending/LoanPayOff/page"
+import CardCustodyLog from "./pages/Lending/CardCustodyLog/page"
+import UnsoldNoAccountsRecording from "./pages/Lending/UnsoldNoAccountsRecording/page"
+import CheckEncashment from "./pages/Lending/CheckEncashment/page"
 
 function App() {
   return (
@@ -78,12 +82,16 @@ function App() {
                 element={<LoanProcessing name="Salary Loan Processing" />}
               />
 
-            {/* Lending Routes */}
-            <Route path="/lending/salary-loan-processing" element={<LoanProcessing name="Salary Loan Processing" />} />
-            <Route path="/lending/cash-advance-processing" element={<CashAdvancePage name="Salary and Bonus Cash Advance Processing" />} />
-            <Route path="/lending/bonus-loan-processing" element={<BonusLoanPage name="Bonus Loan Processing" />} />
-            <Route path="/lending/releasing/change-voucher" element={<ChangeVoucherPage name="Change Voucher Module" />} />
-            <Route path="/lending/loan-renewal" element={<LoanRenewalPage name="Loan Renewal" />} />
+              {/* Lending Routes */}
+              <Route path="/lending/salary-loan-processing" element={<LoanProcessing name="Salary Loan Processing" />} />
+              <Route path="/lending/cash-advance-processing" element={<CashAdvancePage name="Salary and Bonus Cash Advance Processing" />} />
+              <Route path="/lending/bonus-loan-processing" element={<BonusLoanPage name="Bonus Loan Processing" />} />
+              <Route path="/lending/loan-renewal" element={<LoanRenewalPage name="Loan Renewal" />} />
+              <Route path="/lending/releasing/check-encashment" element={<CheckEncashment name="Check Encashment" />} />
+              <Route path="/lending/releasing/change-voucher" element={<ChangeVoucherPage name="Change Voucher Module" />} />
+              <Route path="/lending/releasing/loans-payoff" element={<LoanPayOffPage name="Loan Pay Off" />} />
+              <Route path="/lending/card-custody-log" element={<CardCustodyLog name="Cards Custody Log" />} />
+              <Route path="/lending/unsold-or-no-account-recording" element={<UnsoldNoAccountsRecording name="Unsold/No Accounts Recording" />} />
               <Route
                 path="/lending/borrowers/borrower-master-list"
                 element={<BorrowerMasterListPage name="Borrowers Masterlist" />}

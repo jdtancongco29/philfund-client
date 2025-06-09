@@ -12,13 +12,13 @@ import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialo
 import { toast } from "sonner"
 import { downloadFile } from "@/lib/utils"
 import type { ModulePermissionProps } from "../../MaintenanceAndSecurity/Security/UserPermissions/Service/PermissionsTypes"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { CalendarIcon } from "lucide-react"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
+// import { Input } from "@/components/ui/input"
+// import { Button } from "@/components/ui/button"
+// import { CalendarIcon } from "lucide-react"
+// import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+// import { Calendar } from "@/components/ui/calendar"
 import { format } from "date-fns"
-import { cn } from "@/lib/utils"
+// import { cn } from "@/lib/utils"
 
 export function CheckEncashmentTable({ canAdd, canEdit, canDelete, canExport }: ModulePermissionProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -27,9 +27,9 @@ export function CheckEncashmentTable({ canAdd, canEdit, canDelete, canExport }: 
   const [isEditing, setIsEditing] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [rowsPerPage, setRowsPerPage] = useState(10)
-  const [searchQuery, setSearchQuery] = useState<string>("")
-  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined)
-  const [dateTo, setDateTo] = useState<Date | undefined>(undefined)
+  const [searchQuery, _setSearchQuery] = useState<string>("")
+  const [dateFrom, _setDateFrom] = useState<Date | undefined>(undefined)
+  const [dateTo, _setDateTo] = useState<Date | undefined>(undefined)
   const [columnSort, setColumnSort] = useState<string | null>(null)
   const [sortQuery, setSortQuery] = useState<string | null>(null)
 
@@ -199,12 +199,12 @@ export function CheckEncashmentTable({ canAdd, canEdit, canDelete, canExport }: 
     exportCsvMutation.mutate()
   }
 
-  const handleReset = () => {
-    setSearchQuery("")
-    setDateFrom(undefined)
-    setDateTo(undefined)
-    setCurrentPage(1)
-  }
+  // const handleReset = () => {
+  //   setSearchQuery("")
+  //   setDateFrom(undefined)
+  //   setDateTo(undefined)
+  //   setCurrentPage(1)
+  // }
 
   const actionButtons = []
 

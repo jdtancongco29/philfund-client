@@ -26,6 +26,7 @@ import VerificationTab from "./tab/VerificationTab";
 import { WorkInformationTab } from "./tab/WorkInformationTab";
 
 
+
 export type { ValidationErrors, FormData };
 
 export function AddBorrowerDialog({
@@ -533,15 +534,7 @@ export function AddBorrowerDialog({
           onValueChange={setActiveTab}
           className="flex-1 flex flex-col"
         >
-          {/* <TabsList className="grid w-full grid-cols-7 flex-shrink-0">
-            <TabsTrigger value="basic-info">Basic Info</TabsTrigger>
-            <TabsTrigger value="dependents">Dependents</TabsTrigger>
-            <TabsTrigger value="address-details">Address Details</TabsTrigger>
-            <TabsTrigger value="work-information">Work Information</TabsTrigger>
-            <TabsTrigger value="authorization">Authorization</TabsTrigger>
-            <TabsTrigger value="philfund-cash-card">Philfund cash card</TabsTrigger>
-            <TabsTrigger value="verification">Verification</TabsTrigger>
-          </TabsList> */}
+          
 
           <nav className="flex space-x-8 border-b mb-4">
             <button

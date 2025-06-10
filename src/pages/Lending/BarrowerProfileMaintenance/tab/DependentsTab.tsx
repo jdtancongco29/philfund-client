@@ -22,13 +22,13 @@ interface DependentsTabProps {
 }
 
 export function DependentsTab({ dependents, validationErrors, onUpdateDependents }: DependentsTabProps) {
-  const addDependent = () => {
-    const newDependent: Dependent = {
-      id: Date.now().toString(),
-      name: "",
-      birthdate: undefined,
-    }
-    onUpdateDependents([...dependents, newDependent])
+const addDependent = () => {
+  const newDependent: Dependent = {
+    id: crypto.randomUUID(), // <-- unique and collision-safe
+    name: "",
+    birthdate: undefined,
+  }
+  onUpdateDependents([...dependents, newDependent])
   }
 
   
@@ -47,8 +47,8 @@ export function DependentsTab({ dependents, validationErrors, onUpdateDependents
     onUpdateDependents(updatedDependents)
   }
 
- const getFieldError = (id: string, field: keyof Dependent) => {
-  return validationErrors[`${id}_${field}`]
+const getFieldError = (dependentId: string, field: string) => {
+  return validationErrors[`${dependentId}_${field}`]
 }
 
   return (
@@ -77,54 +77,60 @@ export function DependentsTab({ dependents, validationErrors, onUpdateDependents
           <Label>Actions</Label>
         </div>
 
-        {dependents.map((dependent) => (
-          <div key={dependent.id} className="grid grid-cols-3 gap-6 items-center">
-            <Input
-                placeholder="Enter dependent name"
-                value={dependent.name}
-                onChange={(e) => updateDependent(dependent.id, "name", e.target.value)}
-                className={cn(
-                  validationErrors.dependents &&
-                    !dependent.name.trim() &&
-                    "border-red-500 focus:border-red-500"
-                )}
-              />
-
-                <Input
-  type="date"
-  value={dependent.birthdate ? format(dependent.birthdate, "yyyy-MM-dd") : ""}
-  onChange={(e) => updateDependent(dependent.id, "birthdate", e.target.value ? new Date(e.target.value) : undefined)}
-  className={cn(
-    "mt-2 pr-10 relative",
-    "[&::-webkit-calendar-picker-indicator]:absolute",
-    "[&::-webkit-calendar-picker-indicator]:right-3",
-    "[&::-webkit-calendar-picker-indicator]:top-1/2",
-    "[&::-webkit-calendar-picker-indicator]:-translate-y-1/2",
-    "[&::-webkit-calendar-picker-indicator]:cursor-pointer",
-    "[&::-webkit-calendar-picker-indicator]:text-black",
-    !dependent.birthdate && getFieldError(dependent.id, "birthdate") ? "border-red-500" : ""
-  )}
-  style={{
-    colorScheme: "light",
-  }}
-/>
-
-            
-      
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => removeDependent(dependent.id)}
-              className={cn(
-                "text-red-500 hover:text-red-700",
-                dependents.length <= 1 && "opacity-50 cursor-not-allowed"
-              )}
-              disabled={dependents.length <= 1}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        ))}
+       {dependents.map((dependent) => (
+  <div key={dependent.id} className="grid grid-cols-3 gap-6 items-center">
+    <div className="flex flex-col">
+      <Input
+        placeholder="Enter dependent name"
+        value={dependent.name}
+        onChange={(e) => updateDependent(dependent.id, "name", e.target.value)}
+        className={cn(
+          getFieldError(dependent.id, "name") && "border-red-500 focus:border-red-500"
+        )}
+      />
+      {getFieldError(dependent.id, "name") && (
+        <span className="text-red-500 text-sm mt-1">{getFieldError(dependent.id, "name")}</span>
+      )}
+    </div>
+    
+    <div className="flex flex-col">
+      <Input
+        type="date"
+        value={dependent.birthdate ? format(dependent.birthdate, "yyyy-MM-dd") : ""}
+        onChange={(e) => updateDependent(dependent.id, "birthdate", e.target.value ? new Date(e.target.value) : undefined)}
+        className={cn(
+          "pr-10 relative",
+          "[&::-webkit-calendar-picker-indicator]:absolute",
+          "[&::-webkit-calendar-picker-indicator]:right-3",
+          "[&::-webkit-calendar-picker-indicator]:top-1/2",
+          "[&::-webkit-calendar-picker-indicator]:-translate-y-1/2",
+          "[&::-webkit-calendar-picker-indicator]:cursor-pointer",
+          "[&::-webkit-calendar-picker-indicator]:text-black",
+          getFieldError(dependent.id, "birthdate") && "border-red-500 focus:border-red-500"
+        )}
+        style={{
+          colorScheme: "light",
+        }}
+      />
+      {getFieldError(dependent.id, "birthdate") && (
+        <span className="text-red-500 text-sm mt-1">{getFieldError(dependent.id, "birthdate")}</span>
+      )}
+    </div>
+    
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => removeDependent(dependent.id)}
+      className={cn(
+        "text-red-500 hover:text-red-700",
+        dependents.length <= 1 && "opacity-50 cursor-not-allowed"
+      )}
+      disabled={dependents.length <= 1}
+    >
+      <Trash2 className="h-4 w-4" />
+    </Button>
+  </div>
+))}
       </div>
 
      

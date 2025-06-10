@@ -181,7 +181,11 @@ export function AuthorizationTab({ validationErrors = {}, onValidationChange }: 
       })
     }
   }
+  const getFieldError = (field: string) => {
+    return validationErrors[field]
+  }
 
+  
   return (
     <div className="space-y-8 p-6">
       <Card>
@@ -316,29 +320,28 @@ export function AuthorizationTab({ validationErrors = {}, onValidationChange }: 
               </div>
               <div>
                 <Label>Date Issued *</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal mt-2",
-                        !currentPerson.dateIssued && "text-muted-foreground",
-                        formErrors.dateIssued && "border-red-500"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {currentPerson.dateIssued ? format(currentPerson.dateIssued, "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar 
-                      mode="single" 
-                      selected={currentPerson.dateIssued} 
-                      onSelect={(date) => updateCurrentPerson('dateIssued', date)}
-                      initialFocus 
-                    />
-                  </PopoverContent>
-                </Popover>
+               <Input
+    type="date"
+    value={currentPerson.dateIssued ? format(new Date(currentPerson.dateIssued), "yyyy-MM-dd") : ""}
+    onChange={(e) => {
+      const dateValue = e.target.value ? new Date(e.target.value) : undefined;
+      updateCurrentPerson("dateIssued", dateValue);
+    }}
+    className={`mt-2
+      pr-10
+      relative
+      [&::-webkit-calendar-picker-indicator]:absolute
+      [&::-webkit-calendar-picker-indicator]:right-3
+      [&::-webkit-calendar-picker-indicator]:top-1/2
+      [&::-webkit-calendar-picker-indicator]:-translate-y-1/2
+      [&::-webkit-calendar-picker-indicator]:cursor-pointer
+      [&::-webkit-calendar-picker-indicator]:text-black
+      ${getFieldError("dateIssued") ? "border-red-500" : ""}
+    `}
+    style={{
+      colorScheme: "light",
+    }}
+  />
                 {formErrors.dateIssued && (
                   <p className="text-sm text-red-500 mt-1">{formErrors.dateIssued}</p>
                 )}

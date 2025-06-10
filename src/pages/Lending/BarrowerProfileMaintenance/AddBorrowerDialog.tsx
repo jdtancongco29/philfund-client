@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Printer, Archive, CircleCheck } from "lucide-react"
-
 import { toast } from "sonner"
+
 import type { FormData, ValidationErrors, AddBorrowerDialogProps } from "./Services/AddBorrowersTypes"
 import { AddressDetailsTab } from "./tab/AddressDetailsTab"
 import { AuthorizationTab } from "./tab/AuthorizationTab"
@@ -17,15 +17,13 @@ import VerificationTab from "./tab/VerificationTab"
 import { WorkInformationTab } from "./tab/WorkInformationTab"
 
 import {
-  createBorrowerBasicInfo,
-  createBorrowerDependents,
   validateStepOneFields,
   validateStepTwoFields,
-  fetchCachedBorrowerProfile,
-  getCachedFormData,
+  validateStepThreeFields,
+  validateStepFourFields,
 } from "./Services/AddBorrowersService"
 import { getBranchId, getCode } from "@/lib/api"
-import { formatCachedDependents, validateCachedDependents } from "./utils/CacheDisplayUtils"
+import { useBorrowerForm } from "./hooks/UseBorrowerMutations"
 
 export type { ValidationErrors, FormData }
 
@@ -58,9 +56,11 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
     spouseAddress: "",
     spouseContact: "",
     dependents: [
-      { id: "1", name: "", birthdate: undefined },
-      { id: "2", name: "", birthdate: undefined },
-      { id: "3", name: "", birthdate: undefined },
+      {
+        id: crypto.randomUUID(),
+        name: "",
+        birthdate: undefined,
+      },
     ],
     address: "",
     province: "",
@@ -117,9 +117,21 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
   })
 
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({})
-  const [, setIsLoading] = useState(false)
   const [borrowerId, setBorrowerId] = useState<string>("")
-  const [isLoadingCache, setIsLoadingCache] = useState(false)
+
+  // Use the custom hook for borrower form management
+  const {
+    createBasicInfo,
+    createDependents,
+    createAddressDetails,
+    createWorkInfo,
+    cachedProfile,
+    cachedFormData,
+    isLoading,
+    isCacheLoading,
+    extractValidationErrors,
+    getEnabledTabs,
+  } = useBorrowerForm()
 
   // Tab configuration with enabled/disabled state
   const [tabsConfig, setTabsConfig] = useState<TabConfig[]>([
@@ -127,57 +139,15 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
     { key: "dependents", label: "Dependents", enabled: false },
     { key: "address-details", label: "Address Details", enabled: false },
     { key: "work-information", label: "Work Information", enabled: false },
-    { key: "authorization", label: "Authorization", enabled: false },
+    { key: "authorization", label: "Authorization", enabled: true },
     { key: "philfund-cash-card", label: "Philfund Cash Card", enabled: false },
     { key: "verification", label: "Verification", enabled: false },
   ])
 
   // Load cached data when dialog opens
   useEffect(() => {
-    if (open) {
-      loadCachedData()
-    }
-  }, [open])
-
-  const loadCachedData = async () => {
-    try {
-      setIsLoadingCache(true)
-
-      // Fetch cached borrower profile
-      const cachedResponse = await fetchCachedBorrowerProfile()
-
-      // Check if we have cached data and determine which tabs to enable
-      const enabledTabs = ["basic-info"] // Basic info is always enabled
-
-      if (cachedResponse.status === "FETCHED" && cachedResponse.data) {
-        // If we have step_1 data, enable dependents tab
-        if (cachedResponse.data.step_1) {
-          enabledTabs.push("dependents")
-        }
-
-        // If we have step_2 data, enable address-details tab
-        if (cachedResponse.data.step_2) {
-          enabledTabs.push("address-details")
-        }
-
-        // Load cached form data (includes both step_1 and step_2 if available)
-        const cachedFormData = await getCachedFormData()
-        if (cachedFormData) {
-          setFormData((prev) => ({ ...prev, ...cachedFormData }))
-
-          // Log the loaded dependents data for debugging
-          if (cachedFormData.dependents) {
-            console.log("Loaded cached dependents:", cachedFormData.dependents)
-          }
-        }
-
-
-        // Add logic here for other steps when they become available
-        // if (cachedResponse.data.step_3) {
-        //   enabledTabs.push("work-information");
-        // }
-        // ... and so on for other steps
-      }
+    if (open && cachedProfile) {
+      const enabledTabs = getEnabledTabs(cachedProfile)
 
       // Update tabs configuration
       setTabsConfig((prev) =>
@@ -186,24 +156,48 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
           enabled: enabledTabs.includes(tab.key),
         })),
       )
-    } catch (error) {
-      console.error("Error loading cached data:", error)
-      // If there's an error, keep only basic-info tab enabled
-      setTabsConfig((prev) =>
-        prev.map((tab) => ({
-          ...tab,
-          enabled: tab.key === "basic-info",
-        })),
-      )
-
-      toast.error("Cache Load Error", {
-        description: "Failed to load cached data. Starting fresh.",
-        duration: 3000,
-      })
-    } finally {
-      setIsLoadingCache(false)
     }
-  }
+  }, [open, cachedProfile, getEnabledTabs])
+
+  // Load cached form data
+  useEffect(() => {
+    if (open && cachedFormData) {
+      setFormData((prev) => ({ ...prev, ...cachedFormData }))
+
+      if (cachedFormData.dependents) {
+        console.log("Loaded cached dependents:", cachedFormData.dependents)
+      }
+    }
+  }, [open, cachedFormData])
+
+  // Handle mutation errors and update validation errors
+  useEffect(() => {
+    if (createBasicInfo.error) {
+      const errors = extractValidationErrors(createBasicInfo.error)
+      setValidationErrors((prev) => ({ ...prev, ...errors }))
+    }
+  }, [createBasicInfo.error, extractValidationErrors])
+
+  useEffect(() => {
+    if (createDependents.error) {
+      const errors = extractValidationErrors(createDependents.error)
+      setValidationErrors((prev) => ({ ...prev, ...errors }))
+    }
+  }, [createDependents.error, extractValidationErrors])
+
+  useEffect(() => {
+    if (createAddressDetails.error) {
+      const errors = extractValidationErrors(createAddressDetails.error)
+      setValidationErrors((prev) => ({ ...prev, ...errors }))
+    }
+  }, [createAddressDetails.error, extractValidationErrors])
+
+  useEffect(() => {
+    if (createWorkInfo.error) {
+      const errors = extractValidationErrors(createWorkInfo.error)
+      setValidationErrors((prev) => ({ ...prev, ...errors }))
+    }
+  }, [createWorkInfo.error, extractValidationErrors])
 
   const validateBasicInfo = (): boolean => {
     const serviceErrors = validateStepOneFields(formData)
@@ -262,11 +256,14 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
 
   const handleStepOneSubmission = async (): Promise<boolean> => {
     try {
-      setIsLoading(true)
-
       const cookieBranchId = getBranchId() ?? ""
       const cookieCode = getCode() ?? ""
-      const result = await createBorrowerBasicInfo(formData, cookieBranchId, cookieCode)
+
+      const result = await createBasicInfo.mutateAsync({
+        formData,
+        branchId: cookieBranchId,
+        borrowerCode: cookieCode,
+      })
 
       if (result.status === "DRAFT") {
         setBorrowerId(result.id)
@@ -279,10 +276,6 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
           })),
         )
 
-        toast.success(result.status, {
-          description: result.message || "Basic information saved successfully",
-          duration: 5000,
-        })
         return true
       } else {
         toast.error("Error", {
@@ -291,43 +284,14 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
         })
         return false
       }
-    } catch (error: any) {
-      console.error("Error saving basic info:", error)
-
-      if (error.validationErrors && Object.keys(error.validationErrors).length > 0) {
-        setValidationErrors((prev) => ({
-          ...prev,
-          ...error.validationErrors,
-        }))
-
-        toast.error("Validation Error", {
-          description: "Please correct the highlighted fields and try again",
-          duration: 5000,
-        })
-      } else if (error.type === "network") {
-        toast.error("Network Error", {
-          description: "Unable to connect to server. Please check your internet connection.",
-          duration: 5000,
-        })
-      } else {
-        const errorMessage = error.message || "Failed to save basic information"
-        toast.error("Error", {
-          description: errorMessage,
-          duration: 5000,
-        })
-      }
-
+    } catch (error) {
       return false
-    } finally {
-      setIsLoading(false)
     }
   }
 
   const handleStepTwoSubmission = async (): Promise<boolean> => {
     try {
-      setIsLoading(true)
-
-      const result = await createBorrowerDependents(formData)
+      const result = await createDependents.mutateAsync(formData)
 
       if (result.status === "DRAFT" || result.status === "SUCCESS") {
         // Enable the next tab (address-details) after successful submission
@@ -338,10 +302,6 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
           })),
         )
 
-        toast.success(result.status, {
-          description: result.message || "Dependents information saved successfully",
-          duration: 5000,
-        })
         return true
       } else {
         toast.error("Error", {
@@ -350,35 +310,34 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
         })
         return false
       }
-    } catch (error: any) {
-      console.error("Error saving dependents:", error)
-
-      if (error.validationErrors && Object.keys(error.validationErrors).length > 0) {
-        setValidationErrors((prev) => ({
-          ...prev,
-          ...error.validationErrors,
-        }))
-
-        toast.error("Validation Error", {
-          description: "Please correct the highlighted fields and try again",
-          duration: 5000,
-        })
-      } else if (error.type === "network") {
-        toast.error("Network Error", {
-          description: "Unable to connect to server. Please check your internet connection.",
-          duration: 5000,
-        })
-      } else {
-        const errorMessage = error.message || "Failed to save dependents information"
-        toast.error("Error", {
-          description: errorMessage,
-          duration: 5000,
-        })
-      }
-
+    } catch (error) {
       return false
-    } finally {
-      setIsLoading(false)
+    }
+  }
+
+  const handleStepThreeSubmission = async (): Promise<boolean> => {
+    try {
+      const result = await createAddressDetails.mutateAsync(formData)
+
+      if (result.status === "DRAFT" || result.status === "SUCCESS") {
+        // Enable the next tab (work-information) after successful submission
+        setTabsConfig((prev) =>
+          prev.map((tab) => ({
+            ...tab,
+            enabled: tab.enabled || tab.key === "work-information",
+          })),
+        )
+
+        return true
+      } else {
+        toast.error("Error", {
+          description: result.message || "Failed to save address details",
+          duration: 5000,
+        })
+        return false
+      }
+    } catch (error) {
+      return false
     }
   }
 
@@ -425,132 +384,15 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
   }
 
   const validateAddress = (): boolean => {
-    const errors: ValidationErrors = {}
-
-    if (!formData.address.trim()) {
-      errors.address = "Address is required"
-    }
-    if (!formData.province.trim()) {
-      errors.province = "Province is required"
-    }
-    if (!formData.municipality.trim()) {
-      errors.municipality = "Municipality/City is required"
-    }
-    if (!formData.barangay.trim()) {
-      errors.barangay = "Barangay is required"
-    }
-    if (!formData.street.trim()) {
-      errors.street = "Street is required"
-    }
-    if (!formData.place_status.trim()) {
-      errors.place_status = "Place Status is required"
-    }
-    if (formData.is_permanent) {
-      if (!formData.permanent_address.trim()) {
-        errors.permanent_address = "Permanent Address is required"
-      }
-      if (!formData.permanent_province.trim()) {
-        errors.permanent_province = "Permanent Province is required"
-      }
-      if (!formData.permanent_municipality.trim()) {
-        errors.permanent_municipality = "Permanent Municipality/City is required"
-      }
-      if (!formData.permanent_barangay.trim()) {
-        errors.permanent_barangay = "Permanent Barangay is required"
-      }
-      if (!formData.permanent_street.trim()) {
-        errors.permanent_street = "Permanent Street is required"
-      }
-    }
-    if (!formData.email.trim()) {
-      errors.email = "Email is required"
-    }
-    if (!formData.contactNumber1.trim()) {
-      errors.contactNumber1 = "Contact Number 1 is required"
-    }
-    if (!formData.network_provider1.trim()) {
-      errors.network_provider1 = "Network Provider 1 is required"
-    }
-    if (!formData.contctNumber2.trim()) {
-      errors.contctNumber2 = "Contact Number 2 is required"
-    }
-
-    setValidationErrors(errors)
-    return Object.keys(errors).length === 0
+    const serviceErrors = validateStepThreeFields(formData)
+    setValidationErrors(serviceErrors)
+    return Object.keys(serviceErrors).length === 0
   }
 
   const validateWorkInformation = (): boolean => {
-    const errors: ValidationErrors = {}
-
-    if (!formData.classification) {
-      errors.classification = "Classification Status is required"
-    }
-    if (!formData.date_of_appointment) {
-      errors.date_of_appointment = "Date of Appointment is required"
-    }
-    if (!formData.category) {
-      errors.category = "Category is required"
-    }
-    if (!formData.division) {
-      errors.division = "Division is required"
-    }
-    if (!formData.district) {
-      errors.district = "District is required"
-    }
-    if (!formData.school.trim()) {
-      errors.school = "School is required"
-    }
-    if (!formData.deped_employee_id.trim()) {
-      errors.deped_employee_id = "DepEd Employee ID is required"
-    }
-    if (!formData.pricipal_name.trim()) {
-      errors.pricipal_name = "Principal Name is required"
-    }
-    if (!formData.supervisor_name.trim()) {
-      errors.supervisor_name = "Supervisor Name is required"
-    }
-    if (!formData.prc_id_no.trim()) {
-      errors.prc_id_no = "PRC ID No. is required"
-    }
-    if (!formData.prc_registration_no.trim()) {
-      errors.prc_registration_no = "PRC Registration No. is required"
-    }
-    if (!formData.prc_place_issued.trim()) {
-      errors.prc_place_issued = "PRC Place of Issue is required"
-    }
-    if (!formData.gov_date_issued) {
-      errors.gov_date_issued = "Date of Issue is required"
-    }
-    if (!formData.gov_expiration_date) {
-      errors.gov_expiration_date = "Expiration Date is required"
-    }
-    if (!formData.gov_valid_id_type.trim()) {
-      errors.gov_valid_id_type = "Government Valid ID Type is required"
-    }
-    if (!formData.bank.trim()) {
-      errors.bank = "Bank is required"
-    }
-    if (!formData.atm_account_number.trim()) {
-      errors.atm_account_number = "ATM Account Number is required"
-    }
-    if (!formData.atm_card_number.trim()) {
-      errors.atm_card_number = "ATM Card Number is required"
-    }
-    if (!formData.atm_expiration_date) {
-      errors.atm_expiration_date = "ATM Expiration Date is required"
-    }
-    if (!formData.umid_type.trim()) {
-      errors.umid_type = "UMID Type is required"
-    }
-    if (!formData.umid_card_no.trim()) {
-      errors.umid_card_no = "UMID Card No. is required"
-    }
-    if (!formData.atm_bank_branch.trim()) {
-      errors.atm_bank_branch = "ATM Bank Branch is required"
-    }
-
-    setValidationErrors(errors)
-    return Object.keys(errors).length === 0
+    const serviceErrors = validateStepFourFields(formData)
+    setValidationErrors(serviceErrors)
+    return Object.keys(serviceErrors).length === 0
   }
 
   const validateVerification = (): boolean => {
@@ -645,10 +487,52 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
       }
     }
 
+    // Handle step-three submission (Address Details)
+    if (activeTab === "address-details") {
+      const success = await handleStepThreeSubmission()
+      if (!success) {
+        return
+      }
+    }
+
+    // Handle step-four submission (Work Information)
+    if (activeTab === "work-information") {
+      const success = await handleStepFourSubmission()
+      if (!success) {
+        return
+      }
+    }
+
     const enabledTabs = tabsConfig.filter((tab) => tab.enabled).map((tab) => tab.key)
     const currentIndex = enabledTabs.indexOf(activeTab)
     if (currentIndex < enabledTabs.length - 1) {
       setActiveTab(enabledTabs[currentIndex + 1])
+    }
+  }
+
+  const handleStepFourSubmission = async (): Promise<boolean> => {
+    try {
+      const result = await createWorkInfo.mutateAsync(formData)
+
+      if (result.status === "DRAFT" || result.status === "SUCCESS") {
+        // Enable the next tab (authorization) after successful submission
+        setTabsConfig((prev) =>
+          prev.map((tab) => ({
+            ...tab,
+            enabled: tab.enabled || tab.key === "authorization",
+          })),
+        )
+
+        return true
+      } else {
+        toast.error("Error", {
+          description: result.message || "Failed to save work information",
+          duration: 5000,
+        })
+        return false
+      }
+    } catch (error) {
+      return false
     }
   }
 
@@ -722,7 +606,7 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
                       : "border-transparent text-gray-300 cursor-not-allowed"
                 }`}
                 onClick={() => handleTabClick(tab.key)}
-                disabled={!tab.enabled || isLoadingCache}
+                disabled={!tab.enabled || isCacheLoading}
               >
                 {tab.label}
                 {!tab.enabled && <span className="ml-1 text-xs">(Disabled)</span>}
@@ -730,7 +614,7 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
             ))}
           </nav>
 
-          {isLoadingCache ? (
+          {isCacheLoading ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
@@ -815,8 +699,8 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
                 </Button>
               </>
             ) : (
-              <Button onClick={handleNext} disabled={isLoadingCache}>
-                Next
+              <Button onClick={handleNext} disabled={isCacheLoading || isLoading}>
+                {isLoading ? "Saving..." : "Next"}
               </Button>
             )}
           </div>

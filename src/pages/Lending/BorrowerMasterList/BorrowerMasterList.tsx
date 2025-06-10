@@ -17,6 +17,8 @@ import { BorrowerProfileUploadDialog } from "../BarrowerProfileMaintenance/dialo
 
 
 
+
+
 interface BorrowerData {
   id: string;
   name: string;
@@ -33,7 +35,7 @@ interface BorrowerData {
   statusForInterview: "Pending" | "Done" | "Denied";
 }
 
-// Static data for UI/UX purposes
+
 const staticBorrowersData: BorrowerData[] = [
   {
     id: "1",
@@ -56,7 +58,7 @@ const staticBorrowersData: BorrowerData[] = [
     division: "Division1",
     district: "District 1",
     school: "School 1",
-    totalActiveSL: 3,
+    totalActiveSL: 4,
     totalActiveBL: 0,
     totalActiveSLCA: 0,
     totalActiveBLCA: 0,

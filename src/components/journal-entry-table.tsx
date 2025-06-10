@@ -2,7 +2,7 @@
 
 import { DataTableV4, type ColumnDefinition } from "@/components/data-table/data-table-v4"
 
-interface JournalEntry {
+export interface JournalEntry {
   id: string
   code: string
   name: string
@@ -10,7 +10,7 @@ interface JournalEntry {
   credit: number | null
 }
 
-interface JournalEntryTableProps {
+export interface JournalEntryTableProps {
   data: JournalEntry[]
   showTotals?: boolean
   className?: string

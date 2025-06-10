@@ -45,6 +45,8 @@ import LoanPayOffPage from "./pages/Lending/LoanPayOff/page"
 import CardCustodyLog from "./pages/Lending/CardCustodyLog/page"
 import UnsoldNoAccountsRecording from "./pages/Lending/UnsoldNoAccountsRecording/page"
 import CheckEncashment from "./pages/Lending/CheckEncashment/page"
+import SalaryAndCashAdvancePayment from "./pages/Lending/SalaryAndCashAdvancePayment/page"
+import BonusLoanPaymentPage from "./pages/Lending/BonusLoanPayment/page"
 
 function App() {
   return (
@@ -90,6 +92,8 @@ function App() {
               <Route path="/lending/releasing/check-encashment" element={<CheckEncashment name="Check Encashment" />} />
               <Route path="/lending/releasing/change-voucher" element={<ChangeVoucherPage name="Change Voucher Module" />} />
               <Route path="/lending/releasing/loans-payoff" element={<LoanPayOffPage name="Loan Pay Off" />} />
+              <Route path="/lending/releasing/salary-and-cash-advance-payment" element={<SalaryAndCashAdvancePayment name="Salary and Cash Advance Collection/Payment" />} />
+              <Route path="/lending/releasing/bonus-loan-payment" element={<BonusLoanPaymentPage name="Bonus Loan Payment" />} />
               <Route path="/lending/card-custody-log" element={<CardCustodyLog name="Cards Custody Log" />} />
               <Route path="/lending/unsold-or-no-account-recording" element={<UnsoldNoAccountsRecording name="Unsold/No Accounts Recording" />} />
               <Route

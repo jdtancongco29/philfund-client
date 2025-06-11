@@ -196,6 +196,22 @@ export interface CreateBorrowerWorkInfoRequest {
   umid_bank_branch: string | null
 }
 
+export interface CreateBorrowerAuthorizationRequest {
+  authorized: {
+    full_name: string
+    relationship: string
+    address: string
+    contact_number: string
+    year_known: string
+    valid_id_type: string
+    valid_id_number: string
+    place_issued: string
+    date_issued: string
+    signature: File | null
+    photo: File | null
+  }[]
+}
+
 export interface CreateBorrowerResponse {
   id: string
   code: string
@@ -287,6 +303,20 @@ export interface CachedBorrowerStep4 {
   umid_bank_branch: string | null
 }
 
+export interface CachedBorrowerStep5 {
+  authorized: {
+    full_name: string
+    relationship: string
+    address: string
+    contact_number: string
+    year_known: string
+    valid_id_type: string
+    valid_id_number: string
+    place_issued: string
+    date_issued: string | null
+  }[]
+}
+
 export interface CachedBorrowerResponse {
   status: string
   message: string
@@ -295,7 +325,7 @@ export interface CachedBorrowerResponse {
     step_2?: CachedBorrowerStep2
     step_3?: CachedBorrowerStep3
     step_4?: CachedBorrowerStep4
-    step_5?: any
+    step_5?: CachedBorrowerStep5
     step_6?: any
     step_7?: any
   } | null

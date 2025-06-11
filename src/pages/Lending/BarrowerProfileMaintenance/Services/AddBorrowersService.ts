@@ -6,10 +6,12 @@ import type {
   CachedBorrowerStep2,
   CachedBorrowerStep3,
   CachedBorrowerStep4,
+  CachedBorrowerStep5,
   CreateBorrowerRequest,
   CreateBorrowerResponse,
   CreateBorrowerAddressDetailsRequest,
   CreateBorrowerWorkInfoRequest,
+  CreateBorrowerAuthorizationRequest,
   FormData,
   Dependent,
   BorrowerClassificationResponse,
@@ -112,6 +114,32 @@ export const transformWorkInfoToRequest = (formData: FormData): CreateBorrowerWo
     umid_card_type: formData.umid_type || null,
     umid_card_no: formData.umid_card_no || null,
     umid_bank_branch: formData.atm_bank_branch || null,
+  }
+}
+
+/**
+ * Transform authorization data to step-five API request format
+ */
+export const transformAuthorizationToRequest = (formData: FormData): CreateBorrowerAuthorizationRequest => {
+  const formatDate = (date: Date | undefined): string | null => {
+    if (!date) return null
+    return date.toISOString().split("T")[0]
+  }
+
+  return {
+    authorized: formData.authorizedPersons.map((person) => ({
+      full_name: person.name,
+      relationship: person.relationship,
+      address: person.address,
+      contact_number: person.contactNumber,
+      year_known: person.yearsKnown,
+      valid_id_type: person.validIdType,
+      valid_id_number: person.validIdNumber,
+      place_issued: person.placeIssued,
+      date_issued: formatDate(person.dateIssued) || "",
+      signature: person.signature,
+      photo: person.photo,
+    })),
   }
 }
 
@@ -292,6 +320,57 @@ export const createBorrowerWorkInfoApi = async (formData: FormData): Promise<Cre
 }
 
 /**
+ * API function for creating borrower authorization (Step Five)
+ */
+export const createBorrowerAuthorizationApi = async (formData: FormData): Promise<CreateBorrowerResponse> => {
+  const endpoint = "/borrower-profile/step-five"
+
+  // Create FormData for file uploads
+  const formDataPayload = new FormData()
+
+  // Add authorized persons data
+  formData.authorizedPersons.forEach((person, index) => {
+    formDataPayload.append(`authorized[${index}][full_name]`, person.name)
+    formDataPayload.append(`authorized[${index}][relationship]`, person.relationship)
+    formDataPayload.append(`authorized[${index}][address]`, person.address)
+    formDataPayload.append(`authorized[${index}][contact_number]`, person.contactNumber)
+    formDataPayload.append(`authorized[${index}][year_known]`, person.yearsKnown)
+    formDataPayload.append(`authorized[${index}][valid_id_type]`, person.validIdType)
+    formDataPayload.append(`authorized[${index}][valid_id_number]`, person.validIdNumber)
+    formDataPayload.append(`authorized[${index}][place_issued]`, person.placeIssued)
+
+    if (person.dateIssued) {
+      const formattedDate = person.dateIssued.toISOString().split("T")[0]
+      formDataPayload.append(`authorized[${index}][date_issued]`, formattedDate)
+    }
+
+    // Replace the existing file append logic
+    // Only append files if they are valid File objects with names and size > 0
+    if (person.signature && person.signature instanceof File) {
+      formDataPayload.append(`authorized[${index}][signature]`, person.signature)
+    }
+
+    if (person.photo && person.photo instanceof File) {
+      formDataPayload.append(`authorized[${index}][photo]`, person.photo)
+    }
+  })
+
+  // Use the apiRequest function without the headers option
+  console.log("payload nako:");
+for (const [key, value] of formDataPayload.entries()) {
+  console.log(`${key}:`, value);
+}
+  const response = await apiRequest<CreateBorrowerResponse>("post", endpoint, formDataPayload, {
+    useAuth: true,
+    useBranchId: true,
+    // The Content-Type will be automatically set to multipart/form-data
+    // when FormData is used as the request body
+  })
+
+  return response.data
+}
+
+/**
  * API function for fetching cached borrower profile data
  */
 export const fetchCachedBorrowerProfileApi = async (): Promise<CachedBorrowerResponse> => {
@@ -333,6 +412,11 @@ export const getCachedFormData = async (): Promise<Partial<FormData> | null> => 
       // Transform step_4 data if available
       if (cachedResponse.data.step_4) {
         formData = { ...formData, ...transformCachedStep4ToFormData(cachedResponse.data.step_4) }
+      }
+
+      // Transform step_5 data if available
+      if (cachedResponse.data.step_5) {
+        formData = { ...formData, ...transformCachedStep5ToFormData(cachedResponse.data.step_5) }
       }
 
       return formData
@@ -424,10 +508,11 @@ export const transformCachedStep3ToFormData = (cachedData: CachedBorrowerStep3):
     network_provider1: cachedData.first_network_info,
     contctNumber2: cachedData.second_contact_info,
     network_provider2: cachedData.second_network_info,
-    is_permanent: cachedData.current_province !== cachedData.permanent_province ||
-                  cachedData.current_citymun !== cachedData.permanent_citymun ||
-                  cachedData.current_barangay !== cachedData.permanent_barangay ||
-                  cachedData.current_street !== cachedData.permanent_street,
+    is_permanent:
+      cachedData.current_province !== cachedData.permanent_province ||
+      cachedData.current_citymun !== cachedData.permanent_citymun ||
+      cachedData.current_barangay !== cachedData.permanent_barangay ||
+      cachedData.current_street !== cachedData.permanent_street,
   }
 }
 
@@ -462,6 +547,32 @@ export const transformCachedStep4ToFormData = (cachedData: CachedBorrowerStep4):
     atm_expiration_date: parseDate(cachedData.atm_exp_date),
     // umid_type: cachedData.umid_card_type,
     // umid_card_no: cachedData.umid_card_no,
+  }
+}
+
+export const transformCachedStep5ToFormData = (cachedData: CachedBorrowerStep5): Partial<FormData> => {
+  const parseDate = (dateString: string | null): Date | undefined => {
+    if (!dateString) return undefined
+    return new Date(dateString)
+  }
+
+  const transformedAuthorizedPersons = cachedData.authorized.map((person, index) => ({
+    id: (index + 1).toString(),
+    name: person.full_name,
+    relationship: person.relationship,
+    address: person.address,
+    contactNumber: person.contact_number,
+    yearsKnown: person.year_known,
+    validIdType: person.valid_id_type,
+    validIdNumber: person.valid_id_number,
+    placeIssued: person.place_issued,
+    dateIssued: parseDate(person.date_issued),
+    signature: null, // Files can't be cached
+    photo: null, // Files can't be cached
+  }))
+
+  return {
+    authorizedPersons: transformedAuthorizedPersons,
   }
 }
 
@@ -539,6 +650,19 @@ export const mapApiFieldToFormField = (apiField: string): string => {
     umid_card_type: "umid_type",
     umid_card_no: "umid_card_no",
     umid_bank_branch: "atm_bank_branch",
+    // Authorization field mappings
+    "authorized.0.full_name": "authorization_0_name",
+    "authorized.0.relationship": "authorization_0_relationship",
+    "authorized.0.address": "authorization_0_address",
+    "authorized.0.contact_number": "authorization_0_contactNumber",
+    "authorized.0.year_known": "authorization_0_yearsKnown",
+    "authorized.0.valid_id_type": "authorization_0_validIdType",
+    "authorized.0.valid_id_number": "authorization_0_validIdNumber",
+    "authorized.0.place_issued": "authorization_0_placeIssued",
+    "authorized.0.date_issued": "authorization_0_dateIssued",
+    "authorized.0.signature": "authorization_0_signature",
+    "authorized.0.photo": "authorization_0_photo",
+    authorized: "authorization",
   }
 
   return fieldMap[apiField] || apiField
@@ -604,48 +728,48 @@ export const validateStepOneFields = (formData: FormData): Record<string, string
  */
 export const validateStepTwoFields = (formData: FormData): Record<string, string> => {
   const errors: Record<string, string> = {}
-  
+
   if (!formData.dependents || formData.dependents.length === 0) {
     errors.dependents = "At least one dependent is required"
     return errors
   }
-  
+
   let hasValidDependent = false
-  
+
   formData.dependents.forEach((dep) => {
     const trimmedName = dep.name.trim()
-    
+
     if (!trimmedName) {
       errors[`${dep.id}_name`] = "Name is required"
     }
-    
+
     if (!dep.birthdate) {
       errors[`${dep.id}_birthdate`] = "Birthdate is required"
     } else {
       const today = new Date()
-      const todayString = today.toISOString().split('T')[0]
-      
+      const todayString = today.toISOString().split("T")[0]
+
       let birthdateString: string
       if (dep.birthdate instanceof Date) {
-        birthdateString = dep.birthdate.toISOString().split('T')[0]
+        birthdateString = dep.birthdate.toISOString().split("T")[0]
       } else {
         birthdateString = dep.birthdate
       }
-      
+
       if (birthdateString > todayString) {
         errors[`${dep.id}_birthdate`] = "Birthdate cannot be in the future"
       }
     }
-    
+
     if (trimmedName && dep.birthdate) {
       hasValidDependent = true
     }
   })
-  
+
   if (!hasValidDependent) {
     errors.dependents = "At least one dependent must have both name and birthdate"
   }
-  
+
   return errors
 }
 
@@ -795,6 +919,95 @@ export const validateStepFourFields = (formData: FormData): Record<string, strin
 }
 
 /**
+ * Validate authorization data for step five
+ */
+export const validateStepFiveFields = (formData: FormData): Record<string, string> => {
+  const errors: Record<string, string> = {}
+
+  if (!formData.authorizedPersons || formData.authorizedPersons.length === 0) {
+    errors.authorization = "At least one authorized person is required"
+    return errors
+  }
+
+  let hasValidAuthorizedPerson = false
+
+  formData.authorizedPersons.forEach((person, index) => {
+    const prefix = `authorization_${index}`
+
+    if (!person.name.trim()) {
+      errors[`${prefix}_name`] = "Full Name is required"
+    }
+
+    if (!person.relationship.trim()) {
+      errors[`${prefix}_relationship`] = "Relationship is required"
+    }
+
+    if (!person.address.trim()) {
+      errors[`${prefix}_address`] = "Address is required"
+    }
+
+    if (!person.contactNumber.trim()) {
+      errors[`${prefix}_contactNumber`] = "Contact Number is required"
+    }
+
+    if (!person.yearsKnown.trim()) {
+      errors[`${prefix}_yearsKnown`] = "Years Known is required"
+    }
+
+    if (!person.validIdType) {
+      errors[`${prefix}_validIdType`] = "Valid ID Type is required"
+    }
+
+    if (!person.validIdNumber.trim()) {
+      errors[`${prefix}_validIdNumber`] = "Valid ID Number is required"
+    }
+
+    if (!person.placeIssued.trim()) {
+      errors[`${prefix}_placeIssued`] = "Place Issued is required"
+    }
+
+    if (!person.dateIssued) {
+      errors[`${prefix}_dateIssued`] = "Date Issued is required"
+    }
+
+    // Validate signature file
+    if (!person.signature || !(person.signature instanceof File) || person.signature.size === 0) {
+      errors[`${prefix}_signature`] = "Signature is required"
+    }
+
+    // Validate photo file
+    if (!person.photo || !(person.photo instanceof File) || person.photo.size === 0) {
+      errors[`${prefix}_photo`] = "Photo is required"
+    }
+
+    // Check if this person has all required fields filled including files
+    if (
+      person.name.trim() &&
+      person.relationship.trim() &&
+      person.address.trim() &&
+      person.contactNumber.trim() &&
+      person.yearsKnown.trim() &&
+      person.validIdType &&
+      person.validIdNumber.trim() &&
+      person.placeIssued.trim() &&
+      person.dateIssued &&
+      person.signature instanceof File &&
+      person.signature.size > 0 &&
+      person.photo instanceof File &&
+      person.photo.size > 0
+    ) {
+      hasValidAuthorizedPerson = true
+    }
+  })
+
+  if (!hasValidAuthorizedPerson) {
+    errors.authorization =
+      "At least one authorized person must have all required fields completed including signature and photo"
+  }
+
+  return errors
+}
+/**
  * Enhanced error handler for API responses
  */
 export const handleApiError = (error: any) => {
@@ -842,5 +1055,4 @@ export const handleApiError = (error: any) => {
 
     throw new Error(errorMessage)
   }
-
 }

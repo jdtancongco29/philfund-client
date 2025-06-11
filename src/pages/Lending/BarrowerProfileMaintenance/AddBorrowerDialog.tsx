@@ -21,6 +21,7 @@ import {
   validateStepTwoFields,
   validateStepThreeFields,
   validateStepFourFields,
+  validateStepFiveFields,
 } from "./Services/AddBorrowersService"
 import { getBranchId, getCode } from "@/lib/api"
 import { useBorrowerForm } from "./hooks/UseBorrowerMutations"
@@ -125,6 +126,7 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
     createDependents,
     createAddressDetails,
     createWorkInfo,
+    createAuthorization,
     cachedProfile,
     cachedFormData,
     isLoading,
@@ -198,6 +200,13 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
       setValidationErrors((prev) => ({ ...prev, ...errors }))
     }
   }, [createWorkInfo.error, extractValidationErrors])
+
+  useEffect(() => {
+    if (createAuthorization.error) {
+      const errors = extractValidationErrors(createAuthorization.error)
+      setValidationErrors((prev) => ({ ...prev, ...errors }))
+    }
+  }, [createAuthorization.error, extractValidationErrors])
 
   const validateBasicInfo = (): boolean => {
     const serviceErrors = validateStepOneFields(formData)
@@ -503,6 +512,14 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
       }
     }
 
+    // Handle step-five submission (Authorization)
+    if (activeTab === "authorization") {
+      const success = await handleStepFiveSubmission()
+      if (!success) {
+        return
+      }
+    }
+
     const enabledTabs = tabsConfig.filter((tab) => tab.enabled).map((tab) => tab.key)
     const currentIndex = enabledTabs.indexOf(activeTab)
     if (currentIndex < enabledTabs.length - 1) {
@@ -527,6 +544,32 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
       } else {
         toast.error("Error", {
           description: result.message || "Failed to save work information",
+          duration: 5000,
+        })
+        return false
+      }
+    } catch (error) {
+      return false
+    }
+  }
+
+  const handleStepFiveSubmission = async (): Promise<boolean> => {
+    try {
+      const result = await createAuthorization.mutateAsync(formData)
+
+      if (result.status === "DRAFT" || result.status === "SUCCESS") {
+        // Enable the next tab (philfund-cash-card) after successful submission
+        setTabsConfig((prev) =>
+          prev.map((tab) => ({
+            ...tab,
+            enabled: tab.enabled || tab.key === "philfund-cash-card",
+          })),
+        )
+
+        return true
+      } else {
+        toast.error("Error", {
+          description: result.message || "Failed to save authorization information",
           duration: 5000,
         })
         return false
@@ -568,14 +611,9 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
   }
 
   const validateAuthorization = (): boolean => {
-    const errors: ValidationErrors = {}
-
-    if (!formData.authorizedPersons || formData.authorizedPersons.length === 0) {
-      errors.authorization = "At least one authorized person is required"
-    }
-
-    setValidationErrors(errors)
-    return Object.keys(errors).length === 0
+    const serviceErrors = validateStepFiveFields(formData)
+    setValidationErrors(serviceErrors)
+    return Object.keys(serviceErrors).length === 0
   }
 
   const handleTabClick = (tabKey: string) => {
@@ -656,7 +694,11 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
               </TabsContent>
 
               <TabsContent value="authorization" className="mt-0 h-full">
-                <AuthorizationTab validationErrors={validationErrors} onValidationChange={() => {}} />
+                <AuthorizationTab
+                  formData={formData}
+                  validationErrors={validationErrors}
+                  onUpdateFormData={updateFormData}
+                />
               </TabsContent>
 
               <TabsContent value="philfund-cash-card" className="mt-0 h-full">

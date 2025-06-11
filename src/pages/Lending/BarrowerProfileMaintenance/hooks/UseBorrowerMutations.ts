@@ -5,6 +5,7 @@ import {
   createBorrowerDependentsApi,
   createBorrowerAddressDetailsApi,
   createBorrowerWorkInfoApi,
+  createBorrowerAuthorizationApi,
   fetchCachedBorrowerProfileApi,
   getCachedFormData,
   mapApiFieldToFormField,
@@ -178,6 +179,45 @@ export const useCreateBorrowerWorkInfo = () => {
   })
 }
 
+// Hook for creating borrower authorization (Step Five)
+export const useCreateBorrowerAuthorization = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: createBorrowerAuthorizationApi,
+    onSuccess: (data: CreateBorrowerResponse) => {
+      queryClient.invalidateQueries({ queryKey: borrowerQueryKeys.cached() })
+      queryClient.invalidateQueries({ queryKey: borrowerQueryKeys.cachedFormData() })
+      
+      toast.success(data.status, {
+        description: data.message || "Authorization information saved successfully",
+        duration: 5000,
+      })
+    },
+    onError: (error: any) => {
+      console.error("Error saving authorization:", error)
+
+      if (error.validationErrors && Object.keys(error.validationErrors).length > 0) {
+        toast.error("Validation Error", {
+          description: "Please correct the highlighted fields and try again",
+          duration: 5000,
+        })
+      } else if (error.type === "network") {
+        toast.error("Network Error", {
+          description: "Unable to connect to server. Please check your internet connection.",
+          duration: 5000,
+        })
+      } else {
+        const errorMessage = error.message || "Failed to save authorization information"
+        toast.error("Error", {
+          description: errorMessage,
+          duration: 5000,
+        })
+      }
+    },
+  })
+}
+
 // Hook for fetching cached borrower profile
 export const useCachedBorrowerProfile = () => {
   return useQuery({
@@ -238,6 +278,7 @@ export const useBorrowerForm = () => {
   const createDependentsMutation = useCreateBorrowerDependents()
   const createAddressDetailsMutation = useCreateBorrowerAddressDetails()
   const createWorkInfoMutation = useCreateBorrowerWorkInfo()
+  const createAuthorizationMutation = useCreateBorrowerAuthorization()
   const { data: cachedProfile, isLoading: isCachedProfileLoading } = useCachedBorrowerProfile()
   const { data: cachedFormData, isLoading: isCachedFormDataLoading } = useCachedFormData()
   const { extractValidationErrors } = useValidationErrors()
@@ -245,7 +286,8 @@ export const useBorrowerForm = () => {
   const isLoading = createBasicInfoMutation.isPending || 
                    createDependentsMutation.isPending || 
                    createAddressDetailsMutation.isPending ||
-                   createWorkInfoMutation.isPending
+                   createWorkInfoMutation.isPending ||
+                   createAuthorizationMutation.isPending
   const isCacheLoading = isCachedProfileLoading || isCachedFormDataLoading
 
   return {
@@ -254,6 +296,7 @@ export const useBorrowerForm = () => {
     createDependents: createDependentsMutation,
     createAddressDetails: createAddressDetailsMutation,
     createWorkInfo: createWorkInfoMutation,
+    createAuthorization: createAuthorizationMutation,
     
     // Cached data
     cachedProfile,
@@ -289,6 +332,11 @@ export const useBorrowerForm = () => {
         // If we have step_4 data, enable authorization tab
         if (cachedProfile.data.step_4) {
           enabledTabs.push("authorization")
+        }
+
+        // If we have step_5 data, enable philfund-cash-card tab
+        if (cachedProfile.data.step_5) {
+          enabledTabs.push("philfund-cash-card")
         }
       }
 

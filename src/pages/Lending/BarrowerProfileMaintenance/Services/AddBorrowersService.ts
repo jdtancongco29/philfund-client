@@ -30,6 +30,24 @@ export interface CreateBorrowerCashCardRequest {
   cashcard_exp: string
 }
 
+// Add the new interface for step-seven request
+export interface CreateBorrowerVerificationRequest {
+  ver_g_map_link: string
+  ver_interviewed_by: string
+  ver_interview_status: string
+  ver_taken_by: string
+  ver_auth_by: string
+  ver_date: string
+  ver_signature_taken_by: string
+  ver_signature_auth_by: string
+  ver_signature_taken_date: string
+  ver_cl_prof_taken_by: string
+  ver_audited_by: string
+  ver_borrower_photo?: File
+  ver_borrower_signature?: File
+  ver_home_sketch?: File
+}
+
 /**
  * Transform cash card data to step-six API request format
  */
@@ -60,6 +78,52 @@ export const transformCashCardToRequest = (formData: FormData): CreateBorrowerCa
 }
 
 /**
+ * Transform verification data to step-seven API request format
+ */
+export const transformVerificationToRequest = (
+  formData: FormData,
+  currentUserId: string,
+): CreateBorrowerVerificationRequest => {
+  const formatDate = (date: Date | undefined): string => {
+    if (!date) return new Date().toISOString().split("T")[0]
+    return date.toISOString().split("T")[0]
+  }
+
+  const normalizeFile = (file: File | null): File | undefined => file ?? undefined
+
+  const payload: CreateBorrowerVerificationRequest = {
+    ver_g_map_link: formData.googleMapUrl,
+    ver_interviewed_by: formData.isInterviewed ? formData.interviewedBy || currentUserId : currentUserId,
+    ver_interview_status: formData.isInterviewed ? "completed" : "pending",
+    ver_taken_by: currentUserId,
+    ver_auth_by: currentUserId,
+    ver_date: formatDate(new Date()),
+    ver_signature_taken_by: currentUserId,
+    ver_signature_auth_by: currentUserId,
+    ver_signature_taken_date: formatDate(new Date()),
+    ver_cl_prof_taken_by: currentUserId,
+    ver_audited_by: currentUserId,
+    ver_borrower_photo: normalizeFile(formData.borrowerPhoto),
+    ver_borrower_signature: normalizeFile(formData.borrowerSignature),
+    ver_home_sketch: normalizeFile(formData.homeSketch),
+  }
+
+  console.log("=== Verification Transform Debug ===")
+  console.log("Input formData:", {
+    googleMapUrl: formData.googleMapUrl,
+    isInterviewed: formData.isInterviewed,
+    interviewedBy: formData.interviewedBy,
+    borrowerPhoto: formData.borrowerPhoto?.name,
+    borrowerSignature: formData.borrowerSignature?.name,
+    homeSketch: formData.homeSketch?.name,
+  })
+  console.log("Output payload:", payload)
+
+  return payload
+}
+
+
+/**
  * API function for creating borrower cash card information (Step Six)
  */
 export const createBorrowerCashCardApi = async (formData: FormData): Promise<CreateBorrowerResponse> => {
@@ -67,6 +131,54 @@ export const createBorrowerCashCardApi = async (formData: FormData): Promise<Cre
   const payload = transformCashCardToRequest(formData)
 
   const response = await apiRequest<CreateBorrowerResponse>("post", endpoint, payload, {
+    useAuth: true,
+    useBranchId: true,
+  })
+
+  return response.data
+}
+
+/**
+ * API function for creating borrower verification (Step Seven)
+ */
+export const createBorrowerVerificationApi = async (
+  formData: FormData,
+  currentUserId = "0b839a1d-c44d-4cfb-9302-f769cb24c521",
+): Promise<CreateBorrowerResponse> => {
+  const endpoint = "/borrower-profile/step-seven"
+
+  // Create FormData for file uploads
+  const formDataPayload = new FormData()
+
+  // Transform and add verification data
+  const verificationData = transformVerificationToRequest(formData, currentUserId)
+
+  // Add text fields
+  Object.entries(verificationData).forEach(([key, value]) => {
+    if (value instanceof File) {
+      // Handle files separately
+      formDataPayload.append(key, value)
+    } else if (value !== undefined && value !== null) {
+      // Add non-file fields
+      formDataPayload.append(key, String(value))
+    }
+  })
+
+  console.log("=== Verification FormData Debug ===")
+  for (const [key, value] of formDataPayload.entries()) {
+    if (value instanceof File) {
+      console.log(`${key}:`, {
+        name: value.name,
+        size: value.size,
+        type: value.type,
+        lastModified: value.lastModified,
+      })
+    } else {
+      console.log(`${key}:`, value)
+    }
+  }
+
+  const response = await apiRequest<CreateBorrowerResponse>("post", endpoint, formDataPayload, {
     useAuth: true,
     useBranchId: true,
   })
@@ -751,6 +863,13 @@ export const mapApiFieldToFormField = (apiField: string): string => {
     cashcard_acc_num: "accountNumber",
     cashcard_num: "cardNumber",
     cashcard_exp: "cardExpiryDate",
+    // Verification field mappings
+    ver_g_map_link: "googleMapUrl",
+    ver_interviewed_by: "interviewedBy",
+    ver_interview_status: "isInterviewed",
+    ver_borrower_photo: "borrowerPhoto",
+    ver_borrower_signature: "borrowerSignature",
+    ver_home_sketch: "homeSketch",
   }
 
   return fieldMap[apiField] || apiField
@@ -1128,6 +1247,49 @@ export const validateStepSixFields = (formData: FormData): Record<string, string
 
     if (expiryDate <= today) {
       errors.cardExpiryDate = "Card expiry date must be in the future"
+    }
+  }
+
+  return errors
+}
+
+/**
+ * Validate verification data for step seven
+ */
+export const validateStepSevenFields = (formData: FormData): Record<string, string> => {
+  const errors: Record<string, string> = {}
+
+  if (!formData.borrowerPhoto) {
+    errors.borrowerPhoto = "Borrower photo is required"
+  }
+
+  if (!formData.borrowerSignature) {
+    errors.borrowerSignature = "Borrower signature is required"
+  }
+
+  if (!formData.homeSketch) {
+    errors.homeSketch = "Home sketch is required"
+  }
+
+  if (!formData.googleMapUrl?.trim()) {
+    errors.googleMapUrl = "Google Maps URL is required"
+  } else {
+    const url = formData.googleMapUrl.trim()
+
+    try {
+      new URL(url)
+    } catch (_) {
+      errors.googleMapUrl = "Please enter a valid URL"
+    }
+
+    if (!url.includes("maps.google") && !url.includes("goo.gl/maps") && !url.includes("maps.app.goo.gl")) {
+      errors.googleMapUrl = "Please enter a valid Google Maps URL"
+    }
+  }
+
+  if (formData.isInterviewed) {
+    if (!formData.interviewedBy?.trim()) {
+      errors.interviewedBy = "Interviewer name is required when marked as interviewed"
     }
   }
 

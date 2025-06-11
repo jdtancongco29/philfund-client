@@ -23,6 +23,7 @@ import {
   validateStepFourFields,
   validateStepFiveFields,
   validateStepSixFields,
+  validateStepSevenFields,
 } from "./Services/AddBorrowersService"
 import { getBranchId, getCode } from "@/lib/api"
 import { useBorrowerForm } from "./hooks/UseBorrowerMutations"
@@ -129,6 +130,7 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
     createWorkInfo,
     createAuthorization,
     createCashCard,
+    createVerification,
     cachedProfile,
     cachedFormData,
     isLoading,
@@ -216,6 +218,13 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
       setValidationErrors((prev) => ({ ...prev, ...errors }))
     }
   }, [createCashCard.error, extractValidationErrors])
+
+  useEffect(() => {
+    if (createVerification.error) {
+      const errors = extractValidationErrors(createVerification.error)
+      setValidationErrors((prev) => ({ ...prev, ...errors }))
+    }
+  }, [createVerification.error, extractValidationErrors])
 
   const validateBasicInfo = (): boolean => {
     const serviceErrors = validateStepOneFields(formData)
@@ -384,44 +393,9 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
   }
 
   const validateVerification = (): boolean => {
-    const errors: ValidationErrors = {}
-
-    if (!formData.borrowerPhoto) {
-      errors.borrowerPhoto = "Borrower photo is required"
-    }
-
-    if (!formData.borrowerSignature) {
-      errors.borrowerSignature = "Borrower signature is required"
-    }
-
-    if (!formData.homeSketch) {
-      errors.homeSketch = "Home sketch is required"
-    }
-
-    if (!formData.googleMapUrl?.trim()) {
-      errors.googleMapUrl = "Google Maps URL is required"
-    } else {
-      const url = formData.googleMapUrl.trim()
-
-      try {
-        new URL(url)
-      } catch (_) {
-        errors.googleMapUrl = "Please enter a valid URL"
-      }
-
-      if (!url.includes("maps.google") && !url.includes("goo.gl/maps") && !url.includes("maps.app.goo.gl")) {
-        errors.googleMapUrl = "Please enter a valid Google Maps URL"
-      }
-    }
-
-    if (formData.isInterviewed) {
-      if (!formData.interviewedBy?.trim()) {
-        errors.interviewedBy = "Interviewer name is required when marked as interviewed"
-      }
-    }
-
-    setValidationErrors(errors)
-    return Object.keys(errors).length === 0
+    const serviceErrors = validateStepSevenFields(formData)
+    setValidationErrors(serviceErrors)
+    return Object.keys(serviceErrors).length === 0
   }
 
   const validateCurrentTab = (): boolean => {
@@ -592,7 +566,32 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
     }
   }
 
-  const handleSaveForInterview = () => {
+  const handleStepSevenSubmission = async (): Promise<boolean> => {
+    try {
+      const result = await createVerification.mutateAsync({
+        formData,
+        currentUserId: "0b839a1d-c44d-4cfb-9302-f769cb24c521", // Replace with actual current user ID
+      })
+
+      if (result.status === "DRAFT" || result.status === "SUCCESS") {
+        toast.success("Success", {
+          description: "Verification information saved successfully. Profile completed!",
+          duration: 5000,
+        })
+        return true
+      } else {
+        toast.error("Error", {
+          description: result.message || "Failed to save verification information",
+          duration: 5000,
+        })
+        return false
+      }
+    } catch (error) {
+      return false
+    }
+  }
+
+  const handleSaveForInterview = async () => {
     if (!validateCurrentTab()) {
       toast.warning("Validation Error", {
         description: `Please fill in all required fields before saving.`,
@@ -602,8 +601,12 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
       return
     }
 
-    console.log("Save for Interview", formData)
-    onOpenChange(false)
+    // Submit verification data
+    const success = await handleStepSevenSubmission()
+    if (success) {
+      console.log("Save for Interview completed", formData)
+      onOpenChange(false)
+    }
   }
 
   const handleArchive = () => {

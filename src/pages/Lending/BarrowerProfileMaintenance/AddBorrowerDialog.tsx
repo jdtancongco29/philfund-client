@@ -22,6 +22,7 @@ import {
   validateStepThreeFields,
   validateStepFourFields,
   validateStepFiveFields,
+  validateStepSixFields,
 } from "./Services/AddBorrowersService"
 import { getBranchId, getCode } from "@/lib/api"
 import { useBorrowerForm } from "./hooks/UseBorrowerMutations"
@@ -127,6 +128,7 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
     createAddressDetails,
     createWorkInfo,
     createAuthorization,
+    createCashCard,
     cachedProfile,
     cachedFormData,
     isLoading,
@@ -207,6 +209,13 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
       setValidationErrors((prev) => ({ ...prev, ...errors }))
     }
   }, [createAuthorization.error, extractValidationErrors])
+
+  useEffect(() => {
+    if (createCashCard.error) {
+      const errors = extractValidationErrors(createCashCard.error)
+      setValidationErrors((prev) => ({ ...prev, ...errors }))
+    }
+  }, [createCashCard.error, extractValidationErrors])
 
   const validateBasicInfo = (): boolean => {
     const serviceErrors = validateStepOneFields(formData)
@@ -351,39 +360,9 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
   }
 
   const validatePhilfundCashCard = (): boolean => {
-    const errors: ValidationErrors = {}
-
-    if (!formData.bankName.trim()) {
-      errors.bankName = "Cash Card Bank name is required"
-    }
-
-    if (!formData.cardNumber.trim()) {
-      errors.cardNumber = "Cash card number is required"
-    } else if (formData.cardNumber.length < 10) {
-      errors.cardNumber = "Card number must be at least 10 digits"
-    }
-
-    if (!formData.accountNumber.trim()) {
-      errors.accountNumber = "Account number is required"
-    } else if (formData.accountNumber.length < 8) {
-      errors.accountNumber = "Account number must be at least 8 digits"
-    }
-
-    if (!formData.cardExpiryDate) {
-      errors.cardExpiryDate = "Cash card expiry date is required"
-    } else {
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      const expiryDate = new Date(formData.cardExpiryDate)
-      expiryDate.setHours(0, 0, 0, 0)
-
-      if (expiryDate <= today) {
-        errors.cardExpiryDate = "Card expiry date must be in the future"
-      }
-    }
-
-    setValidationErrors(errors)
-    return Object.keys(errors).length === 0
+    const serviceErrors = validateStepSixFields(formData)
+    setValidationErrors(serviceErrors)
+    return Object.keys(serviceErrors).length === 0
   }
 
   const validateDependents = (): boolean => {
@@ -520,6 +499,14 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
       }
     }
 
+    // Handle step-six submission (Philfund Cash Card)
+    if (activeTab === "philfund-cash-card") {
+      const success = await handleStepSixSubmission()
+      if (!success) {
+        return
+      }
+    }
+
     const enabledTabs = tabsConfig.filter((tab) => tab.enabled).map((tab) => tab.key)
     const currentIndex = enabledTabs.indexOf(activeTab)
     if (currentIndex < enabledTabs.length - 1) {
@@ -570,6 +557,32 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
       } else {
         toast.error("Error", {
           description: result.message || "Failed to save authorization information",
+          duration: 5000,
+        })
+        return false
+      }
+    } catch (error) {
+      return false
+    }
+  }
+
+  const handleStepSixSubmission = async (): Promise<boolean> => {
+    try {
+      const result = await createCashCard.mutateAsync(formData)
+
+      if (result.status === "DRAFT" || result.status === "SUCCESS") {
+        // Enable the next tab (verification) after successful submission
+        setTabsConfig((prev) =>
+          prev.map((tab) => ({
+            ...tab,
+            enabled: tab.enabled || tab.key === "verification",
+          })),
+        )
+
+        return true
+      } else {
+        toast.error("Error", {
+          description: result.message || "Failed to save cash card information",
           duration: 5000,
         })
         return false
@@ -710,7 +723,15 @@ export function AddBorrowerDialog({ open, onOpenChange }: AddBorrowerDialogProps
                     cardExpiryDate: formData.cardExpiryDate,
                   }}
                   validationErrors={validationErrors}
-                  onUpdateFormData={(data) => updateFormData(data)}
+                  onUpdateFormData={(cashCardData) => {
+                    // Properly map the cash card data to the main form data
+                    updateFormData({
+                      bankName: cashCardData.bankName,
+                      cardNumber: cashCardData.cardNumber,
+                      accountNumber: cashCardData.accountNumber,
+                      cardExpiryDate: cashCardData.cardExpiryDate,
+                    })
+                  }}
                 />
               </TabsContent>
 

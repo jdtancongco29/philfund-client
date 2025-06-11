@@ -2,10 +2,11 @@
 import axios from "axios";
 import Cookies from "js-cookie";
 const API_URL = import.meta.env.VITE_API_URL;
+
 interface ApiOptions {
-  useAuth?: boolean // Enables Authorization: Bearer <token>
-  useBranchId?: boolean // Enables X-Branch-Id from cookie
-  customHeaders?: Record<string, string> // Custom headers
+  useAuth?: boolean 
+  useBranchId?: boolean 
+  customHeaders?: Record<string, string> 
   responseType?: XMLHttpRequestResponseType
 }
 
@@ -15,14 +16,14 @@ const getToken = (): string | undefined => {
   return token
 }
 
-// Get branch ID from user cookie
+
 export const getBranchId = (): string | undefined => {
   try {
     const raw = Cookies.get("current_branch")
 
     if (!raw) return undefined
 
-    // Strip quotes if value is a JSON string
+
     const currentBranch = raw.replace(/^"|"$/g, "")
     return currentBranch
   } catch (error) {
@@ -37,7 +38,7 @@ export const getCode = (): string | undefined => {
 
     if (!raw) return undefined
 
-    // Strip quotes if value is a JSON string
+   
     const currentBranch = raw.replace(/^"|"$/g, "")
     return currentBranch
   } catch (error) {
@@ -46,17 +47,21 @@ export const getCode = (): string | undefined => {
   }
 }
 
-// Main API request function
+
 export const apiRequest = async <T = any>(
   method: "get" | "post" | "put" | "delete",
   endpoint: string,
   data: any = null,
   options: ApiOptions = {},
 ) => {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    Accept: "application/json",
+  const headers: Record<string, string> = {}
+
+
+  if (!(data instanceof FormData)) {
+    headers["Content-Type"] = "application/json"
   }
+  
+  headers["Accept"] = "application/json"
 
   if (options.useAuth) {
     const token = getToken()

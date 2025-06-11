@@ -41,6 +41,9 @@ export function BasicInfoTab({ formData, validationErrors, onUpdateFormData }: B
   const getFieldError = (field: string) => {
     return validationErrors[field]
   }
+  
+
+const riskLevelValue = String(formData.bi_risk_level ?? "");
 
 const isMarried = formData.civilStatus?.toLowerCase() === "married"
 
@@ -49,8 +52,8 @@ const isMarried = formData.civilStatus?.toLowerCase() === "married"
       <div className="grid gap-5">
         <div>
           <Label htmlFor="risk">Risk Level</Label>
-          <Select value={formData.riskLevel} onValueChange={(value) => handleInputChange("riskLevel", value)}>
-            <SelectTrigger className={cn("w-88 mt-2", getFieldError("riskLevel") && "border-red-500")}>
+          <Select value={riskLevelValue} onValueChange={(value) => handleInputChange("bi_risk_level", value)}>
+            <SelectTrigger className={cn("w-88 mt-2", getFieldError("bi_risk_level") && "border-red-500")}>
               <SelectValue placeholder="Select..." />
             </SelectTrigger>
             <SelectContent>
@@ -60,7 +63,7 @@ const isMarried = formData.civilStatus?.toLowerCase() === "married"
               <SelectItem value="1">Declined</SelectItem>
             </SelectContent>
           </Select>
-          {getFieldError("riskLevel") && <p className="text-sm text-red-500 mt-1">{getFieldError("riskLevel")}</p>}
+          {getFieldError("bi_risk_level") && <p className="text-sm text-red-500 mt-1">{getFieldError("bi_risk_level")}</p>}
 
 
   

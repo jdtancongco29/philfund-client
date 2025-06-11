@@ -1,40 +1,27 @@
 "use client"
 
-import { useState } from "react"
+import type React from "react"
+
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Card, CardContent } from "@/components/ui/card"
-import { CalendarIcon, Plus, Upload, Edit, Trash2 } from "lucide-react"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Plus, Upload, Edit, Trash2, AlertCircle } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
-
-interface AuthorizedPerson {
-  id: string
-  name: string
-  relationship: string
-  address: string
-  contactNumber: string
-  yearsKnown: string
-  validIdType: string
-  validIdNumber: string
-  placeIssued: string
-  dateIssued: Date | undefined
-  signature: File | null
-  photo: File | null
-}
+import type { AuthorizedPerson, ValidationErrors, FormData } from "../Services/AddBorrowersTypes"
 
 interface AuthorizationTabProps {
-  validationErrors?: { [key: string]: string }
-  onValidationChange?: (isValid: boolean) => void
+  formData: FormData
+  validationErrors?: ValidationErrors
+  onUpdateFormData: (updates: Partial<FormData>) => void
 }
 
-export function AuthorizationTab({ validationErrors = {}, onValidationChange }: AuthorizationTabProps) {
-  const [authorizedPersons, setAuthorizedPersons] = useState<AuthorizedPerson[]>([])
+export function AuthorizationTab({ formData, validationErrors = {}, onUpdateFormData }: AuthorizationTabProps) {
   const [currentPerson, setCurrentPerson] = useState<AuthorizedPerson>({
     id: "",
     name: "",
@@ -51,7 +38,29 @@ export function AuthorizationTab({ validationErrors = {}, onValidationChange }: 
   })
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({})
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingIndex, setEditingIndex] = useState<number | null>(null)
+  const [apiErrorMessage, setApiErrorMessage] = useState<string | null>(null)
 
+  // Initialize authorized persons from form data
+  const authorizedPersons = formData.authorizedPersons || []
+
+  // Extract API error message if present
+  useEffect(() => {
+    // Check if there's an API error message related to authorization
+    const authErrorKeys = Object.keys(validationErrors).filter(
+      (key) => key.startsWith("authorization_") || key === "authorization",
+    )
+
+    if (authErrorKeys.length > 0) {
+      // Find a general error message if available
+      const generalError = validationErrors["authorization"] || "Please correct the highlighted fields to continue."
+      setApiErrorMessage(generalError)
+    } else {
+      setApiErrorMessage(null)
+    }
+  }, [validationErrors])
+
+  // Update the validateCurrentPerson function to check for empty objects
   const validateCurrentPerson = (): boolean => {
     const errors: { [key: string]: string } = {}
 
@@ -66,6 +75,8 @@ export function AuthorizationTab({ validationErrors = {}, onValidationChange }: 
     }
     if (!currentPerson.contactNumber.trim()) {
       errors.contactNumber = "Contact Number is required"
+    } else if (currentPerson.contactNumber.length !== 11) {
+      errors.contactNumber = "Contact Number must be 11 digits"
     }
     if (!currentPerson.yearsKnown.trim()) {
       errors.yearsKnown = "Years Known is required"
@@ -82,23 +93,18 @@ export function AuthorizationTab({ validationErrors = {}, onValidationChange }: 
     if (!currentPerson.dateIssued) {
       errors.dateIssued = "Date Issued is required"
     }
+
+    // Check if signature is null, undefined, empty object, or invalid file
     if (!currentPerson.signature) {
       errors.signature = "Signature is required"
     }
+
     if (!currentPerson.photo) {
       errors.photo = "Photo is required"
     }
 
     setFormErrors(errors)
     return Object.keys(errors).length === 0
-  }
-
-  const validateAuthorizedPersons = (): boolean => {
-    const isValid = authorizedPersons.length > 0
-    if (onValidationChange) {
-      onValidationChange(isValid)
-    }
-    return isValid
   }
 
   const resetForm = () => {
@@ -118,6 +124,7 @@ export function AuthorizationTab({ validationErrors = {}, onValidationChange }: 
     })
     setFormErrors({})
     setEditingId(null)
+    setEditingIndex(null)
   }
 
   const addOrUpdateAuthorizedPerson = () => {
@@ -125,56 +132,65 @@ export function AuthorizationTab({ validationErrors = {}, onValidationChange }: 
       return
     }
 
+    let updatedPersons: AuthorizedPerson[]
+
     if (editingId) {
-      setAuthorizedPersons(prev => 
-        prev.map(person => 
-          person.id === editingId 
-            ? { ...currentPerson, id: editingId }
-            : person
-        )
+      updatedPersons = authorizedPersons.map((person) =>
+        person.id === editingId ? { ...currentPerson, id: editingId } : person,
       )
     } else {
       const newPerson: AuthorizedPerson = {
         ...currentPerson,
         id: Date.now().toString(),
       }
-      setAuthorizedPersons(prev => [...prev, newPerson])
+      updatedPersons = [...authorizedPersons, newPerson]
     }
 
+    onUpdateFormData({ authorizedPersons: updatedPersons })
     resetForm()
-    validateAuthorizedPersons()
   }
 
-  const editAuthorizedPerson = (person: AuthorizedPerson) => {
+  const editAuthorizedPerson = (person: AuthorizedPerson, index: number) => {
     setCurrentPerson(person)
     setEditingId(person.id)
+    setEditingIndex(index)
     setFormErrors({})
   }
 
   const removeAuthorizedPerson = (id: string) => {
-    setAuthorizedPersons(prev => prev.filter(person => person.id !== id))
+    const updatedPersons = authorizedPersons.filter((person) => person.id !== id)
+    onUpdateFormData({ authorizedPersons: updatedPersons })
+
     if (editingId === id) {
       resetForm()
     }
-    validateAuthorizedPersons()
   }
 
-  const handleFileUpload = (type: 'signature' | 'photo') => (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0] || null
-    setCurrentPerson(prev => ({ ...prev, [type]: file }))
+  const handleFileUpload = (type: "signature" | "photo") => (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+
+    console.log(`${type} file selected:`, file)
+
+    // Store the file directly
+    setCurrentPerson((prev) => ({ ...prev, [type]: file || null }))
+
+    // Clear validation error if a file is selected
     if (file && formErrors[type]) {
-      setFormErrors(prev => {
+      setFormErrors((prev) => {
         const newErrors = { ...prev }
         delete newErrors[type]
         return newErrors
       })
     }
+
+    // Reset the input value to allow selecting the same file again if needed
+    event.target.value = ""
   }
 
   const updateCurrentPerson = (field: keyof AuthorizedPerson, value: any) => {
-    setCurrentPerson(prev => ({ ...prev, [field]: value }))
+    setCurrentPerson((prev) => ({ ...prev, [field]: value }))
     if (formErrors[field]) {
-      setFormErrors(prev => {
+      setFormErrors((prev) => {
         const newErrors = { ...prev }
         delete newErrors[field]
         return newErrors
@@ -182,8 +198,60 @@ export function AuthorizationTab({ validationErrors = {}, onValidationChange }: 
     }
   }
 
+  const getFieldError = (field: string): string | undefined => {
+    // First check for specific API errors if we're editing an existing person
+    if (editingIndex !== null) {
+      const apiErrorKey = `authorization_${editingIndex}_${field}`
+      if (validationErrors[apiErrorKey]) {
+        return validationErrors[apiErrorKey]
+      }
+    }
+
+    // Then check for form errors
+    if (formErrors[field]) {
+      return formErrors[field]
+    }
+
+    // Finally check for general field errors
+    return validationErrors[field]
+  }
+
+  // Replace the validIdTypes array with the provided list
+  const validIdTypes = [
+    { value: "philippine passport", label: "Philippine Passport" },
+    { value: "drivers license", label: "Driver's License" },
+    { value: "umid", label: "UMID" },
+    { value: "prc id", label: "PRC ID" },
+    { value: "postal id", label: "Postal ID" },
+    { value: "sss id", label: "SSS ID" },
+    { value: "gsis ecard", label: "GSIS eCard" },
+    { value: "voters id", label: "Voter's ID" },
+    { value: "philhealth id", label: "PhilHealth ID" },
+    { value: "tin id", label: "TIN ID" },
+    { value: "senior citizen id", label: "Senior Citizen ID" },
+    { value: "pwd id", label: "PWD ID" },
+    { value: "national id", label: "National ID" },
+    { value: "ofw id", label: "OFW ID" },
+    { value: "barangay clearance", label: "Barangay Clearance" },
+    { value: "nbi clearance", label: "NBI Clearance" },
+    { value: "police clearance", label: "Police Clearance" },
+    { value: "firearms license", label: "Firearms License" },
+    { value: "acr i-card", label: "ACR I-Card" },
+    { value: "ibp id", label: "IBP ID" },
+    { value: "seaman book", label: "Seaman's Book" },
+    { value: "indigenous peoples id", label: "Indigenous Peoples ID" },
+  ]
+
   return (
     <div className="space-y-8 p-6">
+      {apiErrorMessage && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{apiErrorMessage}</AlertDescription>
+        </Alert>
+      )}
+
       <Card>
         <CardContent className="p-6">
           <h3 className="text-lg font-semibold mb-6 border-b pb-2">
@@ -193,71 +261,68 @@ export function AuthorizationTab({ validationErrors = {}, onValidationChange }: 
             <div className="grid grid-cols-2 gap-6">
               <div>
                 <Label htmlFor="auth-name">Full Name *</Label>
-                <Input 
-                  id="auth-name" 
-                  placeholder="Enter name" 
-                  className={cn("mt-2", formErrors.name && "border-red-500")}
+                <Input
+                  id="auth-name"
+                  placeholder="Enter name"
+                  className={cn("mt-2", getFieldError("name") && "border-red-500")}
                   value={currentPerson.name}
-                  onChange={(e) => updateCurrentPerson('name', e.target.value)}
+                  onChange={(e) => updateCurrentPerson("name", e.target.value)}
                 />
-                {formErrors.name && (
-                  <p className="text-sm text-red-500 mt-1">{formErrors.name}</p>
-                )}
+                {getFieldError("name") && <p className="text-sm text-red-500 mt-1">{getFieldError("name")}</p>}
               </div>
               <div>
                 <Label htmlFor="auth-relationship">Relationship *</Label>
-                <Input 
-                  id="auth-relationship" 
-                  placeholder="Enter relationship" 
-                  className={cn("mt-2", formErrors.relationship && "border-red-500")}
+                <Input
+                  id="auth-relationship"
+                  placeholder="Enter relationship"
+                  className={cn("mt-2", getFieldError("relationship") && "border-red-500")}
                   value={currentPerson.relationship}
-                  onChange={(e) => updateCurrentPerson('relationship', e.target.value)}
+                  onChange={(e) => updateCurrentPerson("relationship", e.target.value)}
                 />
-                {formErrors.relationship && (
-                  <p className="text-sm text-red-500 mt-1">{formErrors.relationship}</p>
+                {getFieldError("relationship") && (
+                  <p className="text-sm text-red-500 mt-1">{getFieldError("relationship")}</p>
                 )}
               </div>
             </div>
 
             <div>
               <Label htmlFor="auth-address">Address *</Label>
-              <Textarea 
-                id="auth-address" 
-                placeholder="Enter Address" 
-                className={cn("mt-2", formErrors.address && "border-red-500")}
+              <Textarea
+                id="auth-address"
+                placeholder="Enter Address"
+                className={cn("mt-2", getFieldError("address") && "border-red-500")}
                 value={currentPerson.address}
-                onChange={(e) => updateCurrentPerson('address', e.target.value)}
+                onChange={(e) => updateCurrentPerson("address", e.target.value)}
               />
-              {formErrors.address && (
-                <p className="text-sm text-red-500 mt-1">{formErrors.address}</p>
-              )}
+              {getFieldError("address") && <p className="text-sm text-red-500 mt-1">{getFieldError("address")}</p>}
             </div>
 
             <div className="grid grid-cols-2 gap-6">
               <div>
-                <Label htmlFor="auth-contact">Contact Number *</Label>
-                <Input 
-                  id="auth-contact" 
-                  placeholder="Enter contact number" 
-                  className={cn("mt-2", formErrors.contactNumber && "border-red-500")}
+                <Label htmlFor="auth-contact">Contact Number * (11 digits)</Label>
+                <Input
+                  id="auth-contact"
+                  placeholder="Enter contact number"
+                  className={cn("mt-2", getFieldError("contactNumber") && "border-red-500")}
                   value={currentPerson.contactNumber}
-                  onChange={(e) => updateCurrentPerson('contactNumber', e.target.value)}
+                  onChange={(e) => updateCurrentPerson("contactNumber", e.target.value)}
+                  maxLength={11}
                 />
-                {formErrors.contactNumber && (
-                  <p className="text-sm text-red-500 mt-1">{formErrors.contactNumber}</p>
+                {getFieldError("contactNumber") && (
+                  <p className="text-sm text-red-500 mt-1">{getFieldError("contactNumber")}</p>
                 )}
               </div>
               <div>
                 <Label htmlFor="auth-years">Years Known *</Label>
-                <Input 
-                  id="auth-years" 
-                  placeholder="Enter number of years" 
-                  className={cn("mt-2", formErrors.yearsKnown && "border-red-500")}
+                <Input
+                  id="auth-years"
+                  placeholder="Enter number of years"
+                  className={cn("mt-2", getFieldError("yearsKnown") && "border-red-500")}
                   value={currentPerson.yearsKnown}
-                  onChange={(e) => updateCurrentPerson('yearsKnown', e.target.value)}
+                  onChange={(e) => updateCurrentPerson("yearsKnown", e.target.value)}
                 />
-                {formErrors.yearsKnown && (
-                  <p className="text-sm text-red-500 mt-1">{formErrors.yearsKnown}</p>
+                {getFieldError("yearsKnown") && (
+                  <p className="text-sm text-red-500 mt-1">{getFieldError("yearsKnown")}</p>
                 )}
               </div>
             </div>
@@ -265,37 +330,36 @@ export function AuthorizationTab({ validationErrors = {}, onValidationChange }: 
             <div className="grid grid-cols-2 gap-6">
               <div>
                 <Label htmlFor="auth-id-type">Valid ID Type *</Label>
-                <Select 
-                  value={currentPerson.validIdType} 
-                  onValueChange={(value) => updateCurrentPerson('validIdType', value)}
+                <Select
+                  value={currentPerson.validIdType}
+                  onValueChange={(value) => updateCurrentPerson("validIdType", value)}
                 >
-                  <SelectTrigger className={cn("mt-2 w-full", formErrors.validIdType && "border-red-500")}>
+                  <SelectTrigger className={cn("mt-2 w-full", getFieldError("validIdType") && "border-red-500")}>
                     <SelectValue placeholder="Select..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="drivers-license">Driver's License</SelectItem>
-                    <SelectItem value="passport">Passport</SelectItem>
-                    <SelectItem value="sss">SSS ID</SelectItem>
-                    <SelectItem value="philhealth">PhilHealth ID</SelectItem>
-                    <SelectItem value="umid">UMID</SelectItem>
-                    <SelectItem value="tin">TIN ID</SelectItem>
+                    {validIdTypes.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-                {formErrors.validIdType && (
-                  <p className="text-sm text-red-500 mt-1">{formErrors.validIdType}</p>
+                {getFieldError("validIdType") && (
+                  <p className="text-sm text-red-500 mt-1">{getFieldError("validIdType")}</p>
                 )}
               </div>
               <div>
                 <Label htmlFor="auth-id-number">Valid ID Number *</Label>
-                <Input 
-                  id="auth-id-number" 
-                  placeholder="Enter ID number" 
-                  className={cn("mt-2", formErrors.validIdNumber && "border-red-500")}
+                <Input
+                  id="auth-id-number"
+                  placeholder="Enter ID number"
+                  className={cn("mt-2", getFieldError("validIdNumber") && "border-red-500")}
                   value={currentPerson.validIdNumber}
-                  onChange={(e) => updateCurrentPerson('validIdNumber', e.target.value)}
+                  onChange={(e) => updateCurrentPerson("validIdNumber", e.target.value)}
                 />
-                {formErrors.validIdNumber && (
-                  <p className="text-sm text-red-500 mt-1">{formErrors.validIdNumber}</p>
+                {getFieldError("validIdNumber") && (
+                  <p className="text-sm text-red-500 mt-1">{getFieldError("validIdNumber")}</p>
                 )}
               </div>
             </div>
@@ -303,44 +367,33 @@ export function AuthorizationTab({ validationErrors = {}, onValidationChange }: 
             <div className="grid grid-cols-2 gap-6">
               <div>
                 <Label htmlFor="auth-place">Place Issued *</Label>
-                <Input 
-                  id="auth-place" 
-                  placeholder="Enter place" 
-                  className={cn("mt-2", formErrors.placeIssued && "border-red-500")}
+                <Input
+                  id="auth-place"
+                  placeholder="Enter place"
+                  className={cn("mt-2", getFieldError("placeIssued") && "border-red-500")}
                   value={currentPerson.placeIssued}
-                  onChange={(e) => updateCurrentPerson('placeIssued', e.target.value)}
+                  onChange={(e) => updateCurrentPerson("placeIssued", e.target.value)}
                 />
-                {formErrors.placeIssued && (
-                  <p className="text-sm text-red-500 mt-1">{formErrors.placeIssued}</p>
+                {getFieldError("placeIssued") && (
+                  <p className="text-sm text-red-500 mt-1">{getFieldError("placeIssued")}</p>
                 )}
               </div>
               <div>
                 <Label>Date Issued *</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal mt-2",
-                        !currentPerson.dateIssued && "text-muted-foreground",
-                        formErrors.dateIssued && "border-red-500"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {currentPerson.dateIssued ? format(currentPerson.dateIssued, "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar 
-                      mode="single" 
-                      selected={currentPerson.dateIssued} 
-                      onSelect={(date) => updateCurrentPerson('dateIssued', date)}
-                      initialFocus 
-                    />
-                  </PopoverContent>
-                </Popover>
-                {formErrors.dateIssued && (
-                  <p className="text-sm text-red-500 mt-1">{formErrors.dateIssued}</p>
+                <Input
+                  type="date"
+                  value={currentPerson.dateIssued ? format(new Date(currentPerson.dateIssued), "yyyy-MM-dd") : ""}
+                  onChange={(e) => {
+                    const dateValue = e.target.value ? new Date(e.target.value) : undefined
+                    updateCurrentPerson("dateIssued", dateValue)
+                  }}
+                  className={cn("mt-2", getFieldError("dateIssued") && "border-red-500")}
+                  style={{
+                    colorScheme: "light",
+                  }}
+                />
+                {getFieldError("dateIssued") && (
+                  <p className="text-sm text-red-500 mt-1">{getFieldError("dateIssued")}</p>
                 )}
               </div>
             </div>
@@ -349,11 +402,11 @@ export function AuthorizationTab({ validationErrors = {}, onValidationChange }: 
               <div>
                 <Label htmlFor="auth-signature">Signature *</Label>
                 <div className="flex items-center gap-2 mt-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     asChild
-                    className={cn(formErrors.signature && "border-red-500")}
+                    className={cn(getFieldError("signature") && "border-red-500")}
                   >
                     <label htmlFor="signature-upload" className="cursor-pointer">
                       <Upload className="h-4 w-4 mr-2" />
@@ -365,24 +418,26 @@ export function AuthorizationTab({ validationErrors = {}, onValidationChange }: 
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={handleFileUpload('signature')}
+                    onChange={handleFileUpload("signature")}
                   />
                   <span className="text-sm text-muted-foreground">
-                    {currentPerson.signature ? currentPerson.signature.name : "No file chosen"}
+                    {currentPerson.signature && currentPerson.signature.name
+                      ? currentPerson.signature.name
+                      : "No file chosen"}
                   </span>
                 </div>
-                {formErrors.signature && (
-                  <p className="text-sm text-red-500 mt-1">{formErrors.signature}</p>
+                {getFieldError("signature") && (
+                  <p className="text-sm text-red-500 mt-1">{getFieldError("signature")}</p>
                 )}
               </div>
               <div>
                 <Label htmlFor="auth-photo">Photo *</Label>
                 <div className="flex items-center gap-2 mt-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     asChild
-                    className={cn(formErrors.photo && "border-red-500")}
+                    className={cn(getFieldError("photo") && "border-red-500")}
                   >
                     <label htmlFor="photo-upload" className="cursor-pointer">
                       <Upload className="h-4 w-4 mr-2" />
@@ -394,15 +449,13 @@ export function AuthorizationTab({ validationErrors = {}, onValidationChange }: 
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={handleFileUpload('photo')}
+                    onChange={handleFileUpload("photo")}
                   />
                   <span className="text-sm text-muted-foreground">
-                    {currentPerson.photo ? currentPerson.photo.name : "No file chosen"}
+                    {currentPerson.photo && currentPerson.photo.name ? currentPerson.photo.name : "No file chosen"}
                   </span>
                 </div>
-                {formErrors.photo && (
-                  <p className="text-sm text-red-500 mt-1">{formErrors.photo}</p>
-                )}
+                {getFieldError("photo") && <p className="text-sm text-red-500 mt-1">{getFieldError("photo")}</p>}
               </div>
             </div>
 
@@ -410,9 +463,7 @@ export function AuthorizationTab({ validationErrors = {}, onValidationChange }: 
               <Button variant="outline" onClick={resetForm}>
                 {editingId ? "Cancel" : "Reset"}
               </Button>
-              <Button onClick={addOrUpdateAuthorizedPerson}>
-                {editingId ? "Update Person" : "Add Person"}
-              </Button>
+              <Button onClick={addOrUpdateAuthorizedPerson}>{editingId ? "Update Person" : "Add Person"}</Button>
             </div>
           </div>
         </CardContent>
@@ -445,16 +496,12 @@ export function AuthorizationTab({ validationErrors = {}, onValidationChange }: 
               <Label>Actions</Label>
             </div>
 
-            {authorizedPersons.map((person) => (
+            {authorizedPersons.map((person, index) => (
               <div key={person.id} className="grid grid-cols-3 gap-6 items-center">
                 <span>{person.name}</span>
                 <span>{person.relationship}</span>
                 <div className="flex gap-2">
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    onClick={() => editAuthorizedPerson(person)}
-                  >
+                  <Button variant="ghost" size="icon" onClick={() => editAuthorizedPerson(person, index)}>
                     <Edit className="h-4 w-4" />
                   </Button>
                   <Button

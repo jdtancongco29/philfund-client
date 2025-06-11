@@ -58,7 +58,7 @@ const staticBorrowersData: BorrowerData[] = [
     division: "Division1",
     district: "District 1",
     school: "School 1",
-    totalActiveSL: 4,
+    totalActiveSL: 3,
     totalActiveBL: 0,
     totalActiveSLCA: 0,
     totalActiveBLCA: 0,

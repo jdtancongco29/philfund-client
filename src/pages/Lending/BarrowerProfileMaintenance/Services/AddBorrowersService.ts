@@ -842,4 +842,5 @@ export const handleApiError = (error: any) => {
 
     throw new Error(errorMessage)
   }
+
 }

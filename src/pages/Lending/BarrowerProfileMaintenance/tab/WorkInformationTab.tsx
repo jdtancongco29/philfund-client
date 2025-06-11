@@ -1,5 +1,3 @@
-// Updated WorkInformationTab component with react-select integration for both classification and category
-
 "use client"
 
 import { Input } from "@/components/ui/input"
@@ -28,8 +26,6 @@ import {
 } from "../Services/AddBorrowersService"
 import { format } from "date-fns"
 import ReactSelect from "react-select"
-
-// Work form data interface - not extending browser FormData
 
 interface WorkInformationTabProps {
   formData: WorkFormData
@@ -226,8 +222,26 @@ export function WorkInformationTab({ formData, validationErrors, onUpdateFormDat
     loadBanks()
   }, [])
 
-  // Transform classifications to react-select options
-  const classificationOptions: ClassificationOption[] = classifications.map((classification) => ({
+  // Filter classifications based on selected category
+  const filteredClassifications = classifications.filter((classification) => {
+    if (!formData.category) return true // Show all if no category selected
+    return classification.group.id === formData.category
+  })
+
+  // Filter districts based on selected division
+  const filteredDistricts = districts.filter((district) => {
+    if (!formData.division) return true // Show all if no division selected
+    return district.division.id === formData.division
+  })
+
+  // Filter schools based on selected district
+  const filteredSchools = schools.filter((school) => {
+    if (!formData.district) return true // Show all if no district selected
+    return school.district.id === formData.district
+  })
+
+  // Transform filtered classifications to react-select options
+  const classificationOptions: ClassificationOption[] = filteredClassifications.map((classification) => ({
     value: classification.id,
     label: `${classification.code} - ${classification.name} (${classification.group.name})`,
     data: classification,
@@ -240,8 +254,8 @@ export function WorkInformationTab({ formData, validationErrors, onUpdateFormDat
     data: category,
   }))
 
-  // Transform districts to react-select options
-  const districtOptions: DistrictOption[] = districts.map((district) => ({
+  // Transform filtered districts to react-select options
+  const districtOptions: DistrictOption[] = filteredDistricts.map((district) => ({
     value: district.id,
     label: `${district.code} - ${district.name} (${district.division.name})`,
     data: district,
@@ -254,8 +268,8 @@ export function WorkInformationTab({ formData, validationErrors, onUpdateFormDat
     data: division,
   }))
 
-  // Transform schools to react-select options
-  const schoolOptions: SchoolOption[] = schools.map((school) => ({
+  // Transform filtered schools to react-select options
+  const schoolOptions: SchoolOption[] = filteredSchools.map((school) => ({
     value: school.id,
     label: `${school.code} - ${school.name} (${school.district.name})`,
     data: school,
@@ -277,7 +291,44 @@ export function WorkInformationTab({ formData, validationErrors, onUpdateFormDat
   const selectedBank = bankOptions.find((option) => option.value === formData.bank)
 
   const handleInputChange = (field: keyof WorkFormData, value: string | Date | boolean | File | null | undefined) => {
-    onUpdateFormData({ [field]: value })
+    // Handle different field types appropriately
+    let processedValue: any = value
+
+    // Convert null to appropriate default for string fields
+    if (value === null) {
+      if (typeof formData[field] === "string") {
+        processedValue = ""
+      } else {
+        processedValue = undefined
+      }
+    }
+
+    // Handle cascading resets
+    if (field === "category") {
+      // Reset classification when category changes
+      onUpdateFormData({
+        category: processedValue as string,
+        classification: "",
+      })
+    } else if (field === "division") {
+      // Reset district and school when division changes
+      onUpdateFormData({
+        division: processedValue as string,
+        district: "",
+        school: "",
+      })
+    } else if (field === "district") {
+      // Reset school when district changes
+      onUpdateFormData({
+        district: processedValue as string,
+        school: "",
+      })
+    } else {
+      // For other fields, create the update object with proper typing
+      const updates: Partial<WorkFormData> = {}
+      updates[field] = processedValue
+      onUpdateFormData(updates)
+    }
   }
 
   const getFieldError = (field: string) => {
@@ -329,6 +380,29 @@ export function WorkInformationTab({ formData, validationErrors, onUpdateFormDat
         <h3 className="text-lg font-semibold border-b pb-2">Employment Information</h3>
         <div className="grid grid-cols-3 gap-6">
           <div>
+            <Label htmlFor="category">Category / Group*</Label>
+            <div className="mt-2">
+              <ReactSelect
+                value={selectedCategory || null}
+                onChange={(option) => {
+                  handleInputChange("category", option?.value || "")
+                }}
+                options={categoryOptions}
+                placeholder={isLoadingCategories ? "Loading categories..." : "Select category"}
+                isLoading={isLoadingCategories}
+                isSearchable
+                isClearable
+                styles={getSelectStyles("category")}
+                className="react-select-container"
+                classNamePrefix="react-select"
+                noOptionsMessage={() =>
+                  categories.length === 0 ? "No categories available" : "No options match your search"
+                }
+              />
+            </div>
+            {getFieldError("category") && <p className="text-sm text-red-500 mt-1">{getFieldError("category")}</p>}
+          </div>
+          <div>
             <Label htmlFor="classification">Classification*</Label>
             <div className="mt-2">
               <ReactSelect
@@ -337,15 +411,28 @@ export function WorkInformationTab({ formData, validationErrors, onUpdateFormDat
                   handleInputChange("classification", option?.value || "")
                 }}
                 options={classificationOptions}
-                placeholder={isLoadingClassifications ? "Loading classifications..." : "Select classification"}
+                placeholder={
+                  isLoadingClassifications
+                    ? "Loading classifications..."
+                    : !formData.category
+                      ? "Select category first"
+                      : classificationOptions.length === 0
+                        ? "No classifications for selected category"
+                        : "Select classification"
+                }
                 isLoading={isLoadingClassifications}
                 isSearchable
                 isClearable
+                isDisabled={!formData.category || classificationOptions.length === 0}
                 styles={getSelectStyles("classification")}
                 className="react-select-container"
                 classNamePrefix="react-select"
                 noOptionsMessage={() =>
-                  classifications.length === 0 ? "No classifications available" : "No options match your search"
+                  !formData.category
+                    ? "Please select a category first"
+                    : classificationOptions.length === 0
+                      ? "No classifications available for selected category"
+                      : "No options match your search"
                 }
               />
             </div>
@@ -378,30 +465,6 @@ export function WorkInformationTab({ formData, validationErrors, onUpdateFormDat
             {getFieldError("date_of_appointment") && (
               <p className="text-sm text-red-500 mt-1">{getFieldError("date_of_appointment")}</p>
             )}
-          </div>
-
-          <div>
-            <Label htmlFor="category">Category / Group*</Label>
-            <div className="mt-2">
-              <ReactSelect
-                value={selectedCategory || null}
-                onChange={(option) => {
-                  handleInputChange("category", option?.value || "")
-                }}
-                options={categoryOptions}
-                placeholder={isLoadingCategories ? "Loading categories..." : "Select category"}
-                isLoading={isLoadingCategories}
-                isSearchable
-                isClearable
-                styles={getSelectStyles("category")}
-                className="react-select-container"
-                classNamePrefix="react-select"
-                noOptionsMessage={() =>
-                  categories.length === 0 ? "No categories available" : "No options match your search"
-                }
-              />
-            </div>
-            {getFieldError("category") && <p className="text-sm text-red-500 mt-1">{getFieldError("category")}</p>}
           </div>
         </div>
       </div>
@@ -443,15 +506,28 @@ export function WorkInformationTab({ formData, validationErrors, onUpdateFormDat
                   handleInputChange("district", option?.value || "")
                 }}
                 options={districtOptions}
-                placeholder={isLoadingDistricts ? "Loading districts..." : "Select district"}
+                placeholder={
+                  isLoadingDistricts
+                    ? "Loading districts..."
+                    : !formData.division
+                      ? "Select division first"
+                      : districtOptions.length === 0
+                        ? "No districts for selected division"
+                        : "Select district"
+                }
                 isLoading={isLoadingDistricts}
                 isSearchable
                 isClearable
+                isDisabled={!formData.division || districtOptions.length === 0}
                 styles={getSelectStyles("district")}
                 className="react-select-container"
                 classNamePrefix="react-select"
                 noOptionsMessage={() =>
-                  districts.length === 0 ? "No districts available" : "No options match your search"
+                  !formData.division
+                    ? "Please select a division first"
+                    : districtOptions.length === 0
+                      ? "No districts available for selected division"
+                      : "No options match your search"
                 }
               />
             </div>
@@ -467,15 +543,28 @@ export function WorkInformationTab({ formData, validationErrors, onUpdateFormDat
                   handleInputChange("school", option?.value || "")
                 }}
                 options={schoolOptions}
-                placeholder={isLoadingSchools ? "Loading schools..." : "Select school"}
+                placeholder={
+                  isLoadingSchools
+                    ? "Loading schools..."
+                    : !formData.district
+                      ? "Select district first"
+                      : schoolOptions.length === 0
+                        ? "No schools for selected district"
+                        : "Select school"
+                }
                 isLoading={isLoadingSchools}
                 isSearchable
                 isClearable
+                isDisabled={!formData.district || schoolOptions.length === 0}
                 styles={getSelectStyles("school")}
                 className="react-select-container"
                 classNamePrefix="react-select"
                 noOptionsMessage={() =>
-                  schools.length === 0 ? "No schools available" : "No options match your search"
+                  !formData.district
+                    ? "Please select a district first"
+                    : schoolOptions.length === 0
+                      ? "No schools available for selected district"
+                      : "No options match your search"
                 }
               />
             </div>
@@ -592,15 +681,31 @@ export function WorkInformationTab({ formData, validationErrors, onUpdateFormDat
                 <SelectValue placeholder="Select ID type..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="drivers_license">Driver's License</SelectItem>
-                <SelectItem value="passport">Passport</SelectItem>
-                <SelectItem value="sss_id">SSS ID</SelectItem>
-                <SelectItem value="philhealth_id">PhilHealth ID</SelectItem>
-                <SelectItem value="voters_id">Voter's ID</SelectItem>
-                <SelectItem value="postal_id">Postal ID</SelectItem>
-                <SelectItem value="national_id">National ID</SelectItem>
+                <SelectItem value="philippine passport">Philippine Passport</SelectItem>
+                <SelectItem value="drivers license">Driver's License</SelectItem>
+                <SelectItem value="umid">UMID</SelectItem>
+                <SelectItem value="prc id">PRC ID</SelectItem>
+                <SelectItem value="postal id">Postal ID</SelectItem>
+                <SelectItem value="sss id">SSS ID</SelectItem>
+                <SelectItem value="gsis ecard">GSIS eCard</SelectItem>
+                <SelectItem value="voters id">Voter's ID</SelectItem>
+                <SelectItem value="philhealth id">PhilHealth ID</SelectItem>
+                <SelectItem value="tin id">TIN ID</SelectItem>
+                <SelectItem value="senior citizen id">Senior Citizen ID</SelectItem>
+                <SelectItem value="pwd id">PWD ID</SelectItem>
+                <SelectItem value="national id">National ID</SelectItem>
+                <SelectItem value="ofw id">OFW ID</SelectItem>
+                <SelectItem value="barangay clearance">Barangay Clearance</SelectItem>
+                <SelectItem value="nbi clearance">NBI Clearance</SelectItem>
+                <SelectItem value="police clearance">Police Clearance</SelectItem>
+                <SelectItem value="firearms license">Firearms License</SelectItem>
+                <SelectItem value="acr i-card">ACR I-Card</SelectItem>
+                <SelectItem value="ibp id">IBP ID</SelectItem>
+                <SelectItem value="seaman book">Seaman's Book</SelectItem>
+                <SelectItem value="indigenous peoples id">Indigenous Peoples ID</SelectItem>
               </SelectContent>
             </Select>
+
             {getFieldError("gov_valid_id_type") && (
               <p className="text-sm text-red-500 mt-1">{getFieldError("gov_valid_id_type")}</p>
             )}

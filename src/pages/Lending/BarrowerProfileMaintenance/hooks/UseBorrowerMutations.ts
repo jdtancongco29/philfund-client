@@ -268,7 +268,7 @@ export const useBorrowerForm = () => {
     
     // Helper functions
     getEnabledTabs: (cachedProfile: CachedBorrowerResponse | undefined) => {
-      const enabledTabs = ["authorization"] // Basic info is always enabled
+      const enabledTabs = ["basic-info"] // Basic info is always enabled
 
       if (cachedProfile?.status === "FETCHED" && cachedProfile.data) {
         // If we have step_1 data, enable dependents tab

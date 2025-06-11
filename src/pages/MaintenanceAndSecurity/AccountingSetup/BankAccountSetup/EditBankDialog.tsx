@@ -590,13 +590,10 @@ export function EditBankDialog({
                 }`}
               >
                 <option value="">Select...</option>
-                <option value="salary funds account">
-                  Salary Funds Account
+                <option value="check account">
+                  Check Account
                 </option>
-                <option value="bonus funds account">Bonus Funds Account</option>
-                <option value="check encashment account">
-                  Check Encashment Account
-                </option>
+                <option value="savings account">Savings Account</option>
               </select>
               <p className="text-sm text-gray-600">
                 The type or purpose of this bank account

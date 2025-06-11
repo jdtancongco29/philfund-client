@@ -24,8 +24,8 @@ const validateForm = (values: FormSchema): Record<string, string> => {
 
   if (!values.code) {
     errors.code = "Reference code is required.";
-  } else if (values.code.length !== 2) {
-    errors.code = "Reference code must be exactly 2 characters.";
+  } else if (values.code.length < 2 || values.code.length > 3) {
+    errors.code = "Reference code must be at least 2-3 characters.";
   }
 
   if (!values.name) {
@@ -202,10 +202,11 @@ export function EditReferenceDialog({
               Reference Code <span className="text-red-500">*</span>
             </label>
             <Input
-              placeholder="Enter 2-character reference code"
-              maxLength={2}
+              placeholder="Enter 3-character reference code"
+              minLength={2}
+              maxLength={3}
               value={formValues.code}
-              onChange={(e) => handleInputChange("code", e.target.value)}
+              onChange={(e) => handleInputChange("code", e.target.value.toUpperCase())}
               className={`block w-full rounded border px-3 py-2 focus:outline-none focus:ring ${
                 errors.code ? "border-red-500" : "border-gray-300"
               }`}

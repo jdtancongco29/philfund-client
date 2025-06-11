@@ -269,6 +269,11 @@ const menuConfig = {
             path: "/maintenance-and-security/accounting-setup/cashiering",
             order: 6,
           },
+          {
+            label: "General Journal",
+            path: "/maintenance-and-security/accounting-setup/general-journal",
+            order: 7,
+          },
         ],
       },
       {

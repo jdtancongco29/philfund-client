@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { BorrowerSearchPanel, type Borrower } from "@/components/borrower-search/borroer-search-panel"
+import { BorrowerSearchPanel, type Borrower } from "@/components/borrower-search/borrower-search-panel"
 import { DataTableV2, type ColumnDefinition } from "@/components/data-table/data-table-v2"
 import { Button } from "@/components/ui/button"
 import LoanRenewalService from "./Service/LoanRenewalService"

@@ -8,9 +8,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select } from "@radix-ui/react-select"
 import { ChevronDown, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, CreditCard, Download, FileText } from "lucide-react"
 import { ChartComponent } from "@/components/chart"
-import { DateRangePicker } from "@/components/date-range-picker"
+import { DateRange } from "react-day-picker"
+import { useState } from "react"
+import DateCalendar from "@/components/date-calendar/date-calendar"
 
 export default function DashboardPage() {
+  const [selectedRange, setSelectedRange] = useState<DateRange | undefined>()
   return (
     <MainLayout>
       <>
@@ -18,7 +21,7 @@ export default function DashboardPage() {
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold">Dashboard</h1>
             <div className="flex items-center gap-2">
-              <DateRangePicker className="w-[300px]" />
+              <DateCalendar range={selectedRange} setRange={(date) => console.log(date)} />
             </div>
           </div>
           {/* Metrics Cards */}
@@ -44,7 +47,7 @@ export default function DashboardPage() {
               </Button>
               <Button variant="outline" size="sm">
                 <Download className="w-4 h-4 mr-2" />
-                CVS
+                CSV
               </Button>
             </div>
           </div>
@@ -86,8 +89,7 @@ export default function DashboardPage() {
             </div>
             <div>
               <p className="text-sm mb-1">Date Range</p>
-              {/* <DateRangePicker className="w-[300px]" /> */}
-              <DateRangePicker className="w-[300px]" />
+              <DateCalendar range={selectedRange} setRange={setSelectedRange} />
             </div>
           </div>
 
@@ -198,14 +200,14 @@ function MetricCard({ title, value, change }: MetricCardProps) {
     <Card className="p-6 border-[var(--border)]">
       <CardContent className="p-0">
         <div className="flex flex-col">
-            <div className="flex justify-between mb-2">
-              <p className="text-sm text-gray-500">{title}</p>
-              <CreditCard />
-            </div>
-            <div className="text-left">
-              <p className="text-3xl font-bold">{value}</p>
-              <p className="text-xs text-gray-500">{change}</p>
-            </div>
+          <div className="flex justify-between mb-2">
+            <p className="text-sm text-gray-500">{title}</p>
+            <CreditCard />
+          </div>
+          <div className="text-left">
+            <p className="text-3xl font-bold">{value}</p>
+            <p className="text-xs text-gray-500">{change}</p>
+          </div>
         </div>
       </CardContent>
     </Card>

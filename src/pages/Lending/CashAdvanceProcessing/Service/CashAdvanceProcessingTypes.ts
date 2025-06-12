@@ -1,13 +1,10 @@
-// src/pages/Lending/CashAdvanceProcessing/Service/CashAdvanceProcessingTypes.ts
-
-// Common Types
+// Updated types to match the new form structure
 export type ApiResponse<T> = {
   status: string
   message: string
   data: T
 }
 
-// Borrower Types
 export interface Borrower {
   id: string
   name: string
@@ -30,7 +27,6 @@ export interface GetBorrowersResponse {
   }
 }
 
-// Division and District Types
 export interface Division {
   id: string
   name: string
@@ -52,16 +48,25 @@ export interface GetDistrictsResponse {
   districts: District[]
 }
 
-// Cash Advance Types
 export interface CashAdvance {
   id: string
   transaction_date: string
   borrower_id: string
   borrower_name: string
-  reference_code: string
-  reference_number: string
-  amount: number
-  journal_entries: JournalEntry[]
+  promissory_note_number: string
+  cash_advance_type: "salary" | "bonus"
+  type_of_cash_advance: string
+  interest_rate: number
+  surcharge_rate: number
+  principal: number
+  interest_amount: number
+  date_due: string
+  total_deductions: number
+  net_proceeds: number
+  reference_code?: string
+  reference_number?: string
+  amount?: number
+  journal_entries?: JournalEntry[]
   prepared_by: string
   approved_by: string
   status: "draft" | "processed" | "approved"
@@ -76,13 +81,19 @@ export interface JournalEntry {
   credit: number | null
 }
 
-// Request Payload Types
 export interface CreateCashAdvancePayload {
   transaction_date: string
   borrower_id: string
-  reference_code: string
-  reference_number: string
-  amount: number
+  promissory_note_number: string
+  cash_advance_type: "salary" | "bonus"
+  type_of_cash_advance: string
+  interest_rate: number
+  surcharge_rate: number
+  principal: number
+  interest_amount: number
+  date_due: string
+  total_deductions: number
+  net_proceeds: number
   prepared_by: string
   approved_by: string
   remarks: string
@@ -92,7 +103,6 @@ export interface UpdateCashAdvancePayload extends CreateCashAdvancePayload {
   id: string
 }
 
-// Filter Types
 export interface CashAdvanceFilters {
   division?: string
   district?: string

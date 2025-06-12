@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils"
 const loanComputationSchema = z.object({
   transaction_date: z.date(),
   borrower_id: z.string().min(1, "Please select a borrower"),
+  loan_type: z.string().min(1, "Please select loan type"),
   date_granted: z.date(),
   principal: z.number().min(1, "Principal amount is required"),
   terms: z.number().min(1, "Terms is required"),
@@ -74,6 +75,7 @@ export function LoanComputationTab({
     defaultValues: {
       transaction_date: currentLoan?.transaction_date ? new Date(currentLoan.transaction_date) : new Date(),
       borrower_id: currentLoan?.borrower_id || "",
+      loan_type: currentLoan?.loan_type || "",
       date_granted: currentLoan?.date_granted ? new Date(currentLoan.date_granted) : new Date(),
       principal: currentLoan?.principal || 0,
       terms: currentLoan?.terms || 0,
@@ -147,7 +149,31 @@ export function LoanComputationTab({
               {/* Transaction Details */}
               <Card className="border-none shadow-none p-0">
                 <CardContent className="px-6">
-                  <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="grid grid-cols-3 gap-4 mb-6">
+                    <FormField
+                      control={form.control}
+                      name="loan_type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Select Loan Type <span className="text-red-500">*</span>
+                          </FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select..." />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="bonus">Bonus Loan</SelectItem>
+                              <SelectItem value="salary">Salary Loan</SelectItem>
+                              <SelectItem value="emergency">Emergency Loan</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <FormField
                       control={form.control}
                       name="transaction_date"
@@ -348,10 +374,6 @@ export function LoanComputationTab({
                         </FormItem>
                       )}
                     />
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Total Payable</label>
-                      <Input value={`₱${totalPayable.toLocaleString()}`} disabled className="bg-gray-50" />
-                    </div>
                   </div>
 
                   <div className="grid grid-cols-3 gap-4 mt-4">
@@ -359,17 +381,9 @@ export function LoanComputationTab({
                       <label className="text-sm font-medium mb-2 block">Total Payable</label>
                       <Input value={`₱${totalPayable.toLocaleString()}`} disabled className="bg-gray-50" />
                     </div>
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Monthly Amortization</label>
-                      <Input value={`₱${monthlyAmortization.toLocaleString()}`} disabled className="bg-gray-50" />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Interest Rate</label>
-                      <Input value={`${watchedValues.interest_rate}%`} disabled className="bg-gray-50" />
-                    </div>
                   </div>
 
-                  <div className="mt-4">
+                  {/* <div className="grid grid-cols-3 gap-4 mt-4">
                     <div>
                       <label className="text-sm font-medium mb-2 block">Total Interest over term</label>
                       <Input
@@ -378,7 +392,7 @@ export function LoanComputationTab({
                         className="bg-gray-50"
                       />
                     </div>
-                  </div>
+                  </div> */}
                 </CardContent>
               </Card>
 
@@ -532,33 +546,34 @@ export function LoanComputationTab({
               <Card className="border-none shadow-none p-0">
                 <CardContent className="px-6">
                   <h3 className="text-lg font-semibold mb-4">List of existing payables</h3>
-
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>PN no.</TableHead>
-                        <TableHead>Loan type</TableHead>
-                        <TableHead>Monthly amortization</TableHead>
-                        <TableHead>Overdraft</TableHead>
-                        <TableHead>Total</TableHead>
-                        <TableHead>Amount Paid</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {currentLoan?.existing_payables.map((payable) => (
-                        <TableRow key={payable.id}>
-                          <TableCell>{payable.pn_no}</TableCell>
-                          <TableCell>{payable.loan_type}</TableCell>
-                          <TableCell>₱{payable.monthly_amortization.toLocaleString()}</TableCell>
-                          <TableCell>₱{payable.overdraft.toLocaleString()}</TableCell>
-                          <TableCell>₱{payable.total.toLocaleString()}</TableCell>
-                          <TableCell>
-                            <Input placeholder={payable.amount_paid} className="w-full" />
-                          </TableCell>
+                  <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>PN no.</TableHead>
+                          <TableHead>Loan type</TableHead>
+                          <TableHead>Monthly amortization</TableHead>
+                          <TableHead>Overdraft</TableHead>
+                          <TableHead>Total</TableHead>
+                          <TableHead>Amount Paid</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {currentLoan?.existing_payables.map((payable) => (
+                          <TableRow key={payable.id}>
+                            <TableCell>{payable.pn_no}</TableCell>
+                            <TableCell>{payable.loan_type}</TableCell>
+                            <TableCell>₱{payable.monthly_amortization.toLocaleString()}</TableCell>
+                            <TableCell>₱{payable.overdraft.toLocaleString()}</TableCell>
+                            <TableCell>₱{payable.total.toLocaleString()}</TableCell>
+                            <TableCell>
+                              <Input placeholder={payable.amount_paid} className="w-full" />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
 
                   <div className="mt-4 space-y-4">
                     <div>
@@ -591,36 +606,37 @@ export function LoanComputationTab({
                       Add comaker
                     </Button>
                   </div>
-
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Address</TableHead>
-                        <TableHead>Contact</TableHead>
-                        <TableHead className="w-[100px]">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {coMakers.map((coMaker) => (
-                        <TableRow key={coMaker.id}>
-                          <TableCell>{coMaker.name}</TableCell>
-                          <TableCell>{coMaker.address}</TableCell>
-                          <TableCell>{coMaker.contact}</TableCell>
-                          <TableCell>
-                            <div className="flex gap-1">
-                              <Button variant="ghost" size="icon">
-                                <PencilIcon className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" onClick={() => handleRemoveCoMaker(coMaker.id)}>
-                                <TrashIcon className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
-                          </TableCell>
+                  <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Address</TableHead>
+                          <TableHead>Contact</TableHead>
+                          <TableHead className="w-[100px]">Actions</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {coMakers.map((coMaker) => (
+                          <TableRow key={coMaker.id}>
+                            <TableCell>{coMaker.name}</TableCell>
+                            <TableCell>{coMaker.address}</TableCell>
+                            <TableCell>{coMaker.contact}</TableCell>
+                            <TableCell>
+                              <div className="flex gap-1">
+                                <Button variant="ghost" size="icon">
+                                  <PencilIcon className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => handleRemoveCoMaker(coMaker.id)}>
+                                  <TrashIcon className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
 
                 </CardContent>
               </Card>

@@ -18,7 +18,10 @@ export default function ChangePasswordForm() {
     })
     const [email, setEmail] = useState("")
     const [token, setToken] = useState("")
-    const [message, setMessage] = useState("")
+    const [message, setMessage] = useState({
+        status: "",
+        message: "",
+    })
     const [loading, setLoading] = useState(false)
 
     useEffect(() => {
@@ -80,13 +83,22 @@ export default function ChangePasswordForm() {
                 const data = await response.json()
 
                 if (response.ok) {
-                    setMessage("Password changed successfully.")
+                    setMessage({
+                        status: "success",
+                        message: "Password reset successfully. You can now log in with your new password.",
+                    })
                 } else {
-                    setMessage(data.message || "Failed to reset password.")
+                    setMessage({
+                        status: "success",
+                        message: data.message || "Failed to reset password.",
+                    })
                 }
             } catch (error) {
                 console.error(error)
-                setMessage("An unexpected error occurred.")
+                setMessage({
+                    status: "error",
+                    message: error instanceof Error ? error.message : "An unexpected error occurred.",
+                })
             } finally {
                 setLoading(false)
             }
@@ -100,8 +112,8 @@ export default function ChangePasswordForm() {
                 <h1 className="text-2xl font-bold">Change Password</h1>
                 <p className="text-muted-foreground">Please update your password</p>
                 {message && (
-                    <div className={`rounded-md p-3 text-center text-sm bg-red-50 text-red-500`}>
-                    {message}
+                    <div className={`rounded-md p-3 text-center text-sm ${message.status === "success" ? "bg-green-50 text-green-500" : "bg-red-50 text-red-500" } `}>
+                    {message.message}
                     </div>
                 )}
             </div>

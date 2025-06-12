@@ -44,6 +44,7 @@ const formSchema = (isEditing: boolean) =>
       inactive_to: z.string().optional(),
       special_approver: z.boolean(),
       loan_approver: z.boolean(),
+      loan_checker: z.boolean(),
       disbursement_approver: z.boolean(),
       branch_opener: z.boolean(),
       new_client_approver: z.boolean(),
@@ -1242,6 +1243,28 @@ export function UserDialog({
                                 <div className="space-y-0.5">
                                   <FormLabel className="text-sm">Loan Approver</FormLabel>
                                   <FormDescription>This user is capable of approving special loans.</FormDescription>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                    className="custom-switch"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        <div className="rounded-md border p-3">
+                          <FormField
+                            control={form.control}
+                            name="loan_checker"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between w-full">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="text-sm">Loan Checker</FormLabel>
+                                  <FormDescription>This user is capable of checking and verifying the loans and transactions.</FormDescription>
                                 </div>
                                 <FormControl>
                                   <Switch

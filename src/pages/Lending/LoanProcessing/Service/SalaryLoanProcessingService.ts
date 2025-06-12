@@ -371,6 +371,7 @@ export const SalaryLoanService = {
       pn_no: "29687",
       borrower_id: "11",
       borrower_name: "Juan dela Cruz",
+      loan_type: "Salary Loan",
       date_granted: "2025-12-18",
       principal: 200000.0,
       terms: 96,
@@ -431,6 +432,7 @@ export const SalaryLoanService = {
       ...payload,
       pn_no: `PN-${Date.now()}`,
       borrower_name: sampleBorrowers.find((b) => b.id === payload.borrower_id)?.name || "Unknown",
+      loan_type: payload.loan_type,
       interest: payload.principal * (payload.interest_rate / 100) * payload.terms,
       total_payable: payload.principal + payload.principal * (payload.interest_rate / 100) * payload.terms,
       monthly_amortization:
@@ -490,6 +492,7 @@ export const SalaryLoanService = {
       ...payload,
       pn_no: "29687",
       borrower_name: sampleBorrowers.find((b) => b.id === payload.borrower_id)?.name || "Unknown",
+      loan_type: payload.loan_type,
       interest: payload.principal * (payload.interest_rate / 100) * payload.terms,
       total_payable: payload.principal + payload.principal * (payload.interest_rate / 100) * payload.terms,
       monthly_amortization:

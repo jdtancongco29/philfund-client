@@ -47,6 +47,9 @@ import UnsoldNoAccountsRecording from "./pages/Lending/UnsoldNoAccountsRecording
 import CheckEncashment from "./pages/Lending/CheckEncashment/page"
 import SalaryAndCashAdvancePayment from "./pages/Lending/SalaryAndCashAdvancePayment/page"
 import BonusLoanPaymentPage from "./pages/Lending/BonusLoanPayment/page"
+import AtmExpiryPage from "./pages/Lending/Reports/AtmExpiry/page"
+import UmidExpiryPage from "./pages/Lending/Reports/UmidExpiry/page"
+import CardsMonitoringPage from "./pages/Lending/Reports/CardsMonitoring/page"
 
 function App() {
   return (
@@ -79,12 +82,6 @@ function App() {
               />
 
               {/* Lending Routes */}
-              <Route
-                path="/lending/salary-loan-processing"
-                element={<LoanProcessing name="Salary Loan Processing" />}
-              />
-
-              {/* Lending Routes */}
               <Route path="/lending/salary-loan-processing" element={<LoanProcessing name="Salary Loan Processing" />} />
               <Route path="/lending/cash-advance-processing" element={<CashAdvancePage name="Salary and Bonus Cash Advance Processing" />} />
               <Route path="/lending/bonus-loan-processing" element={<BonusLoanPage name="Bonus Loan Processing" />} />
@@ -100,6 +97,11 @@ function App() {
                 path="/lending/borrowers/borrower-master-list"
                 element={<BorrowerMasterListPage name="Borrowers Masterlist" />}
               />
+              <Route path="/lending/reports/atm-monitoring" element={<AtmExpiryPage name="ATM Expiry Monitoring" />} />
+              <Route path="/lending/reports/umid-monitoring" element={<UmidExpiryPage name="UMID Expiry Monitoring" />} />
+              <Route path="/lending/reports/cards-monitoring" element={<CardsMonitoringPage name="Cards Monitoring" />} />
+
+
 
               {/* Accounting Routes */}
               <Route path="/accounting" element={<AccountingPage />} />

@@ -4,7 +4,6 @@ import { Calendar as CalendarIcon } from "lucide-react"
 import { type DateRange } from "react-day-picker"
 
 import { Calendar } from "@/components/ui/calendar"
-import { Button } from "@/components/ui/button"
 
 interface DateRangeCalendarProps {
   range?: DateRange
@@ -58,17 +57,16 @@ export default function DateRangeCalendar({
 
   return (
     <div ref={ref} className="relative inline-block overflow-visible z-40">
-      <Button
-        variant="outline"
+      <div
         id="dates"
-        className="justify-between font-normal w-[300px]"
+        className="justify-between font-normal w-[300px] flex items-center cursor-pointer rounded-md border p-2 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         onClick={() => setIsOpen((prev) => !prev)}
       >
         {range?.from && range?.to
           ? `${range.from.toLocaleDateString()} - ${range.to.toLocaleDateString()}`
           : "mm / dd / yyyy - mm / dd / yyyy"}
         <CalendarIcon className="ml-2 h-4 w-4" />
-      </Button>
+      </div>
 
       {isOpen && (
         <div className="absolute top-full left-0 mt-2 rounded-md border bg-white shadow-md p-4 z-50 w-max">

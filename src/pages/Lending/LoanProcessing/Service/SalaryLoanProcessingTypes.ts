@@ -58,6 +58,7 @@ export interface SalaryLoan {
   pn_no: string
   borrower_id: string
   borrower_name: string
+  loan_type: string
   date_granted: string
   principal: number
   terms: number
@@ -160,6 +161,7 @@ export interface GetBanksResponse {
 export interface CreateSalaryLoanPayload {
   transaction_date: string
   borrower_id: string
+  loan_type: string
   date_granted: string
   principal: number
   terms: number

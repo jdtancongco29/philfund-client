@@ -10,7 +10,7 @@ import {
 import { useMemo, useState } from "react";
 import clsx from "clsx";
 
-// Enhanced menu configuration with ordering and page-based sections
+
 const lendingItems = [
   {
     type: "list" as const,
@@ -60,19 +60,34 @@ const lendingItems = [
       { label: "Unsold/No Account", path: "/lending/unsold-or-no-account-recording", order: 2 },
     ],
   },
+  {
+    type: "accordion" as const,
+    title: "Reports",
+    value: "reports",
+    order: 5,
+    defaultOpen: false,
+    links: [
+      { label: "ATM Monitoring", path: "/lending/reports/atm-monitoring", order: 1 },
+      { label: "UMID Monitoring", path: "/lending/reports/umid-monitoring", order: 2 },
+      { label: "Cards Monitoring", path: "/lending/reports/cards-monitoring", order: 3 },
+    ],
+  },
 ];
+
+const sharedLendingItems = lendingItems.filter(item => item.value !== "reports");
+
 const menuConfig = {
   dashboard: {
     sectionTitle: "Dashboard",
     order: 1,
     pathPattern: /^\/dashboard/,
-    items: lendingItems,
+    items: sharedLendingItems,
   },
   "borrower-dashboard": {
     sectionTitle: "Borrowers Dashboard",
     order: 2,
     pathPattern: /^\/borrower-dashboard/,
-    items: lendingItems,
+    items: sharedLendingItems,
   },
 
   lending: {

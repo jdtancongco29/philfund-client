@@ -23,6 +23,7 @@ import NoSelected from "@/components/no-selected"
 const loanComputationSchema = z.object({
   transaction_date: z.date(),
   borrower_id: z.string().min(1, "Please select a borrower"),
+  loan_type: z.string().min(1, "Please select loan type"),
   date_granted: z.date(),
   principal: z.number().min(1, "Principal amount is required"),
   terms: z.number().min(1, "Terms is required"),
@@ -165,6 +166,7 @@ export function SalaryLoanProcessing() {
     const payload = {
       transaction_date: format(values.transaction_date, "yyyy-MM-dd"),
       borrower_id: values.borrower_id,
+      loan_type: values.loan_type,
       date_granted: format(values.date_granted, "yyyy-MM-dd"),
       principal: values.principal,
       terms: values.terms,

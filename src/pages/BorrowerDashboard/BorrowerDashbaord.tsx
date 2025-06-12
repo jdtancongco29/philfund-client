@@ -7,11 +7,7 @@ import { toast } from "sonner";
 import NoSelected from "@/components/no-selected";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@radix-ui/react-tabs";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-
-import { LoanComputationFormValues } from "../Lending/LoanProcessing/SalaryLoanProcessing";
-
 import { UserDetailsDrawer } from "./Drawer/UserDetailsDrawer";
 import SalaryLoanService from "./Service/SalaryLoanProcessingService";
 import {
@@ -140,39 +136,7 @@ ModulePermissionProps) {
     setSelectedBorrower(borrower);
   };
 
-  const handleSaveAsDraft = (values: LoanComputationFormValues) => {
-    const payload = {
-      transaction_date: format(values.transaction_date, "yyyy-MM-dd"),
-      borrower_id: values.borrower_id,
-      date_granted: format(values.date_granted, "yyyy-MM-dd"),
-      principal: values.principal,
-      terms: values.terms,
-      interest_rate: values.interest_rate,
-      installment_period: values.installment_period,
-      due_date: values.due_date,
-      cash_card_amount: values.cash_card_amount,
-      computer_fee: values.computer_fee,
-      service_charge: values.service_charge,
-      insurance: values.insurance,
-      notarial_fees: values.notarial_fees,
-      gross_receipts_tax: values.gross_receipts_tax,
-      processing_fee: values.processing_fee,
-      co_makers: coMakers.map((cm) => ({
-        name: cm.name,
-        address: cm.address,
-        contact: cm.contact,
-      })),
-      prepared_by: values.prepared_by,
-      approved_by: values.approved_by || "",
-      remarks: values.remarks || "",
-    };
-
-    if (currentLoan) {
-      updateLoanMutation.mutate({ ...payload, id: currentLoan.id });
-    } else {
-      createLoanMutation.mutate(payload);
-    }
-  };
+  const handleSaveAsDraft = () => {};
 
   const handleProcess = () => {
     if (currentLoan) {

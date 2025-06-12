@@ -579,3 +579,27 @@ export interface WorkFormData {
   umid_card_no: string
   atm_bank_branch: string
 }
+export interface CreateBorrowerCashCardRequest {
+  cashcard_bank_name: string
+  cashcard_acc_num: string
+  cashcard_num: string
+  cashcard_exp: string
+}
+
+// Add the new interface for step-seven request
+export interface CreateBorrowerVerificationRequest {
+  ver_g_map_link: string
+  ver_interviewed_by: string
+  ver_interview_status: string
+  ver_taken_by: string
+  ver_auth_by: string
+  ver_date: string
+  ver_signature_taken_by: string
+  ver_signature_auth_by: string
+  ver_signature_taken_date: string
+  ver_cl_prof_taken_by: string
+  ver_audited_by: string
+  ver_borrower_photo?: File
+  ver_borrower_signature?: File
+  ver_home_sketch?: File
+}

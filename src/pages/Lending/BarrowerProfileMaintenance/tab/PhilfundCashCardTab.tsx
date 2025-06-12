@@ -1,10 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 
@@ -18,7 +16,7 @@ interface PhilfundCashCardData {
 interface PhilfundCashCardTabProps {
   formData?: PhilfundCashCardData
   validationErrors?: { [key: string]: string }
-  onUpdateFormData?: (data: PhilfundCashCardData) => void
+  onUpdateFormData?: (data: Partial<PhilfundCashCardData>) => void
 }
 
 export function PhilfundCashCardTab({ 
@@ -42,6 +40,7 @@ export function PhilfundCashCardTab({
     setLocalData(updatedData)
     
     if (onUpdateFormData) {
+      // Pass the entire updated data object
       onUpdateFormData(updatedData)
     }
   }

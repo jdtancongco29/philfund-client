@@ -1,26 +1,24 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 import {
   createBorrowerBasicInfoApi,
   createBorrowerDependentsApi,
   createBorrowerAddressDetailsApi,
   createBorrowerWorkInfoApi,
   createBorrowerAuthorizationApi,
+  createBorrowerCashCardApi,
+  createBorrowerVerificationApi,
   fetchCachedBorrowerProfileApi,
   getCachedFormData,
   mapApiFieldToFormField,
-} from '../Services/AddBorrowersService'
-import type {
-  CreateBorrowerResponse,
-  CachedBorrowerResponse,
-  ValidationErrors,
-} from '../Services/AddBorrowersTypes'
+} from "../Services/AddBorrowersService"
+import type { CreateBorrowerResponse, CachedBorrowerResponse, ValidationErrors } from "../Services/AddBorrowersTypes"
 
 // Query keys
 export const borrowerQueryKeys = {
-  all: ['borrowers'] as const,
-  cached: () => [...borrowerQueryKeys.all, 'cached'] as const,
-  cachedFormData: () => [...borrowerQueryKeys.all, 'cached-form-data'] as const,
+  all: ["borrowers"] as const,
+  cached: () => [...borrowerQueryKeys.all, "cached"] as const,
+  cachedFormData: () => [...borrowerQueryKeys.all, "cached-form-data"] as const,
 }
 
 // Hook for creating borrower basic info (Step One)
@@ -32,7 +30,7 @@ export const useCreateBorrowerBasicInfo = () => {
     onSuccess: (data: CreateBorrowerResponse) => {
       queryClient.invalidateQueries({ queryKey: borrowerQueryKeys.cached() })
       queryClient.invalidateQueries({ queryKey: borrowerQueryKeys.cachedFormData() })
-      
+
       toast.success(data.status, {
         description: data.message || "Basic information saved successfully",
         duration: 5000,
@@ -71,7 +69,7 @@ export const useCreateBorrowerDependents = () => {
     onSuccess: (data: CreateBorrowerResponse) => {
       queryClient.invalidateQueries({ queryKey: borrowerQueryKeys.cached() })
       queryClient.invalidateQueries({ queryKey: borrowerQueryKeys.cachedFormData() })
-      
+
       toast.success(data.status, {
         description: data.message || "Dependents information saved successfully",
         duration: 5000,
@@ -110,7 +108,7 @@ export const useCreateBorrowerAddressDetails = () => {
     onSuccess: (data: CreateBorrowerResponse) => {
       queryClient.invalidateQueries({ queryKey: borrowerQueryKeys.cached() })
       queryClient.invalidateQueries({ queryKey: borrowerQueryKeys.cachedFormData() })
-      
+
       toast.success(data.status, {
         description: data.message || "Address details saved successfully",
         duration: 5000,
@@ -149,7 +147,7 @@ export const useCreateBorrowerWorkInfo = () => {
     onSuccess: (data: CreateBorrowerResponse) => {
       queryClient.invalidateQueries({ queryKey: borrowerQueryKeys.cached() })
       queryClient.invalidateQueries({ queryKey: borrowerQueryKeys.cachedFormData() })
-      
+
       toast.success(data.status, {
         description: data.message || "Work information saved successfully",
         duration: 5000,
@@ -188,7 +186,7 @@ export const useCreateBorrowerAuthorization = () => {
     onSuccess: (data: CreateBorrowerResponse) => {
       queryClient.invalidateQueries({ queryKey: borrowerQueryKeys.cached() })
       queryClient.invalidateQueries({ queryKey: borrowerQueryKeys.cachedFormData() })
-      
+
       toast.success(data.status, {
         description: data.message || "Authorization information saved successfully",
         duration: 5000,
@@ -209,6 +207,85 @@ export const useCreateBorrowerAuthorization = () => {
         })
       } else {
         const errorMessage = error.message || "Failed to save authorization information"
+        toast.error("Error", {
+          description: errorMessage,
+          duration: 5000,
+        })
+      }
+    },
+  })
+}
+
+// Hook for creating borrower cash card (Step Six)
+export const useCreateBorrowerCashCard = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: createBorrowerCashCardApi,
+    onSuccess: (data: CreateBorrowerResponse) => {
+      queryClient.invalidateQueries({ queryKey: borrowerQueryKeys.cached() })
+      queryClient.invalidateQueries({ queryKey: borrowerQueryKeys.cachedFormData() })
+
+      toast.success(data.status, {
+        description: data.message || "Cash card information saved successfully",
+        duration: 5000,
+      })
+    },
+    onError: (error: any) => {
+      console.error("Error saving cash card:", error)
+
+      if (error.validationErrors && Object.keys(error.validationErrors).length > 0) {
+        toast.error("Validation Error", {
+          description: "Please correct the highlighted fields and try again",
+          duration: 5000,
+        })
+      } else if (error.type === "network") {
+        toast.error("Network Error", {
+          description: "Unable to connect to server. Please check your internet connection.",
+          duration: 5000,
+        })
+      } else {
+        const errorMessage = error.message || "Failed to save cash card information"
+        toast.error("Error", {
+          description: errorMessage,
+          duration: 5000,
+        })
+      }
+    },
+  })
+}
+
+// Hook for creating borrower verification (Step Seven)
+export const useCreateBorrowerVerification = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ formData, currentUserId }: { formData: any; currentUserId?: string }) =>
+      createBorrowerVerificationApi(formData, currentUserId),
+    onSuccess: (data: CreateBorrowerResponse) => {
+      queryClient.invalidateQueries({ queryKey: borrowerQueryKeys.cached() })
+      queryClient.invalidateQueries({ queryKey: borrowerQueryKeys.cachedFormData() })
+
+      toast.success(data.status, {
+        description: data.message || "Verification information saved successfully",
+        duration: 5000,
+      })
+    },
+    onError: (error: any) => {
+      console.error("Error saving verification:", error)
+
+      if (error.validationErrors && Object.keys(error.validationErrors).length > 0) {
+        toast.error("Validation Error", {
+          description: "Please correct the highlighted fields and try again",
+          duration: 5000,
+        })
+      } else if (error.type === "network") {
+        toast.error("Network Error", {
+          description: "Unable to connect to server. Please check your internet connection.",
+          duration: 5000,
+        })
+      } else {
+        const errorMessage = error.message || "Failed to save verification information"
         toast.error("Error", {
           description: errorMessage,
           duration: 5000,
@@ -279,15 +356,20 @@ export const useBorrowerForm = () => {
   const createAddressDetailsMutation = useCreateBorrowerAddressDetails()
   const createWorkInfoMutation = useCreateBorrowerWorkInfo()
   const createAuthorizationMutation = useCreateBorrowerAuthorization()
+  const createCashCardMutation = useCreateBorrowerCashCard()
+  const createVerificationMutation = useCreateBorrowerVerification()
   const { data: cachedProfile, isLoading: isCachedProfileLoading } = useCachedBorrowerProfile()
   const { data: cachedFormData, isLoading: isCachedFormDataLoading } = useCachedFormData()
   const { extractValidationErrors } = useValidationErrors()
 
-  const isLoading = createBasicInfoMutation.isPending || 
-                   createDependentsMutation.isPending || 
-                   createAddressDetailsMutation.isPending ||
-                   createWorkInfoMutation.isPending ||
-                   createAuthorizationMutation.isPending
+  const isLoading =
+    createBasicInfoMutation.isPending ||
+    createDependentsMutation.isPending ||
+    createAddressDetailsMutation.isPending ||
+    createWorkInfoMutation.isPending ||
+    createAuthorizationMutation.isPending ||
+    createCashCardMutation.isPending ||
+    createVerificationMutation.isPending
   const isCacheLoading = isCachedProfileLoading || isCachedFormDataLoading
 
   return {
@@ -297,18 +379,20 @@ export const useBorrowerForm = () => {
     createAddressDetails: createAddressDetailsMutation,
     createWorkInfo: createWorkInfoMutation,
     createAuthorization: createAuthorizationMutation,
-    
+    createCashCard: createCashCardMutation,
+    createVerification: createVerificationMutation,
+
     // Cached data
     cachedProfile,
     cachedFormData,
-    
+
     // Loading states
     isLoading,
     isCacheLoading,
-    
+
     // Utilities
     extractValidationErrors,
-    
+
     // Helper functions
     getEnabledTabs: (cachedProfile: CachedBorrowerResponse | undefined) => {
       const enabledTabs = ["basic-info"] // Basic info is always enabled
@@ -337,6 +421,11 @@ export const useBorrowerForm = () => {
         // If we have step_5 data, enable philfund-cash-card tab
         if (cachedProfile.data.step_5) {
           enabledTabs.push("philfund-cash-card")
+        }
+
+        // If we have step_6 data, enable verification tab
+        if (cachedProfile.data.step_6) {
+          enabledTabs.push("verification")
         }
       }
 

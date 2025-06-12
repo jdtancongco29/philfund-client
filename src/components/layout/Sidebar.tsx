@@ -70,6 +70,7 @@ const lendingItems = [
       { label: "ATM Monitoring", path: "/lending/reports/atm-monitoring", order: 1 },
       { label: "UMID Monitoring", path: "/lending/reports/umid-monitoring", order: 2 },
       { label: "Cards Monitoring", path: "/lending/reports/cards-monitoring", order: 3 },
+      { label: "Salary Loan Release", path: "/lending/reports/salary-loan-release", order: 4 },
     ],
   },
 ];

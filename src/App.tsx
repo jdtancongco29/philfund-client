@@ -50,6 +50,7 @@ import BonusLoanPaymentPage from "./pages/Lending/BonusLoanPayment/page"
 import AtmExpiryPage from "./pages/Lending/Reports/AtmExpiry/page"
 import UmidExpiryPage from "./pages/Lending/Reports/UmidExpiry/page"
 import CardsMonitoringPage from "./pages/Lending/Reports/CardsMonitoring/page"
+import SalaryLoanReleasePage from "./pages/Lending/Reports/SalaryLoanRelease/page"
 
 function App() {
   return (
@@ -100,6 +101,7 @@ function App() {
               <Route path="/lending/reports/atm-monitoring" element={<AtmExpiryPage name="ATM Expiry Monitoring" />} />
               <Route path="/lending/reports/umid-monitoring" element={<UmidExpiryPage name="UMID Expiry Monitoring" />} />
               <Route path="/lending/reports/cards-monitoring" element={<CardsMonitoringPage name="Cards Monitoring" />} />
+              <Route path="/lending/reports/salary-loan-release" element={<SalaryLoanReleasePage name="Salary Loan Releases" />} />
 
 
 

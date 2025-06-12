@@ -6,7 +6,7 @@ import type { AtmExpiryItem, AtmExpiryFilters } from "./Service/AtmExpiryTypes"
 import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query"
 import AtmExpiryService from "./Service/AtmExpiryService"
 import { DataTableV2 } from "@/components/data-table/data-table-v2"
-import { FileText } from "lucide-react"
+// import { FileText } from "lucide-react"
 import { toast } from "sonner"
 import { downloadFile } from "@/lib/utils"
 import type { ModulePermissionProps } from "@/pages/MaintenanceAndSecurity/Security/UserPermissions/Service/PermissionsTypes"
@@ -15,7 +15,7 @@ export function AtmExpiryTable({
     // canAdd,
     // canEdit,
     // canDelete,
-    canExport
+    // canExport
 }: ModulePermissionProps) {
     const [currentPage, setCurrentPage] = useState(1)
     const [rowsPerPage, setRowsPerPage] = useState(10)
@@ -159,16 +159,7 @@ export function AtmExpiryTable({
     }
 
     // Define action buttons
-    const actionButtons = [
-        {
-            label: "Print Report",
-            icon: <FileText className="h-4 w-4" />,
-            onClick: (item: AtmExpiryItem) => {
-                toast.info(`Printing report for ${item.borrowerName}...`)
-                // Implement print functionality
-            },
-        },
-    ]
+    const actionButtons:any = []
 
     const handleSort = (column: string, sort: string) => {
         setColumnSort(column)
@@ -235,8 +226,8 @@ export function AtmExpiryTable({
                 onLoading={isPending || isFetching || exportPdfMutation.isPending || exportCsvMutation.isPending}
                 idField="id"
                 enableNew={false}
-                enablePdfExport={canExport}
-                enableCsvExport={canExport}
+                enablePdfExport={false}
+                enableCsvExport={false}
                 enableFilter={true}
                 onResetTable={false}
                 onSearchChange={onSearchChange}

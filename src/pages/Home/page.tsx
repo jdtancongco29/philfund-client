@@ -21,7 +21,7 @@ export default function DashboardPage() {
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold">Dashboard</h1>
             <div className="flex items-center gap-2">
-              <DateCalendar range={selectedRange} setRange={(date) => console.log(date)} />
+              <DateCalendar mode="range" range={selectedRange} setRange={(date) => console.log(date)} />
             </div>
           </div>
           {/* Metrics Cards */}
@@ -89,7 +89,7 @@ export default function DashboardPage() {
             </div>
             <div>
               <p className="text-sm mb-1">Date Range</p>
-              <DateCalendar range={selectedRange} setRange={setSelectedRange} />
+              <DateCalendar mode="range" range={selectedRange} setRange={setSelectedRange} />
             </div>
           </div>
 

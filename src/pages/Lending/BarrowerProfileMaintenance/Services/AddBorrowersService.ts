@@ -1136,7 +1136,6 @@ export const validateStepFiveFields = (formData: FormData): Record<string, strin
     return errors
   }
 
-  let hasValidAuthorizedPerson = false
 
   formData.authorizedPersons.forEach((person, index) => {
     const prefix = `authorization_${index}`
@@ -1203,7 +1202,6 @@ export const validateStepFiveFields = (formData: FormData): Record<string, strin
       person.photo instanceof File &&
       person.photo.size > 0
     ) {
-      hasValidAuthorizedPerson = true
     }
   })
 
